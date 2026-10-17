@@ -408,6 +408,7 @@ G.I18n.add({
   'Pantalla': 'Display', 'Números de daño': 'Damage numbers', 'Los números que salen al golpear y al recibir daño.': 'The numbers that pop up when you hit or get hit.',
   'Menos sacudidas y destellos': 'Less shaking and flashing', 'La cámara tiembla menos y los fogonazos son suaves.': 'The camera shakes less and flashes are softer.',
   'Mostrar FPS': 'Show FPS', 'Fotogramas por segundo, en la esquina de abajo.': 'Frames per second, in the bottom corner.',
+  'Información del mapa': 'Map info', 'Al pasar el ratón por el mapa en plena partida, qué es cada cosa (enemigos, altares, terreno...).': 'Hovering over the map during a run shows what each thing is (enemies, altars, terrain...).',
   'Minimapa': 'Minimap', 'Tu entorno arriba a la derecha durante la partida. En PC, también con la tecla M.': 'Your surroundings at the top right during a run. On PC, also with the M key.',
   'Campo de visión': 'Field of view', 'Cuánto mapa se ve a tu alrededor. Con más, todo se ve más pequeño y los enemigos salen más lejos.': 'How much of the map you see around you. With more, everything looks smaller and enemies appear farther away.',
   'Pantalla completa': 'Fullscreen', 'Sin barras del navegador.': 'Without browser bars.', 'Activar': 'Turn on', 'Sí': 'Yes', 'No': 'No',

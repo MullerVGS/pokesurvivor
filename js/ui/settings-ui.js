@@ -84,6 +84,7 @@ G.SettingsUI = (() => {
         + toggle('calm', 'Menos sacudidas y destellos', 'La cámara tiembla menos y los fogonazos son suaves.')
         + toggle('fps', 'Mostrar FPS', 'Fotogramas por segundo, en la esquina de abajo.')
         + toggle('minimap', 'Minimapa', 'Tu entorno arriba a la derecha durante la partida. En PC, también con la tecla M.')
+        + toggle('mapTips', 'Información del mapa', 'Al pasar el ratón por el mapa en plena partida, qué es cada cosa (enemigos, altares, terreno...).')
         + G.View.row()
         + (canFull() ? `<div class="set-row"><div class="grow"><b>Pantalla completa</b><small>Sin barras del navegador.</small></div>
              <button class="btn small" id="set-full">${isFull() ? 'Salir' : 'Activar'}</button></div>`

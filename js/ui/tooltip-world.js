@@ -378,6 +378,8 @@
   }
 
   G.Tooltip.probe((x, y, touch) => {
+    // En plena partida molesta: sólo si se pide en Ajustes (lo del HUD y los menús, siempre).
+    if (!G.Settings.get('mapTips')) return null;
     if (touch) return touchOk(x, y) ? find(x, y) : null;
     const now = performance.now();
     if (now - at < EVERY - 10) return last;
