@@ -127,7 +127,7 @@ const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; ch
 // Nada del servidor ni del repositorio se sirve.
 const HIDDEN = /(^|\/)(\.|server\/|tools\/|docs\/|node_modules\/)|\.md$/;
 
-function serveStatic(req, res, pathname) {
+function serveStatic(req, res, pathname, search) {
   let rel = decodeURIComponent(pathname).replace(/^\/+/, '');
   if (rel === '' || rel.endsWith('/')) rel += 'index.html';
   const file = path.resolve(STATIC_DIR, rel);
@@ -140,10 +140,14 @@ function serveStatic(req, res, pathname) {
       return fs.createReadStream(nf).on('error', () => res.end()).pipe(res);
     }
     const ext = path.extname(file).toLowerCase();
-    // Sprites, iconos y fuentes no cambian; el código se revalida siempre (el juego se actualiza solo).
+    // Sprites, iconos y fuentes no cambian. El código con huella (?v=) tampoco:
+    // si cambia, cambia la dirección. El resto (css/style.css, js/fb/, html,
+    // json) con no-store: Cloudflare cambia el no-cache por 4 h de caché en .css
+    // y .js, y el navegador seguía con el CSS viejo con el JS nuevo.
     const art = /^assets\/(pokemon|icons|fonts)\//.test(rel);
+    const cache = art ? 'public, max-age=604800' : search.has('v') ? 'public, max-age=31536000, immutable' : 'no-store';
     res.writeHead(200, { 'content-type': TYPES[ext] || 'application/octet-stream', 'content-length': st.size,
-      'cache-control': art ? 'public, max-age=604800' : 'no-cache', 'last-modified': st.mtime.toUTCString() });
+      'cache-control': cache, 'last-modified': st.mtime.toUTCString() });
     if (req.method === 'HEAD') return res.end();
     fs.createReadStream(file).pipe(res);
   });
@@ -152,11 +156,11 @@ function serveStatic(req, res, pathname) {
 const server = http.createServer((req, res) => {
   // Copia privada: fuera de los buscadores (la web oficial es pokesurvivor.com).
   res.setHeader('x-robots-tag', 'noindex, nofollow');
-  const { pathname } = new URL(req.url, 'http://x');
+  const { pathname, searchParams } = new URL(req.url, 'http://x');
   if (pathname === '/api/health') { res.writeHead(200, { 'content-type': 'application/json' }); return res.end(JSON.stringify({ ok: true, rooms: live.size, ws: wss.clients.size })); }
   if (pathname.startsWith('/api/')) return api(req, res, pathname.slice(5));
   if (req.method !== 'GET' && req.method !== 'HEAD') { res.writeHead(405); return res.end(); }
-  serveStatic(req, res, pathname);
+  serveStatic(req, res, pathname, searchParams);
 });
 
 // ---------------- WebSocket ----------------
