@@ -30,7 +30,8 @@ G.Combat = (() => {
     m.t -= dt;
     if (m.t > 0) return;
     // Los ataques que necesitan blanco esperan a tenerlo (no gastes animación al aire).
-    if (needsTarget(m) && !(pl.target && G.U.dist(pl.x, pl.y, pl.target.x, pl.target.y) <= reach(m))) {
+    // Con la mira en el cursor (aim.js) salen igual, para romper cosas y abrirse paso.
+    if (needsTarget(m) && !(pl.aimed && m.kind !== 'chain') && !(pl.target && G.U.dist(pl.x, pl.y, pl.target.x, pl.target.y) <= reach(m))) {
       m.t = 0.05;
       return;
     }
@@ -226,7 +227,7 @@ G.Combat = (() => {
   /** Cadena: golpea a un enemigo y salta a los siguientes más cercanos (cada salto, algo menos). */
   function chain(pl, m) {
     const col = G.U.TYPE_COLOR[m.type], vis = G.VFX.forMove(m);
-    let cur = pl.target && !pl.target.dead && pl.target.hurt ? pl.target : G.Projectiles.nearest(G.EnemyMgr.all(), pl.x, pl.y, reach(m));
+    let cur = pl.target && !pl.target.dead && pl.target.hurt ? pl.target : pl.aimed ? null : G.Projectiles.nearest(G.EnemyMgr.all(), pl.x, pl.y, reach(m));
     if (!cur) return;
     let fx = pl.x, fy = pl.y - G.LIFT, k = 1;
     const done = new Set();
@@ -271,12 +272,14 @@ G.Combat = (() => {
   function meteors(pl, m) {
     const col = G.U.TYPE_COLOR[m.type], vis = G.VFX.forMove(m);
     const n = Math.max(1, m.count | 0);
-    const near = G.EnemyMgr.queryCircle(pl.x, pl.y, reach(m)).filter(e => !e.dead);
+    // Con la mira en el cursor (aim.js), caen alrededor de donde apuntas.
+    const c = pl.aimed && pl.aimAt;
+    const near = (c ? G.EnemyMgr.queryCircle(c.x, c.y, 110) : G.EnemyMgr.queryCircle(pl.x, pl.y, reach(m))).filter(e => !e.dead);
     G.U.shuffle ? G.U.shuffle(near) : near.sort(() => Math.random() - 0.5);
     for (let i = 0; i < n; i++) {
       const e = near[i];
-      const x = e ? e.x + G.U.rand(-8, 8) : pl.x + G.U.rand(-140, 140);
-      const y = e ? e.y + G.U.rand(-6, 6) : pl.y + G.U.rand(-110, 110);
+      const x = e ? e.x + G.U.rand(-8, 8) : c ? c.x + G.U.rand(-50, 50) : pl.x + G.U.rand(-140, 140);
+      const y = e ? e.y + G.U.rand(-6, 6) : c ? c.y + G.U.rand(-40, 40) : pl.y + G.U.rand(-110, 110);
       fields.push({ kind: 'meteor', owner: pl, ghost, m, col, vis, x, y, t: -i * 0.09, fall: 0.5, r: m.radius, dmg: m.dmg * pl.atk });
     }
   }
@@ -671,6 +674,6 @@ G.Combat = (() => {
     }
   }
 
-  return { tick, resolve, ghostCast, ghostOrbit, updateFields, drawGroundFields, drawAirFields, clearFields,
+  return { tick, resolve, ghostCast, ghostOrbit, updateFields, drawGroundFields, drawAirFields, clearFields, reach,
            get fieldCount() { return fields.length; } };
 })();

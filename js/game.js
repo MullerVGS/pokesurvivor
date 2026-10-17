@@ -734,6 +734,7 @@ G.Game = (() => {
     ctx.scale(G.Camera.scale, G.Camera.scale);
     G.Camera.apply(ctx);
     drawScene(G.Camera, G.Coop.active ? [pl, ...G.Coop.puppets()] : [pl]);
+    G.Aim.draw(ctx, pl);
     G.Projectiles.draw(ctx);
     G.Combat.drawAirFields(ctx);
     G.FX.draw(ctx);

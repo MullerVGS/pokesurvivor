@@ -376,6 +376,8 @@ G.Player = class Player {
     this.target = tg;
     if (tg) this.aim = Math.atan2(tg.y - this.y, tg.x - this.x);
     else if (this.walking) this.aim = this.moveAngle;
+    // Con el ratón (Ajustes > Controles), la mira puede ir al cursor (aim.js).
+    G.Aim.steer(this, dt);
 
     // --- animación: mira al objetivo al atacar, si no a donde camina ---
     const face = this.attackFace > 0 || !this.walking ? this.aim : this.moveAngle;

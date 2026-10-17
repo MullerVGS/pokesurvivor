@@ -102,7 +102,9 @@ G.SettingsUI = (() => {
              <div><kbd>Esc</kbd> o <kbd>P</kbd></div><span>pausa</span>
              <div><kbd>M</kbd></div><span>minimapa</span>
              <div><kbd>1</kbd>–<kbd>3</kbd></div><span>elegir carta al subir de nivel</span>
-           </div>`;
+           </div>`
+        + `<div class="set-row"><div class="grow"><b>Apuntar con el ratón</b><small>Los ataques salen solos; esto decide hacia dónde. Automático: al enemigo más cercano. Con clic: igual, pero mientras mantienes el botón izquierdo van hacia el cursor. Manual: siempre hacia el cursor.</small></div></div>`
+        + choice('aimMode', [['auto', 'Automático'], ['click', 'Con clic'], ['manual', 'Manual']]);
     } else if (tab === 'acc') {
       renderAccount(box);
     } else {
