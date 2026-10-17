@@ -52,12 +52,15 @@ if (!EXPOSE) {
     '--unicode-escape-sequence', 'false', '--target', 'browser'], { stdio: 'inherit', shell });
 }
 const min = fs.readFileSync(outJs);
-const hash = crypto.createHash('sha1').update(min).digest('hex').slice(0, 10);
+const css = fs.readFileSync(path.join(ROOT, 'css', 'style.css'));
+// La huella de la versión cuenta también el CSS: si sólo cambia el CSS, el juego
+// tiene que actualizarse igual (updater.js compara esta huella).
+const hash = crypto.createHash('sha1').update(min).update(css).digest('hex').slice(0, 10);
 
 let html = dev.slice(0, i) + `<script defer src="js/app.min.js?v=${hash}"></script>` + dev.slice(j + END.length);
 // El CSS, también con su huella: Cloudflare le da 4 h de caché y el navegador
 // seguía con el viejo (sin los estilos nuevos) con el JS ya nuevo.
-const cssHash = crypto.createHash('sha1').update(fs.readFileSync(path.join(ROOT, 'css', 'style.css'))).digest('hex').slice(0, 10);
+const cssHash = crypto.createHash('sha1').update(css).digest('hex').slice(0, 10);
 html = html.replace('href="css/style.css"', `href="css/style.css?v=${cssHash}"`);
 html = html.replace(/<meta name="robots" content="noindex">\s*/, '');
 // --sin-seo: sin canonical/redes/datos estructurados ni enlaces a las páginas
