@@ -876,6 +876,8 @@ a.btn { text-decoration: none; display: inline-block; color: var(--ink); }
 .tip-part .tip-hd b { font-size: 15px; }
 .tip-foot { color: var(--muted); font-size: 12px; }
 .tip-up { color: var(--green); font-style: normal; }
+.tip-down { color: var(--red); font-style: normal; }
+.tip-stats .tip-foot { font-style: normal; font-weight: 400; }
 .tip-term { text-decoration: underline dotted; text-underline-offset: 3px; }
 u.tip-term { color: #ffe9a3; }
 .tip.pinned .tip-term { cursor: help; }

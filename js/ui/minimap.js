@@ -130,6 +130,7 @@ G.Minimap = (() => {
     const D = Math.min(G.Touch.active ? 104 : 140, Math.round(h * 0.3)), R = D / 2;
     const [x0, y0] = place(w, h, D);
     const cx = x0 + R, cy = y0 + R, k = R / RANGE;
+    G.Tooltip.zone(x0, y0, D, D, 'term:minimap');     // popup con la leyenda (y tapa el mundo de debajo)
     const CW = G.World.CW, pcx = Math.floor(pl.x / CW), pcy = Math.floor(pl.y / CW);
     const terrain = G.Settings.fx > 0;
     const at = pcx + ',' + pcy + (terrain ? '' : ',-');

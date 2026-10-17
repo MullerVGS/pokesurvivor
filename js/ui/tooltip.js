@@ -11,8 +11,12 @@
  * Qué tiene popup:
  *   DOM      cualquier elemento con data-tip="<fuente>" (cartas, Pokédex, gacha...)
  *   canvas   zonas que registra el HUD en cada fotograma: zone(x, y, w, h, fuente),
- *            y "sondas" para lo que no es HUD: probe(fn), fn(x, y) en px de
- *            pantalla -> fuente | { src, x, y, w, h } | null
+ *            y "sondas" para lo que no es HUD: probe(fn), fn(x, y, touch) en px de
+ *            pantalla -> fuente | { src, x, y, w, h } | null (touch: es un toque
+ *            largo, no el ratón). El mundo se mueve bajo el ratón quieto: quien
+ *            tenga sondas llama a recheck() para que se vuelva a mirar ahí.
+ *            Un clic con el ratón en el canvas durante la partida no suelta los
+ *            fijados (hacer clic para apuntar no cierra nada; sólo T y Esc).
  *
  * Fuentes: 'tipo:arg' ('move:ember', 'slot:0', 'item:leftovers', 'term:burn'...).
  * Cada tipo tiene una función que monta el contenido (tooltip-sources.js):
@@ -32,13 +36,14 @@
  *   G.Tooltip.hide()        cierra todos
  *   G.Tooltip.content(src)  el contenido de una fuente (para pruebas)
  *   G.Tooltip.holds()       ¿hay uno fijado que pausa la partida?
+ *   G.Tooltip.recheck()     vuelve a mirar lo que hay bajo el ratón quieto (sondas)
  */
 G.Tooltip = (() => {
   const DELAY = 250, LONG = 400, GRACE = 90, M = 8, STALE = 1500;
   const sources = {};
   const stack = [];          // popups abiertos, de fuera a dentro: { el, src, key, anchor, pinned, touch, html }
   let wait = null, leaveT = null, tick = null;
-  let zones = [], zonesAt = 0, canvasKey = null;
+  let zones = [], zonesAt = 0, canvasKey = null, ptr = null;   // ptr: último punto del ratón sobre el canvas
   const probes = [];
 
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
@@ -227,14 +232,14 @@ G.Tooltip = (() => {
   function zone(x, y, w, h, src) { zones.push({ x, y, w, h, src }); }
   function probe(fn) { probes.push(fn); }
 
-  function canvasHit(x, y) {
+  function canvasHit(x, y, touch = false) {
     if (performance.now() - zonesAt > STALE) return null;
     for (let i = zones.length - 1; i >= 0; i--) {
       const z = zones[i];
       if (x >= z.x && x <= z.x + z.w && y >= z.y && y <= z.y + z.h) return { src: z.src, key: 'zone:' + z.src, anchor: { zone: z.src, r: z } };
     }
     for (const fn of probes) {
-      const r = fn(x, y);
+      const r = fn(x, y, touch);
       if (!r) continue;
       const o = typeof r === 'string' ? { src: r, x, y, w: 0, h: 0 } : r;
       return { src: o.src, key: 'probe:' + o.src, anchor: { probe: true, r: { x: o.x, y: o.y, w: o.w || 0, h: o.h || 0 } } };
@@ -250,21 +255,27 @@ G.Tooltip = (() => {
   });
   document.addEventListener('pointerout', e => {
     if (e.pointerType === 'touch') return;
+    if (!e.relatedTarget && ptr) { ptr = null; canvasHover(null); }      // el ratón sale de la ventana
     const t = e.target.closest && e.target.closest('[data-tip]');
     if (!t || (e.relatedTarget && t.contains(e.relatedTarget))) return;
     const level = levelOf(t);
     if (level >= 0) leave(level, t);
   });
   // El canvas del juego: zonas del HUD y sondas.
-  addEventListener('pointermove', e => {
-    if (e.pointerType === 'touch') return;
-    const hit = e.target && e.target.id === 'game' ? canvasHit(e.clientX, e.clientY) : null;
+  function canvasHover(hit) {
     const key = hit ? hit.key : null;
     if (key === canvasKey) return;
     if (canvasKey) leave(0, canvasKey);
     canvasKey = key;
     if (hit) enter(0, hit.src, hit.anchor, key);
+  }
+  addEventListener('pointermove', e => {
+    if (e.pointerType === 'touch') return;
+    ptr = e.target && e.target.id === 'game' ? [e.clientX, e.clientY] : null;
+    canvasHover(ptr ? canvasHit(ptr[0], ptr[1]) : null);
   });
+  /** Lo que se mueve solo (enemigos, el mapa al andar) bajo el ratón quieto. */
+  function recheck() { if (ptr) canvasHover(canvasHit(ptr[0], ptr[1])); }
   // Al hacer scroll en un menú, el popup se quedaría lejos de lo suyo.
   addEventListener('scroll', e => {
     if (!stack.length || (e.target.closest && e.target.closest('.tip'))) return;
@@ -297,9 +308,11 @@ G.Tooltip = (() => {
   let press = null, swallow = false;
   function cancelPress() { if (press) { clearTimeout(press.t); press = null; } }
 
-  // Fuera de los popups: un clic (o un toque) suelta los fijados.
+  // Fuera de los popups: un clic (o un toque) suelta los fijados. En la
+  // partida, el clic del ratón en el canvas no (es para jugar: apuntar...).
   document.addEventListener('pointerdown', e => {
     if (!stack.length || (e.target.closest && e.target.closest('.tip'))) return;
+    if (e.pointerType !== 'touch' && e.target.id === 'game' && G.Game.state === 'playing') return;
     if (stack.some(p => p.pinned)) close(0);
   }, true);
 
@@ -324,7 +337,7 @@ G.Tooltip = (() => {
     const tc = e.changedTouches[0];
     const t = e.target.closest && e.target.closest('[data-tip]');
     const hit = t ? { src: t.dataset.tip, key: t, anchor: { el: t } }
-      : e.target.id === 'game' ? canvasHit(tc.clientX, tc.clientY) : null;
+      : e.target.id === 'game' ? canvasHit(tc.clientX, tc.clientY, true) : null;
     if (!hit) return;
     press = { x: tc.clientX, y: tc.clientY, t: setTimeout(() => {
       press = null;
@@ -351,6 +364,6 @@ G.Tooltip = (() => {
   /** Fijado en una partida en solitario: el juego se para (game.js). */
   function holds() { return !G.Coop.active && G.Game.state === 'playing' && stack.some(p => p.pinned); }
 
-  return { source, content, show, hide: () => close(0), holds, zone, clearZones, probe,
+  return { source, content, show, hide: () => close(0), holds, zone, clearZones, probe, recheck,
            get isOpen() { return stack.length > 0; } };
 })();

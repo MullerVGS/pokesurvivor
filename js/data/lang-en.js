@@ -630,5 +630,84 @@ G.I18n.add({
   'Se abre de vez en cuando: sigue la flecha morada. Dentro te espera un legendario, y si lo vences ganas un vínculo.':
     'It opens every now and then: follow the purple arrow. A legendary awaits inside, and if you beat it you earn a bond.',
   'Cada banner cuenta las tiradas seguidas sin sacar una Legendaria. Al llegar al tope, la siguiente es Legendaria seguro.':
-    'Each banner counts your pulls in a row without a Legendary. When it reaches the cap, the next one is a guaranteed Legendary.'
+    'Each banner counts your pulls in a row without a Legendary. When it reaches the cap, the next one is a guaranteed Legendary.',
+
+  // ---------------- popup de lo que hay en el mapa (tooltip-world.js) ----------------
+  'Manantial': 'Spring', 'Cofre con candado': 'Locked chest', 'Trampa': 'Trap', 'Jefe': 'Boss', 'Escudo': 'Shield',
+  'Charco que te cura mientras estás encima. Se va gastando y se recarga solo con el tiempo.': 'A pool that heals you while you stand on it. It runs dry and refills by itself over time.',
+  'Quédate a su lado unos segundos, aunque te ataquen, y se abre: monedas, tickets, a veces un objeto y experiencia para subir un nivel.':
+    'Stay next to it for a few seconds, even while under attack, and it opens: coins, tickets, sometimes an item, and enough experience to level up.',
+  'Salta al pisarla, tú o un enemigo que camine, y alcanza a todo lo que tiene cerca. Las hay de veneno, pegajosas y explosivas.':
+    'It goes off when stepped on, by you or a walking enemy, and hits everything nearby. There are poison, sticky and explosive ones.',
+  'Pokémon fuerte que llega cada pocos minutos, con su barra de vida arriba. Tiene cuatro ataques propios, todos con aviso en el suelo, y por debajo de la mitad de vida se enfurece. Al caer suelta un objeto, monedas y mucha experiencia.':
+    'A strong Pokémon that shows up every few minutes, with its health bar at the top. It has four attacks of its own, all with a warning on the ground, and below half health it gets enraged. When it falls it drops an item, coins and lots of experience.',
+  'Burbuja azul que ponen los Pokémon de apoyo a sus compañeros: se come el daño hasta romperse. Ve primero a por quien los pone.':
+    'A blue bubble that support Pokémon put on their allies: it soaks up damage until it breaks. Go for whoever casts them first.',
+  'Lo que hay a tu alrededor, unas tres pantallas: tú en el centro, tus compañeros, los jefes y la grieta (con una flecha en el borde si están lejos), los altares (en gris si ya los has usado), los manantiales, los cofres con candado y los enemigos cercanos. El recuadro es lo que ves. Se quita con la tecla M o en Ajustes.':
+    'What is around you, about three screens: you in the center, your teammates, bosses and the rift (with an arrow on the edge if they are far), altars (gray once used), springs, locked chests and nearby enemies. The box is what you see. Turn it off with the M key or in Settings.',
+  'Va directo a por ti.': 'Comes straight at you.', 'Se para, apunta y embiste: apártate de su línea.': 'Stops, aims and charges: get out of its line.',
+  'Se queda a distancia y dispara. Las paredes y los árboles te cubren.': 'Keeps its distance and shoots. Walls and trees give you cover.',
+  'Lento, pero con mucha vida y golpes fuertes.': 'Slow, but with lots of health and hard hits.',
+  'Apoyo: cura a los de alrededor. Ve a por él primero.': 'Support: heals those around it. Go for it first.',
+  'Apoyo: pone escudos a sus compañeros. Ve a por él primero.': 'Support: puts shields on its allies. Go for it first.',
+  'Apoyo: llama a su manada. Ve a por él primero.': 'Support: calls its pack. Go for it first.',
+  'Se acerca y explota a tu lado: aléjate en cuanto se pare.': 'Comes close and explodes next to you: get away as soon as it stops.',
+  'Dispara un rayo que antes se ve en el suelo.': 'Fires a beam that shows on the ground first.',
+  'Pone bajo tus pies zonas que estallan al poco.': 'Puts zones under your feet that blow up shortly after.',
+  'Dispara en abanico.': 'Shoots in a fan.', 'Salta y cae sobre ti: la caída se ve antes en el suelo.': 'Jumps and lands on you: the landing shows on the ground first.',
+  'Corredor: muy rápido y frágil. Va a donde vas a estar.': 'Runner: very fast and fragile. It heads to where you are going to be.',
+  'muy eficaz': 'super effective', 'poco eficaz': 'not very effective', 'clima ×{x}': 'weather ×{x}', 'Sus golpes a ti': 'Its hits on you',
+  'Legendario': 'Legendary', 'Enfurecido': 'Enraged', 'Shiny': 'Shiny', 'Dorado': 'Golden', 'Quemado': 'Burned', 'Envenenado': 'Poisoned',
+  'Duende del tesoro: huye de ti y se escapa a los 15 s. Lleva monedas y un ticket ×10.': 'Treasure goblin: it runs from you and escapes after 15 s. It carries coins and a ×10 ticket.',
+  'Duende del tesoro: huye de ti y se escapa a los 15 s. Va cargado de monedas.': 'Treasure goblin: it runs from you and escapes after 15 s. It is loaded with coins.',
+  'Llega con la Sentencia de Arceus. Sólo da experiencia.': 'It comes with the Judgment of Arceus. It only gives experience.',
+  'El legendario de la grieta: si lo vences, te llevas un vínculo, tickets y monedas.': 'The legendary of the rift: beat it and you get a bond, tickets and coins.',
+  'Cuatro ataques propios, todos con aviso en el suelo. Por debajo de la mitad de vida se enfurece. Al caer suelta un objeto, monedas y mucha experiencia.':
+    'Four attacks of its own, all with a warning on the ground. Below half health it gets enraged. When it falls it drops an item, coins and lots of experience.',
+  'Flota: pasa por encima de paredes, agua y lava.': 'Floats: it goes over walls, water and lava.',
+  'Shiny: el doble de vida y cinco veces la experiencia. Si lo derrotas, es tuyo.': 'Shiny: double health and five times the experience. Defeat it and it is yours.',
+  'Hora dorada: da el doble de experiencia y a veces suelta monedas.': 'Golden hour: it gives double experience and sometimes drops coins.',
+  'Caído': 'Down', 'Quédate a su lado unos segundos para levantarlo.': 'Stay next to them for a few seconds to bring them back.',
+  'En cooperativo cada uno tiene los suyos: lo que gastas tú no se lo gastas a los demás.': 'In co-op everyone has their own: what you use up is not used up for the others.',
+  'Trampa de veneno': 'Poison trap', 'Trampa pegajosa': 'Sticky trap', 'Trampa explosiva': 'Explosive trap',
+  'Si estás dentro te quita un 10% de tu vida máxima. Los enemigos de alrededor quedan envenenados y reciben daño.':
+    'If you are inside, it takes 10% of your max health. Enemies around it get poisoned and take damage.',
+  'Si estás dentro vas a media velocidad durante 3,5 s. Los enemigos de alrededor van mucho más lentos durante 4,5 s.':
+    'If you are inside, you move at half speed for 3.5 s. Enemies around it move much slower for 4.5 s.',
+  'Si estás dentro te quita un 20% de tu vida máxima. A los enemigos de alrededor les hace mucho daño y los empuja.':
+    'If you are inside, it takes 20% of your max health. It deals heavy damage to enemies around it and knocks them back.',
+  'Altar de Furia': 'Fury altar', 'Altar de Rayo': 'Lightning altar', 'Altar de Imán': 'Magnet altar', 'Altar de Prisa': 'Haste altar',
+  'Ya usado': 'Used', 'Sin usar': 'Unused', 'Ya lo has usado: cada altar sirve una sola vez.': 'You already used it: each altar works only once.',
+  'Písalo y el poder es tuyo. Sirve una sola vez.': 'Step on it and the power is yours. It works only once.',
+  'Carga': 'Charge', 'Cura': 'Heals', '{x} de tu vida/s': '{x} of your health/s', 'Seco: espera a que se recargue.': 'Dry: wait for it to refill.',
+  'Ponte encima y cura mientras quede carga.': 'Stand on it and it heals while it has charge left.', 'Se recarga solo: de vacío a lleno, unos 45 s.': 'It refills by itself: about 45 s from empty to full.',
+  'Se abre en': 'Opens in', 'Abriendo': 'Opening',
+  'Quédate a su lado y se abre, aunque te ataquen. Si te vas, se vuelve a cerrar poco a poco.': 'Stay next to it and it opens, even while under attack. If you leave, it slowly closes again.',
+  'Suelta monedas, de 1 a 3 tickets (a veces un ×10), la mitad de las veces un objeto y experiencia para subir un nivel.':
+    'It drops coins, 1 to 3 tickets (sometimes a ×10), an item half of the time, and enough experience to level up.',
+  'Salta al pisarla, tú o un enemigo que camine, y alcanza a todo lo que tiene cerca.': 'It goes off when stepped on, by you or a walking enemy, and hits everything nearby.',
+  'Se cierra en': 'Closes in', 'Entra y os lleva, con todo el grupo, a la arena de un legendario. Tenéis 2 minutos.': 'Step in and it takes you, with the whole group, to a legendary’s arena. You have 2 minutes.',
+  'Si lo vences: un vínculo, tickets y monedas. Si caes, vuelves sin premio y la partida sigue.': 'If you beat it: a bond, tickets and coins. If you fall, you come back with no reward and the run goes on.',
+  'Experiencia': 'Experience', 'Baya': 'Berry', 'Bomba': 'Bomb', 'Monedas': 'Coins', 'Ticket': 'Ticket', 'Ticket ×10': 'Ticket ×10',
+  'Te acerca al siguiente nivel. Vuela hacia ti al entrar en tu radio de recogida.': 'Brings you closer to the next level. It flies to you once it is inside your pickup radius.',
+  'Cura un 30% de tu vida máxima.': 'Heals 30% of your max health.', 'Atrae hacia ti todo lo que hay en el suelo.': 'Pulls everything on the ground toward you.',
+  'Golpea a todos los enemigos que se ven en la pantalla.': 'Hits every enemy on the screen.', 'Para la tienda de mejoras.': 'For the upgrade shop.',
+  'Una tirada del gacha.': 'One gacha pull.', 'Diez tiradas del gacha de una vez.': 'Ten gacha pulls at once.',
+  'En el suelo: al cogerlo eliges si te lo quedas.': 'On the ground: when you pick it up you choose whether to keep it.',
+  'Ataque con aviso': 'Telegraphed attack', 'Golpea en': 'Hits in', 'Se va llenando y, al llenarse, golpea a quien esté dentro. ¡Sal de ahí!': 'It fills up and, when full, hits whoever is inside. Get out of there!',
+  'Quita al menos un {x} de tu vida máxima, sin mirar tipos ni defensa.': 'It takes at least {x} of your max health, ignoring types and defense.',
+  'Árbol': 'Tree', 'Cofre': 'Chest', 'Hierba alta': 'Tall grass', 'Aguante': 'Durability',
+  'No se rompe. Bloquea el paso y para los disparos, los tuyos y los de los enemigos: sirve de cobertura.': 'It does not break. It blocks the way and stops shots, yours and the enemies’: use it as cover.',
+  'Bloquea el paso y para los disparos. Se rompe a golpes y a veces suelta experiencia, monedas o una baya.': 'It blocks the way and stops shots. It breaks when hit and sometimes drops experience, coins or a berry.',
+  'Se rompe a golpes y suelta un buen botín: monedas, experiencia, una baya o un imán y, a veces, un objeto.': 'It breaks when hit and drops good loot: coins, experience, a berry or a magnet and, sometimes, an item.',
+  'No bloquea nada. Se corta con cualquier ataque y a veces esconde una baya o unas monedas.': 'It blocks nothing. Any attack cuts it, and sometimes it hides a berry or some coins.',
+  'Pantano': 'Swamp', 'Lava': 'Lava', 'Charco tóxico': 'Toxic pool', 'Charco eléctrico': 'Electric pool', 'Pared': 'Wall',
+  'Nadie la cruza andando: sólo los enemigos que flotan y los jefes.': 'Nobody can walk through it: only floating enemies and bosses.',
+  'Para los disparos, los tuyos y los de los enemigos, y corta los rayos: ponte detrás para cubrirte.': 'It stops shots, yours and the enemies’, and cuts beams: get behind it for cover.',
+  'Al cruzarlo vas más lento, y los enemigos que caminan, también.': 'You move slower crossing it, and so do walking enemies.',
+  'Te quita': 'Takes', '{x} de tu vida cada {x} s': '{x} of your health every {x} s',
+  'Mientras estás dentro te quita vida, y a los enemigos que caminan, también: por eso lo rodean.': 'While you are in it, it drains your health, and walking enemies’ too: that is why they go around it.',
+  'Resbala: cuesta arrancar, frenar y girar. A los enemigos no les afecta.': 'It is slippery: starting, stopping and turning are harder. It does not affect enemies.',
+  'Los enemigos que flotan y los jefes pasan por encima.': 'Floating enemies and bosses go over it.',
+  'A los de tipo {x} no les afecta.': 'It does not affect {x} types.', 'Tampoco a ti.': 'Nor you.'
 });

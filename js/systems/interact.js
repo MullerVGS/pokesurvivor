@@ -116,5 +116,5 @@ G.Interact = (() => {
     }
   }
 
-  return { update, trapEffect, POWERS, CHEST_TIME };
+  return { update, trapEffect, POWERS, CHEST_TIME, POWER_TIME };
 })();
