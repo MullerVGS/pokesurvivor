@@ -47,9 +47,10 @@
   <section id="done" class="box hidden">
     <h2 class="ok">Save pronto para entrar</h2>
     <div id="done-info"></div>
-    <p>Agora <b>entre ou crie sua conta</b> aqui no jogo: o save é aplicado sozinho à conta que entrar neste navegador.
-      Se a conta for nova, ela fica igual à sua do pokesurvivor.com. Se já tiver progresso aqui, os dois se juntam e nada se perde.</p>
-    <p class="row"><a class="btn" href="../">Abrir o jogo</a> <button class="btn ghost" id="undo" type="button">Cancelar o import</button></p>
+    <p>Agora <b>crie sua conta</b> no jogo: o nick <b id="done-nick"></b> já vem preenchido, é só escolher uma senha.
+      A conta nova fica igual à sua do pokesurvivor.com, com o mesmo nick.</p>
+    <p class="muted">Já tem conta aqui? Entre nela: o save se junta ao que você já tem e nada se perde (o nick dela continua o mesmo).</p>
+    <p class="row"><a class="btn" href="../">Criar a conta</a> <button class="btn ghost" id="undo" type="button">Cancelar o import</button></p>
   </section>
 
   <section id="pick" class="box hidden">
@@ -127,6 +128,7 @@
     catch (e) { $('paste-err').textContent = 'Este navegador não deixou guardar (modo anônimo?).'; return; }
     $('pick').classList.add('hidden');
     $('done-info').innerHTML = '<p>' + info(s) + '</p>';
+    $('done-nick').textContent = s.name || '';
     $('done').classList.remove('hidden');
     scrollTo({ top: 0, behavior: 'smooth' });
   }
@@ -174,7 +176,7 @@
   $('undo').onclick = () => { try { localStorage.removeItem(K_IMPORT); } catch (e) { /* nada */ } $('done').classList.add('hidden'); };
 
   // Já havia um save esperando (voltou à página).
-  try { const p = JSON.parse(localStorage.getItem(K_IMPORT) || 'null'); if (p && valid(p.save)) { $('done-info').innerHTML = '<p>' + info(p.save) + '</p>'; $('done').classList.remove('hidden'); } } catch (e) { /* nada */ }
+  try { const p = JSON.parse(localStorage.getItem(K_IMPORT) || 'null'); if (p && valid(p.save)) { $('done-info').innerHTML = '<p>' + info(p.save) + '</p>'; $('done-nick').textContent = p.save.name || ''; $('done').classList.remove('hidden'); } } catch (e) { /* nada */ }
 })();
 </script>
 </body>

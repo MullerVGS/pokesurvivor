@@ -19,6 +19,7 @@ G.LoginUI = (() => {
       G.Flow.afterLogin();
     };
     $('btn-guest').onclick = () => { G.DB.playAsGuest(); G.Flow.afterLogin(); };
+    $('btn-import').onclick = () => { location.href = 'importar/'; };
     $('f-forgot').onclick = e => {
       e.preventDefault();
       $('login-err').textContent = '';
@@ -78,6 +79,19 @@ G.LoginUI = (() => {
     return why;
   }
 
+  /** Save de pokesurvivor.com esperando (importar/): crear cuenta con su apodo ya escrito. */
+  function importReady() {
+    let imp = null;
+    try { imp = JSON.parse(localStorage.getItem('ps.import') || 'null'); } catch (e) { /* nada */ }
+    const nick = imp && imp.save && typeof imp.save.name === 'string' ? imp.save.name.trim().slice(0, 16) : '';
+    if (!nick) return;
+    setMode('register');
+    $('f-user').value = nick;
+    $('btn-import').textContent = 'Save de ' + nick + ' pronto ✓';
+    $('login-mode').textContent = 'Crie a conta com o nick ' + nick + ' e uma senha nova: o save do pokesurvivor.com entra nela. ' +
+      'Se você já tem conta aqui, entre nela e o save se junta ao que já tem.';
+  }
+
   function setMode(m) {
     mode = m;
     document.querySelectorAll('#scr-login .tab').forEach(t => t.classList.toggle('on', t.dataset.tab === m));
@@ -92,6 +106,7 @@ G.LoginUI = (() => {
     if (!G.DB.storageOk) $('login-err').textContent = 'Este navegador no deja guardar datos: juega como invitado.';
     $('btn-google').classList.toggle('hidden', G.DB.mode !== 'cloud' || noGoogle());
     $('login-mode').textContent = modeNote();
+    importReady();
     setTimeout(() => $('f-user').focus(), 50);
   }
 

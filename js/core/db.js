@@ -556,7 +556,9 @@ G.DB = (() => {
     const inc = migrate(JSON.parse(JSON.stringify(imp.save)), s.name);
     inc.updated = Date.now();
     const out = s.partner ? merge(s, inc) : Object.assign(inc, { created: s.created || inc.created });
-    out.name = s.name;
+    // Cuenta nueva: se queda con el apodo de pokesurvivor.com (Social lo reserva al entrar).
+    // Con progreso, el apodo ya está reservado y no cambia.
+    out.name = s.partner || !VALID.test(inc.name || '') ? s.name : inc.name;
     setTimeout(() => G.UI && G.UI.toast && G.UI.toast('Partida importada de pokesurvivor.com: ' +
       Object.keys(out.owned || {}).length + ' Pokémon, ' + (out.coins | 0) + ' monedas.', 5000), 1500);
     return out;
