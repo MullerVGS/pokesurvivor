@@ -1,0 +1,9 @@
+{
+  "name": "pokesurvivor-server",
+  "private": true,
+  "description": "Servidor propio de PokéSurvivor: cuentas, partidas, ranking, amigos y salas (sustituye a Firebase)",
+  "main": "index.js",
+  "engines": { "node": ">=22.13" },
+  "scripts": { "start": "node index.js" },
+  "dependencies": { "ws": "8.18.3" }
+}

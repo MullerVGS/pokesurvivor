@@ -29,7 +29,8 @@ G.DB = (() => {
   const K_CLOUD = 'ps.cloud.', K_MIGRATED = 'ps.migrated.';
   const VERSION = 3;
   const START_COINS = 500;
-  const SDK = 'https://www.gstatic.com/firebasejs/13.0.0/';
+  // Con servidor propio (G.FIREBASE_CONFIG.sdk), el "SDK" es js/fb/, que habla con server/.
+  const SDK = (G.FIREBASE_CONFIG && G.FIREBASE_CONFIG.sdk) || 'https://www.gstatic.com/firebasejs/13.0.0/';
   const NAME_DOMAIN = 'jugadores.pokesurvivor.net';   // sólo para el email interno
 
   let mode = 'local';       // 'cloud' | 'local'
@@ -427,7 +428,7 @@ G.DB = (() => {
   async function initCloud() {
     const cfg = G.FIREBASE_CONFIG;
     if (!/^https?:$/.test(location.protocol)) { localReason = 'file'; return false; }
-    if (cfg && !cfg.emulator && !HOSTS.includes(location.hostname)) { localReason = 'host'; return false; }
+    if (cfg && !cfg.emulator && !cfg.sdk && !HOSTS.includes(location.hostname)) { localReason = 'host'; return false; }
     if (!cfg || !cfg.apiKey || !cfg.projectId) { localReason = 'config'; return false; }
     await loadScript(SDK + 'firebase-app-compat.js');
     await loadScript(SDK + 'firebase-auth-compat.js');
@@ -520,6 +521,8 @@ G.DB = (() => {
       s = merge(s, opts.legacy.save);
       write(K_MIGRATED + opts.legacy.key, uid);
     }
+    const imported = takeImport();
+    if (imported) s = applyImport(s, imported);
     save = fold(migrate(s, s.name));
     key = uid; user = save.name; guest = false;
     write(K_CLOUD + uid, save);
@@ -529,11 +532,34 @@ G.DB = (() => {
     // terminar la subida, y con Firebase lento se tardaba hasta 9 s en entrar.
     // (Comparar el texto entero daba "distinto" casi siempre y se subía en cada
     // entrada: ahora sólo si esta copia es más nueva que la de la nube.)
-    const same = remote && !opts.legacy && (!cached || (cached.updated || 0) <= (remote.updated || 0));
+    const same = remote && !opts.legacy && !imported && (!cached || (cached.updated || 0) <= (remote.updated || 0));
     lastPush = Date.now();       // la primera compra o ticket no sube al momento: espera como las demás
     if (!online) { pending = true; setSync('offline'); scheduleRetry(); }
     else if (same) setSync('ok');
     else pushNow();
+  }
+
+  /*
+   * IMPORTAR una partida de pokesurvivor.com (importar/index.html la deja en
+   * ps.import). Se aplica a la cuenta que entre a continuación en este
+   * navegador: si la cuenta está recién creada (sin compañero), la partida
+   * importada la sustituye entera; si ya tiene progreso, se fusionan como dos
+   * aparatos de la misma cuenta, con lo importado como lo más reciente.
+   */
+  const K_IMPORT = 'ps.import';
+  function takeImport() {
+    const imp = read(K_IMPORT);
+    remove(K_IMPORT);
+    return imp && imp.save && typeof imp.save === 'object' ? imp : null;
+  }
+  function applyImport(s, imp) {
+    const inc = migrate(JSON.parse(JSON.stringify(imp.save)), s.name);
+    inc.updated = Date.now();
+    const out = s.partner ? merge(s, inc) : Object.assign(inc, { created: s.created || inc.created });
+    out.name = s.name;
+    setTimeout(() => G.UI && G.UI.toast && G.UI.toast('Partida importada de pokesurvivor.com: ' +
+      Object.keys(out.owned || {}).length + ' Pokémon, ' + (out.coins | 0) + ' monedas.', 5000), 1500);
+    return out;
   }
 
   /*

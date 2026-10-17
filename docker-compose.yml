@@ -1,0 +1,26 @@
+# Servidor propio de PokéSurvivor (juego + cuentas + partidas + salas).
+#   docker compose up -d --build
+# Datos (SQLite) en el volumen pokesurvivor-data. Sin puertos publicados: el
+# reverse proxy lo alcanza por el nombre del contenedor en la red "borda".
+name: pokesurvivor
+
+services:
+  app:
+    build: .
+    image: pokesurvivor:latest
+    container_name: pokesurvivor
+    restart: unless-stopped
+    environment:
+      ADMINS: ${ADMINS:-}
+    volumes:
+      - pokesurvivor-data:/data
+    networks: [borda]
+
+volumes:
+  pokesurvivor-data:
+
+networks:
+  # Con el proxy en Docker, apunta a su red (REDE_DA_BORDA + REDE_DA_BORDA_EXTERNA=true).
+  borda:
+    name: ${REDE_DA_BORDA:-pokesurvivor-borda}
+    external: ${REDE_DA_BORDA_EXTERNA:-false}

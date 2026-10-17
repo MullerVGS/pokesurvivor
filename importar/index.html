@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Importar save · PokéSurvivor</title>
+<link rel="icon" href="../favicon.ico">
+<style>
+  @font-face { font-family: 'Pixelify'; src: url('../assets/fonts/PixelifyPS-400.ttf') format('truetype'); font-weight: 400 550; }
+  @font-face { font-family: 'Pixelify'; src: url('../assets/fonts/PixelifyPS-700.ttf') format('truetype'); font-weight: 551 900; }
+  :root { --ink: #fff; --muted: #b9cbf0; --box1: #2c519f; --box2: #1a3170; --edge: #f4f8ff; --edge-out: #0b1838;
+          --gold: #ffd23f; --gold2: #f0a31e; --red: #ff5f6d; --green: #5fe08a; --bg: #0d1a3d; }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; background: var(--bg); color: var(--ink);
+         font: 16px/1.5 'Pixelify', 'Segoe UI', system-ui, sans-serif; padding: 24px 16px 48px; }
+  main { max-width: 640px; margin: 0 auto; }
+  h1 { font-size: 28px; margin: 0 0 4px; color: var(--gold); letter-spacing: .5px; }
+  h2 { font-size: 18px; margin: 0 0 8px; }
+  p { margin: 0 0 10px; }
+  .sub { color: var(--muted); margin-bottom: 20px; }
+  .box { background: linear-gradient(var(--box1), var(--box2)); border: 3px solid var(--edge); outline: 3px solid var(--edge-out);
+         border-radius: 10px; padding: 16px; margin: 0 0 20px; }
+  ol { margin: 0 0 10px; padding-left: 22px; } li { margin-bottom: 6px; }
+  .btn { display: inline-block; font: inherit; font-weight: 700; color: #1a1300; background: linear-gradient(var(--gold), var(--gold2));
+         border: 2px solid var(--edge-out); border-radius: 8px; padding: 8px 14px; cursor: pointer; text-decoration: none; }
+  .btn.ghost { background: transparent; color: var(--ink); border-color: var(--muted); }
+  .bm { cursor: grab; }
+  code, textarea { font: 13px/1.4 ui-monospace, Consolas, monospace; }
+  pre { background: #08122c; border-radius: 6px; padding: 10px; overflow-x: auto; margin: 0 0 10px; white-space: pre-wrap; word-break: break-all; font-size: 12px; }
+  textarea { width: 100%; min-height: 90px; background: #08122c; color: var(--ink); border: 2px solid var(--muted); border-radius: 6px; padding: 8px; }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .muted { color: var(--muted); font-size: 14px; }
+  .err { color: var(--red); } .ok { color: var(--green); }
+  .save { display: flex; justify-content: space-between; gap: 10px; align-items: center; flex-wrap: wrap;
+          background: rgba(0,0,0,.2); border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; }
+  .save b { color: var(--gold); }
+  .hidden { display: none !important; }
+  a { color: var(--gold); }
+</style>
+</head>
+<body>
+<main>
+  <h1>Trazer seu save</h1>
+  <p class="sub">Leva o progresso da sua conta do pokesurvivor.com (Pokémon, shinies, moedas, tickets, melhorias e logros) para este servidor.</p>
+
+  <section id="done" class="box hidden">
+    <h2 class="ok">Save pronto para entrar</h2>
+    <div id="done-info"></div>
+    <p>Agora <b>entre ou crie sua conta</b> aqui no jogo: o save é aplicado sozinho à conta que entrar neste navegador.
+      Se a conta for nova, ela fica igual à sua do pokesurvivor.com. Se já tiver progresso aqui, os dois se juntam e nada se perde.</p>
+    <p class="row"><a class="btn" href="../">Abrir o jogo</a> <button class="btn ghost" id="undo" type="button">Cancelar o import</button></p>
+  </section>
+
+  <section id="pick" class="box hidden">
+    <h2>Qual save?</h2>
+    <p class="muted">Este navegador tem mais de uma conta do pokesurvivor.com. Escolha a sua:</p>
+    <div id="pick-list"></div>
+  </section>
+
+  <section class="box">
+    <h2>No computador: um clique</h2>
+    <ol>
+      <li>Arraste este botão para a barra de favoritos: <a class="btn bm" id="bm" href="#">Levar save</a></li>
+      <li>Abra <a href="https://pokesurvivor.com" target="_blank" rel="noopener">pokesurvivor.com</a>, entre na sua conta e espere o menu aparecer.</li>
+      <li>Clique no favorito <b>Levar save</b>. Esta página abre sozinha com o seu save.</li>
+    </ol>
+    <p class="muted">O favorito só lê o save que o próprio jogo guarda no seu navegador. Ele não vê sua senha e não muda nada lá.</p>
+  </section>
+
+  <section class="box">
+    <h2>Sem favorito: copiar e colar</h2>
+    <p>No pokesurvivor.com, com a conta aberta, aperte <b>F12</b>, vá em <b>Console</b>, cole isto e aperte Enter:</p>
+    <pre id="snippet"></pre>
+    <p class="row"><button class="btn ghost" id="copy-snippet" type="button">Copiar o comando</button></p>
+    <p>O save vai para a área de transferência. Cole aqui (ou escolha um arquivo <code>.json</code>):</p>
+    <textarea id="paste" placeholder='{"v":3,"name":"...","coins":...}' spellcheck="false"></textarea>
+    <p class="row" style="margin-top:10px">
+      <button class="btn" id="use-paste" type="button">Usar este save</button>
+      <label class="btn ghost">Escolher arquivo <input id="file" type="file" accept=".json,application/json,text/plain" hidden></label>
+    </p>
+    <p id="paste-err" class="err"></p>
+  </section>
+
+  <p class="muted">No celular o favorito funciona digitando o nome dele na barra de endereço com o pokesurvivor.com aberto. Se não der, faça o import no computador: o save vai para a conta, e a conta abre em qualquer aparelho.</p>
+</main>
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const ORIGIN = location.origin;
+  const OFFICIAL = ['https://pokesurvivor.com', 'https://www.pokesurvivor.com'];
+  const K_IMPORT = 'ps.import';
+
+  // ---------------- o que roda no pokesurvivor.com ----------------
+  // O jogo guarda a cópia da conta em localStorage, em ps.cloud.<uid>.
+  const collect = "const L=[];for(const k of Object.keys(localStorage)){if(k.indexOf('ps.cloud.')!==0)continue;" +
+    "try{const s=JSON.parse(localStorage.getItem(k));if(s&&typeof s==='object')L.push({key:k,save:s})}catch(e){}}";
+  const bookmarklet = "(()=>{if(!/(^|\\.)pokesurvivor\\.com$/.test(location.hostname)){alert('Abra pokesurvivor.com e clique de novo.');return}" +
+    collect +
+    "if(!L.length){alert('Nenhum save aqui. Entre na sua conta, espere o menu aparecer e clique de novo.');return}" +
+    "const o=" + JSON.stringify(ORIGIN) + ";const w=window.open(o+'/importar/?de=oficial','_blank');" +
+    "if(!w){alert('O navegador bloqueou a janela nova. Permita pop-ups para pokesurvivor.com.');return}" +
+    "const f=e=>{if(e.source===w&&e.data==='ps-import-ready'){w.postMessage({type:'ps-import',saves:L},o);removeEventListener('message',f)}};" +
+    "addEventListener('message',f)})()";
+  $('bm').href = 'javascript:' + encodeURIComponent(bookmarklet);
+  $('bm').onclick = e => { e.preventDefault(); alert('Arraste o botão para a barra de favoritos (não clique aqui).'); };
+
+  const snippet = "(()=>{" + collect + "L.sort((a,b)=>(b.save.updated||0)-(a.save.updated||0));" +
+    "copy(JSON.stringify(L.length===1?L[0].save:L.map(x=>x.save)));console.log(L.length?'Save copiado: '+L.map(x=>x.save.name).join(', '):'Nenhum save aqui: entre na conta primeiro.')})()";
+  $('snippet').textContent = snippet;
+  $('copy-snippet').onclick = () => navigator.clipboard.writeText(snippet).then(() => { $('copy-snippet').textContent = 'Copiado!'; });
+
+  // ---------------- receber e guardar ----------------
+
+  const valid = s => s && typeof s === 'object' && !Array.isArray(s) && (s.owned || s.coins != null) && typeof (s.owned || {}) === 'object';
+  const count = o => Object.keys(o || {}).length;
+  const when = t => t ? new Date(t).toLocaleString('pt-BR') : '—';
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  function info(s) {
+    const t = s.tickets || {};
+    return `<b>${esc(s.name || 'Sem nome')}</b> · ${count(s.owned)} Pokémon · ${count(s.shiny)} shinies · ` +
+      `${s.coins | 0} moedas · ${(t.t1 | 0)} + ${(t.t10 | 0)}×10 tickets<br><span class="muted">atualizado em ${when(s.updated)}</span>`;
+  }
+
+  function store(s) {
+    try { localStorage.setItem(K_IMPORT, JSON.stringify({ save: s, at: Date.now(), from: 'pokesurvivor.com' })); }
+    catch (e) { $('paste-err').textContent = 'Este navegador não deixou guardar (modo anônimo?).'; return; }
+    $('pick').classList.add('hidden');
+    $('done-info').innerHTML = '<p>' + info(s) + '</p>';
+    $('done').classList.remove('hidden');
+    scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function receive(list) {
+    list = list.filter(valid).sort((a, b) => (b.updated || 0) - (a.updated || 0));
+    if (!list.length) { $('paste-err').textContent = 'Isso não parece um save do PokéSurvivor.'; return; }
+    if (list.length === 1) return store(list[0]);
+    $('pick-list').innerHTML = '';
+    list.forEach(s => {
+      const d = document.createElement('div');
+      d.className = 'save';
+      d.innerHTML = '<div>' + info(s) + '</div>';
+      const b = document.createElement('button');
+      b.className = 'btn'; b.type = 'button'; b.textContent = 'Este';
+      b.onclick = () => store(s);
+      d.appendChild(b);
+      $('pick-list').appendChild(d);
+    });
+    $('pick').classList.remove('hidden');
+  }
+
+  // Aberta pelo favorito: avisa o pokesurvivor.com que está pronta e espera o save.
+  let got = false;
+  addEventListener('message', e => {
+    if (!OFFICIAL.includes(e.origin) || !e.data || e.data.type !== 'ps-import' || !Array.isArray(e.data.saves)) return;
+    got = true;
+    receive(e.data.saves.map(x => x && x.save));
+  });
+  if (window.opener) {
+    let n = 0;
+    const ping = () => { if (got || n++ > 20) return; try { window.opener.postMessage('ps-import-ready', '*'); } catch (e) { return; } setTimeout(ping, 400); };
+    ping();
+  }
+
+  function parse(text) {
+    $('paste-err').textContent = '';
+    let v;
+    try { v = JSON.parse(text); } catch (e) { $('paste-err').textContent = 'Não consegui ler: confira se colou o texto inteiro.'; return; }
+    if (v && v.save && !v.owned) v = v.save;             // documento inteiro do Firestore
+    receive(Array.isArray(v) ? v : [v]);
+  }
+  $('use-paste').onclick = () => parse($('paste').value.trim());
+  $('file').onchange = e => { const f = e.target.files[0]; if (f) f.text().then(parse); };
+  $('undo').onclick = () => { try { localStorage.removeItem(K_IMPORT); } catch (e) { /* nada */ } $('done').classList.add('hidden'); };
+
+  // Já havia um save esperando (voltou à página).
+  try { const p = JSON.parse(localStorage.getItem(K_IMPORT) || 'null'); if (p && valid(p.save)) { $('done-info').innerHTML = '<p>' + info(p.save) + '</p>'; $('done').classList.remove('hidden'); } } catch (e) { /* nada */ }
+})();
+</script>
+</body>
+</html>

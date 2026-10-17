@@ -55,8 +55,10 @@ G.LoginUI = (() => {
    * hasta que lo vincule o diga que no le vuelvan a preguntar.
    */
   let offered = false;
+  // Servidor propio sin Google (G.FIREBASE_CONFIG.google === false): ni botón ni aviso de vincular Gmail.
+  const noGoogle = () => !!G.FIREBASE_CONFIG && G.FIREBASE_CONFIG.google === false;
   function offerRecovery() {
-    if (offered || G.DB.mode !== 'cloud' || !G.DB.fb || !G.DB.nameAccount || G.DB.hasGoogle) return;
+    if (offered || G.DB.mode !== 'cloud' || !G.DB.fb || !G.DB.nameAccount || G.DB.hasGoogle || noGoogle()) return;
     try { if (localStorage.getItem('ps.recover.no.' + G.DB.fb.uid)) return; } catch (e) { /* nada */ }
     offered = true;
     $('rec-err').textContent = '';
@@ -88,7 +90,7 @@ G.LoginUI = (() => {
     G.UI.chrome(false);
     G.UI.show('scr-login');
     if (!G.DB.storageOk) $('login-err').textContent = 'Este navegador no deja guardar datos: juega como invitado.';
-    $('btn-google').classList.toggle('hidden', G.DB.mode !== 'cloud');
+    $('btn-google').classList.toggle('hidden', G.DB.mode !== 'cloud' || noGoogle());
     $('login-mode').textContent = modeNote();
     setTimeout(() => $('f-user').focus(), 50);
   }

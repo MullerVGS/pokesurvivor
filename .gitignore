@@ -21,3 +21,8 @@ docs/CONTACTOS_CREADORES.md
 
 # Caché local de wrangler (Cloudflare)
 .wrangler/
+
+# Servidor propio
+server/node_modules/
+server/data/
+.env

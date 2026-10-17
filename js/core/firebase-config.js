@@ -8,17 +8,17 @@
  *
  * Si se pone a null, el juego funciona en modo local (sólo en el navegador).
  */
-// Proyecto pokesurvivor-free (desde el 12-10-2026): autenticación normal de Firebase,
-// SIN Identity Platform, así las cuentas son gratis sin límite. ¡No pulsar nunca
-// "Actualizar a Identity Platform" en su consola! (El viejo era pokesurvivor-jpter.)
+// Servidor propio (server/, en la pessoal-vps) en lugar de Firebase: `sdk` hace
+// que js/core/db.js cargue js/fb/, que habla con /api del mismo dominio. Sin
+// Google: las cuentas son de nombre y contraseña. (El de pokesurvivor.com era
+// el proyecto de Firebase pokesurvivor-free.)
 G.FIREBASE_CONFIG = {
-  apiKey: 'AIzaSyB1LpJcsnT7gj7c8cpRMGjhswLPr8-dnBw',
-  authDomain: 'pokesurvivor-free.firebaseapp.com',
-  projectId: 'pokesurvivor-free',
-  storageBucket: 'pokesurvivor-free.firebasestorage.app',
-  messagingSenderId: '798271504277',
-  appId: '1:798271504277:web:dcac4409f969239e87009c',
-  databaseURL: 'https://pokesurvivor-free-default-rtdb.europe-west1.firebasedatabase.app'
+  apiKey: 'servidor-propio',
+  projectId: 'pokesurvivor-duenas',
+  databaseURL: 'servidor-propio',
+  sdk: '/js/fb/',
+  apiBase: '/api',
+  google: false
 };
 
 /* Ejemplo de cómo debe quedar:
