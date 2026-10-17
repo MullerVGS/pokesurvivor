@@ -209,14 +209,18 @@ G.Minimap = (() => {
     if (!lo || lo.width !== L) lo = Object.assign(document.createElement('canvas'), { width: L, height: L });
     const g = lo.getContext('2d');
     g.clearRect(0, 0, L, L);
+    // Lo que no es lo principal (el terreno, el recuadro de la cámara y el
+    // panel), translúcido: se ve la partida por debajo. Los iconos, enteros.
     if (terrain && bg) {
       const bx = (pcx - SPAN) * CN - ox + half, by = (pcy - SPAN) * CN - oy + half;
+      g.globalAlpha = 0.6;
       g.drawImage(bg, bx, by);
+      g.globalAlpha = 1;
     }
 
     // Lo que ve la cámara (línea de 1 px).
     const cam = G.Camera;
-    g.fillStyle = 'rgba(244,248,255,.45)';
+    g.fillStyle = 'rgba(244,248,255,.3)';
     {
       const l = X(cam.left()), tp = Y(cam.top()), r = X(cam.left() + cam.w), b = Y(cam.top() + cam.h);
       g.fillRect(l, tp, r - l + 1, 1); g.fillRect(l, b, r - l + 1, 1);
@@ -273,11 +277,11 @@ G.Minimap = (() => {
     roundRect(ctx, x0, y0, D, D, 9);
     // (Más oscuro que las cajas del menú: si no, el agua azul se pierde en el fondo.)
     const grad = ctx.createLinearGradient(0, y0, 0, y0 + D);
-    grad.addColorStop(0, 'rgba(22,40,90,.9)'); grad.addColorStop(1, 'rgba(12,24,62,.9)');
+    grad.addColorStop(0, 'rgba(22,40,90,.55)'); grad.addColorStop(1, 'rgba(12,24,62,.55)');
     ctx.fillStyle = grad; ctx.fill();
-    ctx.lineWidth = 4; ctx.strokeStyle = '#0b1838'; ctx.stroke();
+    ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(11,24,56,.6)'; ctx.stroke();
     roundRect(ctx, x0 + 2, y0 + 2, D - 4, D - 4, 7);
-    ctx.lineWidth = 2; ctx.strokeStyle = '#f4f8ff'; ctx.stroke();
+    ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(244,248,255,.6)'; ctx.stroke();
     ctx.imageSmoothingEnabled = false;
     ctx.drawImage(lo, x0 + B, y0 + B, L * PS, L * PS);
     ctx.restore();
