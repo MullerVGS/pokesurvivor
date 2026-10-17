@@ -122,7 +122,7 @@
           const ok = !!(s.legends && s.legends[a.dex]);
           const c = document.createElement('div');
           c.className = 'leg-cell' + (ok ? ' ok' : '');
-          c.title = a.name + (ok ? ' · ¡vencido!' : '');
+          c.dataset.tip = 'ach:' + a.id;
           c.appendChild(G.UI.spriteCanvas(a.dex, 64, 56, { scale: 1, silhouette: !ok, shadow: ok }));
           c.insertAdjacentHTML('beforeend', `<small>${ok ? esc(G.DEX_BY[a.dex].name) : '???'}</small>`);
           lg.appendChild(c);
@@ -136,6 +136,7 @@
       const v = Math.min(a.goal, a.value(s));
       const el = document.createElement('div');
       el.className = 'ach' + (ok ? ' ok' : '');
+      el.dataset.tip = 'ach:' + a.id;
       el.innerHTML = `${G.Icons.html(ok ? 'medal' + a.tier : 'medalOff', 36)}
         <div class="a-txt"><b>${esc(a.name)}</b><small>${esc(a.desc)}</small>
           ${ok ? '' : `<div class="bar"><i style="width:${v / a.goal * 100}%"></i></div>`}
@@ -278,7 +279,7 @@
         if (!a) continue;
         const m = document.createElement('div');
         m.className = 'pm';
-        m.title = a.name;
+        m.dataset.tip = 'ach:' + id + ':x';     // el perfil puede ser de otro: sin tu progreso
         if (a.dex) m.appendChild(G.UI.spriteCanvas(a.dex, 48, 40, { scale: 1 }));
         else m.innerHTML = G.Icons.html('medal' + a.tier, 36);
         m.insertAdjacentHTML('beforeend', `<small>${esc(a.name)}</small>`);

@@ -594,11 +594,13 @@ G.Game = (() => {
     if (state === 'playing') G.Settings.sample(real);
     fpsAcc += real; fpsN++;
     if (fpsAcc >= 0.5) { fpsShown = Math.round(fpsN / fpsAcc); fpsAcc = 0; fpsN = 0; }
-    frameDt = state === 'playing' ? dt : 0;
+    // Un popup de información fijado con T para la partida en solitario (tooltip.js).
+    const held = state === 'playing' && G.Tooltip.holds();
+    frameDt = state === 'playing' && !held ? dt : 0;
 
     handleKeys();
 
-    if (state === 'playing') update(dt);
+    if (state === 'playing' && !held) update(dt);
     else if (pl && state !== 'ui') { G.FX.update(dt * 0.25); pl.anim.update(dt * 0.25); }
     // La red se atiende siempre (también con las cartas de nivel abiertas).
     if (G.Coop.active && pl && state !== 'ui' && state !== 'over') G.Coop.tick(dt);

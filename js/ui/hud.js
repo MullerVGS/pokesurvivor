@@ -29,6 +29,7 @@ G.HUD = (() => {
     ctx.save();
     ctx.textBaseline = 'alphabetic';
     G.Touch.clearButtons();
+    G.Tooltip.clearZones();          // zonas con popup de información (tooltip.js)
     const touch = G.Touch.active;
 
     // ---------- barra de experiencia (borde superior) ----------
@@ -72,6 +73,7 @@ G.HUD = (() => {
       ctx.fillStyle = 'rgba(0,0,0,.5)'; ctx.fill();
       ctx.fillStyle = COL[k];
       ctx.fillText(txt, bx + 6, py + 45);
+      G.Tooltip.zone(bx, py + 34, tw, 15, 'buff:' + k);
       bx += tw + 5;
     }
 
@@ -97,6 +99,7 @@ G.HUD = (() => {
       G.Icons.draw(ctx, wx.icon, x0 + 6, y0 + 3, 20);
       ctx.fillStyle = wx.color;
       ctx.fillText(txt, x0 + 32, y0 + 17);
+      G.Tooltip.zone(x0, y0, tw, 26, 'wx:' + wx.kind);
     }
 
     // ---------- minimapa (debajo del clima; ver minimap.js) ----------
@@ -145,6 +148,7 @@ G.HUD = (() => {
       ctx.fillStyle = 'rgba(0,0,0,.6)'; ctx.fill();
       ctx.fillStyle = pw.def.color;
       ctx.fillText(txt, bx + 6, py + 45);
+      G.Tooltip.zone(bx, py + 34, tw, 15, 'power');
       bx += tw + 5;
     }
 
@@ -271,6 +275,7 @@ G.HUD = (() => {
       const y = on ? sy - 6 : sy;
       // Tocar (o hacer clic en) un icono activa ese movimiento.
       if (m) G.Touch.addButton(x, y, S, S, () => { if (G.Game.state === 'playing' && pl.active !== i) { pl.setActive(i); G.Audio.sfx('click'); } }, GAP / 2 + 3);
+      if (m) G.Tooltip.zone(x, y, S, S, 'slot:' + i);
       const col = m ? G.U.TYPE_COLOR[m.type] : '#4a5468';
 
       // fondo
@@ -340,6 +345,7 @@ G.HUD = (() => {
     if (pl.bonds > 0) {
       const bx = sx + totalW + 12, by = sy + S / 2 - 12;
       G.Icons.draw(ctx, 'bond', bx, by, 24);
+      G.Tooltip.zone(bx, by, 24, 24, 'term:bond');
       if (pl.bonds > 1) {
         ctx.font = F(800, 10);
         ctx.textAlign = 'left';
@@ -358,6 +364,7 @@ G.HUD = (() => {
       ctx.strokeStyle = pl.item ? '#ffd23f' : 'rgba(140,170,210,.18)';
       ctx.stroke();
       if (pl.item) {
+        G.Tooltip.zone(ix, iy, S, S, 'item:' + pl.item);
         G.Icons.draw(ctx, pl.item, ix + (S - 36) / 2, iy + (S - 36) / 2, 36);
         ctx.font = F(700, 9);
         ctx.textAlign = 'center';

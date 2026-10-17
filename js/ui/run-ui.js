@@ -54,6 +54,7 @@ G.RunUI = (() => {
          <div class="txt"><div class="nm">${c.title} ${tag}</div><div class="ds">${c.desc}</div></div>
          <div class="key">${i + 1}</div>`;
       el.dataset.sfx = 'none';             // el juego pone su propio sonido al elegir
+      el.dataset.tip = 'card:' + c.key;    // popup de información (tooltip.js)
       el.onclick = () => pick(i);
       box.appendChild(el);
     });
@@ -151,6 +152,7 @@ G.RunUI = (() => {
       el.innerHTML = `<div class="ico">${G.Icons.html(id, 36)}</div>
         <div class="txt"><div class="nm">${verb} ${it.name}</div><div class="ds">${it.desc}</div></div>
         <div class="key">${i + 1}</div>`;
+      el.dataset.tip = 'item:' + id;
       el.onclick = () => { G.UI.hide('scr-item'); cb(id); };
       box.appendChild(el);
     });
@@ -194,6 +196,7 @@ G.RunUI = (() => {
          <div class="txt"><div class="nm">${m.name} <span class="tag-chip" style="background:${col}">Nv.${m.lvl}</span></div><div class="ds">${desc}</div></div>
          <div class="key">${i + 1}</div>`;
       el.dataset.sfx = 'none';
+      el.dataset.tip = 'inst:' + m.id;
       el.onclick = () => pickBond(i);
       box.appendChild(el);
     });

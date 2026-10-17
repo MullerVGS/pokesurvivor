@@ -843,3 +843,45 @@ a.btn { text-decoration: none; display: inline-block; color: var(--ink); }
   #dex-detail .btn { position: sticky; bottom: 0; order: 9; margin-top: auto; padding: 8px 6px; font-size: 15px;
     box-shadow: 0 -6px 10px rgba(5,10,25,.6); }
 }
+/* ============ popup de información (js/ui/tooltip.js) ============
+ * Sin fijar no recibe el ratón (no tapa lo de debajo ni parpadea); fijado
+ * (tecla T o toque largo) sí, para pasar por sus términos subrayados. */
+.tip {
+  position: fixed; left: 0; top: 0; z-index: 300; width: max-content; max-width: 320px; overflow-y: auto;
+  padding: 10px 12px; border-radius: 10px; background: rgba(10,16,32,.96); border: 2px solid var(--edge-in);
+  box-shadow: 0 6px 24px rgba(0,0,0,.6); color: var(--ink); font-family: var(--font); font-size: 14px; line-height: 1.35;
+  text-shadow: 1px 1px 0 var(--shadow); pointer-events: none; user-select: none; -webkit-user-select: none;
+}
+.tip.pinned { pointer-events: auto; border-color: var(--gold); box-shadow: 0 0 0 1px rgba(255,210,63,.35), 0 6px 24px rgba(0,0,0,.6); }
+.tip-hd { display: flex; align-items: center; gap: 8px; padding-right: 26px; }
+.tip-hd b { font-size: 17px; }
+.tip-key {
+  position: absolute; top: 8px; right: 8px; min-width: 22px; padding: 1px 5px; border-radius: 5px; text-align: center;
+  border: 2px solid rgba(244,248,255,.4); font-size: 12px; font-weight: 700; color: var(--muted);
+}
+.tip.pinned .tip-key { background: var(--gold); border-color: var(--gold); color: #20160a; text-shadow: none; }
+.tip-x {
+  position: absolute; top: 4px; right: 4px; width: 32px; height: 32px; border-radius: 8px; cursor: pointer;
+  background: rgba(0,0,0,.35); border: 2px solid rgba(244,248,255,.4); color: var(--ink); font: 700 20px/1 var(--font);
+}
+.tip-chips { display: flex; flex-wrap: wrap; gap: 4px; margin: 6px 0 2px; }
+.tip-chip { font-size: 11px; padding: 1px 7px; border-radius: 5px; color: #10131a; text-shadow: none; font-weight: 700; }
+.tip-stats { display: grid; grid-template-columns: auto 1fr; gap: 1px 14px; margin: 8px 0 2px; font-size: 13px; }
+.tip-stats span { color: var(--muted); }
+.tip-stats b { text-align: right; font-weight: 700; }
+.tip p { margin: 6px 0 0; }
+.tip ul { margin: 6px 0 0; padding-left: 18px; color: var(--muted); font-size: 13px; }
+.tip-part { margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(244,248,255,.15); }
+.tip-part .tip-hd { padding-right: 0; }
+.tip-part .tip-hd b { font-size: 15px; }
+.tip-foot { color: var(--muted); font-size: 12px; }
+.tip-up { color: var(--green); font-style: normal; }
+.tip-term { text-decoration: underline dotted; text-underline-offset: 3px; }
+u.tip-term { color: #ffe9a3; }
+.tip.pinned .tip-term { cursor: help; }
+.tip.pinned u.tip-term:hover { color: var(--gold); }
+[data-tip] { -webkit-touch-callout: none; }
+@media (max-height: 520px) {
+  .tip { font-size: 13px; max-width: 280px; padding: 8px 10px; }
+  .tip-hd b { font-size: 15px; }
+}

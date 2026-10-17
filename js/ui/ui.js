@@ -52,7 +52,7 @@ G.UI = (() => {
   }
 
   function typeChips(types) {
-    return types.map(t => `<span class="type" style="background:${G.U.TYPE_COLOR[t]}">${G.U.TYPE_NAME[t]}</span>`).join('');
+    return types.map(t => `<span class="type" data-tip="type:${t}" style="background:${G.U.TYPE_COLOR[t]}">${G.U.TYPE_NAME[t]}</span>`).join('');
   }
 
   /** Rareza: la Poké Ball que le corresponde (ver G.Icons.rarity). */

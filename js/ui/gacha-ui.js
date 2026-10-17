@@ -11,6 +11,7 @@ G.GachaUI = (() => {
     $('pull-10').onclick = () => pull(10, 't1');
     $('pull-10b').onclick = () => pull(10, 't10');
     $('pull-close').onclick = close;
+    $('gacha-pity').dataset.tip = 'term:pity';
 
     const tabs = $('gacha-gens');
     G.Gacha.BANNERS.forEach(b => {
@@ -49,7 +50,8 @@ G.GachaUI = (() => {
     const feat = $('gacha-feat');
     feat.innerHTML = '';
     for (const dex of G.Gacha.featured(gen)) {
-      feat.appendChild(G.UI.spriteCanvas(dex, 170, 190, { lively: true, scale: 2, dir: 1 }));
+      const cv = feat.appendChild(G.UI.spriteCanvas(dex, 170, 190, { lively: true, scale: 2, dir: 1 }));
+      cv.dataset.tip = 'mon:' + dex;
     }
 
     const pity = (s.pity && s.pity[gen]) || 0;
@@ -102,6 +104,7 @@ G.GachaUI = (() => {
       const mon = G.DEX_BY[r.dex];
       const c = document.createElement('div');
       c.className = 'pcard r' + r.rarity + (r.shiny ? ' shiny' : '');
+      c.dataset.tip = 'mon:' + r.dex;
       c.style.setProperty('--rc', r.shiny ? '#9ae6ff' : G.Gacha.RARITY_COLOR[r.rarity]);
       c.innerHTML = `<div class="stars">${G.UI.stars(r.rarity, 24)}</div>`;
       c.appendChild(G.UI.spriteCanvas(r.dex, 132, 120, { lively: r.rarity >= 4 || r.shiny, scale: 2, shiny: r.shiny }));

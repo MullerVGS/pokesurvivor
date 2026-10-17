@@ -6,9 +6,11 @@
  * Cada línea en español y en inglés.
  */
 G.CHANGELOG = [
-  { d: '2026-10-17', title: ['Minimapa', 'Minimap'], new: [
+  { d: '2026-10-17', title: ['Minimapa e información al pasar el ratón', 'Minimap and info on hover'], new: [
     ['Minimapa: un círculo arriba a la derecha con lo que hay a tu alrededor: el terreno, tus compañeros, los jefes, la grieta, los altares (en gris si ya los has usado), los manantiales, los cofres con candado y los enemigos cercanos. Si un jefe o la grieta están lejos, una flecha en el borde te dice hacia dónde ir. Se quita en Ajustes > Gráficos o con la tecla M.',
-     'Minimap: a circle at the top right showing what is around you: the terrain, your teammates, bosses, the rift, altars (gray once used), springs, locked chests and nearby enemies. If a boss or the rift is far away, an arrow on the edge shows you which way to go. Turn it off in Settings > Graphics or with the M key.']
+     'Minimap: a circle at the top right showing what is around you: the terrain, your teammates, bosses, the rift, altars (gray once used), springs, locked chests and nearby enemies. If a boss or the rift is far away, an arrow on the edge shows you which way to go. Turn it off in Settings > Graphics or with the M key.'],
+    ['Información al pasar el ratón: sobre tus ataques, el objeto, los potenciadores y el clima de la partida, y en las cartas de nivel, la tienda de mejoras, el gacha, la Pokédex y los logros, sale un recuadro con lo que hace cada cosa y sus números (en las cartas de mejora, cómo quedan). Pulsa T para fijarlo: las palabras subrayadas (quemadura, vínculo, los tipos, los objetos…) abren el suyo al lado, que también se fija con T. En solitario la partida se pausa mientras haya uno fijado, y Esc los cierra todos. En el móvil, mantén el dedo encima y ciérralo con la ×.',
+     'Info on hover: over your moves, item, buffs and the weather during a run, and on level-up cards, the upgrade shop, the gacha, the Pokédex and achievements, a box shows what each thing does and its numbers (on upgrade cards, how they will end up). Press T to pin it: underlined words (burn, bond, types, items…) open their own box next to it, which you can pin with T too. In solo the run pauses while one is pinned, and Esc closes them all. On mobile, hold your finger on it and close it with the ×.']
   ] },
   { d: '2026-10-15', title: ['Actualizaciones obligatorias', 'Required updates'], chg: [
     ['Cuando una actualización sea obligatoria (por ejemplo, para arreglar un fallo importante), la partida en curso se termina tras un aviso de 10 s y el juego se recarga. No pierdes nada: las monedas, los tickets, los récords y el ranking de esa partida se guardan como al abandonarla.',

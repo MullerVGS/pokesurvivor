@@ -577,5 +577,58 @@ G.I18n.add({
   // ---------------- reportar marcas del ranking ----------------
   'Reportar marca sospechosa': 'Report suspicious record', 'Ya la has reportado': 'You already reported it',
   'Ya has reportado esta marca': 'You already reported this record',
-  '¿Reportar la marca de {x} como trampa?': "Report {x}'s record as cheating?", 'Gracias: la revisaremos': 'Thanks: we will review it'
+  '¿Reportar la marca de {x} como trampa?': "Report {x}'s record as cheating?", 'Gracias: la revisaremos': 'Thanks: we will review it',
+
+  // ---------------- popup de información (tooltip.js, glossary.js) ----------------
+  'Daño': 'Damage', 'Recarga': 'Cooldown', 'Golpea cada': 'Hits every', 'Perforación': 'Pierce', 'Duración': 'Duration',
+  'Proyectiles': 'Projectiles', 'Disparos': 'Shots', 'Orbes': 'Orbs', 'Bumeranes': 'Boomerangs', 'Saltos': 'Jumps', 'Salto': 'Jump',
+  'Minas': 'Mines', 'Meteoros': 'Meteors', 'A la vez': 'At once', 'Alcance': 'Range', 'Distancia': 'Distance', 'Radio': 'Radius',
+  'Por acumulación': 'Per stack', 'Acumulaciones': 'Stacks', 'daño': 'damage', 'velocidad': 'speed', 'daño recibido': 'damage taken', 'vida/s': 'HP/s',
+  'Quema': 'Burns', 'Envenena': 'Poisons', 'Frena': 'Slows', '{x} por golpe': '{x} per hit',
+  'Nv. {x} / {x}': 'Lv. {x} / {x}', 'Nv. {x} → {x}': 'Lv. {x} → {x}', 'Nv. {x}: {x}': 'Lv. {x}: {x}', 'Evolucionado': 'Evolved', 'Nuevo': 'New',
+  'Evolución de {x}.': 'Evolution of {x}.', 'Siguiente nivel: {x}': 'Next level: {x}',
+  'Evoluciona en {x} al nivel máximo si has cogido {x} en la run: {x}.': 'Evolves into {x} at max level if you have taken {x} in the run: {x}.',
+  'Ya has cogido la mejora que pide.': 'You have already taken the card it needs.',
+  '{x} movimientos en un solo hueco: se lanzan a la vez, cada uno con su recarga.': '{x} moves in a single slot: they fire together, each with its own cooldown.',
+  'Mejora de la run': 'Run upgrade', 'Veces': 'Times', 'La piden para evolucionar: {x}.': 'Needed to evolve: {x}.',
+  'Objeto': 'Item', 'Equipado': 'Equipped', 'Mejora permanente': 'Permanent upgrade', 'Cada nivel: {x}': 'Each level: {x}', 'Siguiente': 'Next',
+  'Sólo cuenta para {x}: cada Pokémon tiene sus mejoras.': 'Only counts for {x}: each Pokémon has its own upgrades.',
+  'Defensa': 'Defense', 'Regeneración': 'Regeneration', 'Total': 'Total', 'Quedan': 'Left', 'Efecto': 'Effect', 'Poder de altar': 'Altar power',
+  'Lo acumula {x} mientras sea tu ataque activo.': '{x} stacks it while it is your active move.',
+  'Clima': 'Weather', 'Quedan {x} s': '{x} s left', 'Cuenta para tus ataques y para los de los enemigos.': 'It counts for your moves and for enemy attacks.',
+  'Los Pokémon que no son de tipo {x} pierden un poco de vida.': 'Pokémon that are not {x} type lose a little health.',
+  'Los que no son de tipo Hielo van un 10% más lentos.': 'Those that are not Ice type move 10% slower.',
+  'Golpea fuerte (×1,6) a: {x}': 'Hits hard (×1.6): {x}', 'Golpea poco (×0,6) a: {x}': 'Hits weakly (×0.6): {x}',
+  'Casi no hace daño (×0,3) a: {x}': 'Barely hurts (×0.3): {x}', 'Le golpean fuerte: {x}': 'Takes hard hits from: {x}',
+  'Le golpean poco: {x}': 'Takes weak hits from: {x}', 'Casi no le hacen daño: {x}': 'Barely hurt by: {x}', 'Clima: {x}': 'Weather: {x}',
+  'Con dos tipos se multiplican, como mucho ×2,4. Cuenta para tus ataques y para los de los enemigos.': 'With two types they multiply, up to ×2.4. It counts for your moves and for enemy attacks.',
+  'Bronce': 'Bronze', 'Plata': 'Silver', 'Oro': 'Gold', 'Progreso': 'Progress', 'Premio': 'Reward',
+  'Puede aprender {x} movimientos.': 'Can learn {x} moves.',
+  'Quemadura': 'Burn', 'Envenenamiento': 'Poisoning', 'Frenado': 'Slowed', 'Evolución de movimiento': 'Move evolution',
+  'Golpe crítico': 'Critical hit', 'Potenciador': 'Buff', 'Altar': 'Altar', 'Grieta': 'Rift', 'Tiradas sin legendaria': 'Pulls without a legendary',
+  'Puede ser: {x}.': 'It can be: {x}.', 'Hay {x}: {x}.': 'There are {x}: {x}.', 'Tope: {x} tiradas.': 'Cap: {x} pulls.',
+  'El enemigo pierde vida cada medio segundo durante 3 s. Cada golpe que quema suma una acumulación más, hasta 8: cuantas más, más daño. Hace más daño cuanto más nivel tienes.':
+    'The enemy loses health every half second for 3 s. Each burning hit adds one more stack, up to 8: the more stacks, the more damage. It hurts more the higher your level.',
+  'El enemigo pierde un trozo de su vida máxima cada 0,6 s durante 4 s. Cada golpe que envenena suma una acumulación más, hasta 8. Contra enemigos con mucha vida rinde más que la quemadura.':
+    'The enemy loses a chunk of its max health every 0.6 s for 4 s. Each poisoning hit adds one more stack, up to 8. Against enemies with lots of health it does more than a burn.',
+  'El enemigo va más lento durante 1,2 s. Cuánto, depende del ataque.': 'The enemy moves slower for 1.2 s. How much depends on the move.',
+  'Cada legendario que vences en una grieta te da uno. Con él juntas movimientos en un solo hueco (hasta 4) y se lanzan a la vez, cada uno con su recarga. Así te queda un hueco libre para aprender otro.':
+    'Every legendary you defeat in a rift gives you one. With it you join moves into a single slot (up to 4) and they fire together, each with its own cooldown. That leaves a free slot to learn another.',
+  'Un movimiento al nivel máximo evoluciona si en esa run has cogido alguna vez la mejora que pide. Sale una carta dorada: cambia de nombre y gana mucha potencia. Los potenciadores no evolucionan.':
+    'A move at max level evolves if you have taken the card it needs at least once in that run. A golden card appears: it changes its name and gains a lot of power. Buffs do not evolve.',
+  'De vez en cuando llega un clima que dura alrededor de un minuto. Cambia el daño según el tipo del ataque, para ti y para los enemigos.':
+    'Every now and then a weather arrives and lasts about a minute. It changes damage depending on the move type, for you and for enemies.',
+  'Se encuentran en los cofres y los sueltan los jefes. Sólo puedes llevar uno: si encuentras otro, eliges con cuál quedarte. Dura lo que dura la run.':
+    'Found in chests and dropped by bosses. You can only carry one: if you find another, you choose which to keep. It lasts for the whole run.',
+  'Tiempo entre un ataque y el siguiente. La bajan Reflejos, la Garra Rápida y el poder Prisa de los altares.':
+    'Time between one attack and the next. Reflexes, Quick Claw and the Haste power from altars lower it.',
+  'Cuántos enemigos más atraviesa un disparo antes de desaparecer.': 'How many extra enemies a shot goes through before it disappears.',
+  'A veces un golpe hace ×1,5 de daño. La probabilidad sube con la mejora Golpe Crítico.': 'Sometimes a hit deals ×1.5 damage. The chance goes up with the Critical Hit upgrade.',
+  'Movimiento que no hace daño: mientras sea tu ataque activo acumula una mejora (ataque, velocidad, defensa o vida) que caduca a los pocos segundos si cambias. Con dos potenciadores ya no te salen más.':
+    'A move that deals no damage: while it is your active move it stacks a boost (attack, speed, defense or health) that wears off a few seconds after you switch. Once you have two buffs, no more are offered.',
+  'Al pisarlo te da un poder durante un rato. Cada altar sirve una sola vez.': 'Stepping on it gives you a power for a while. Each altar works only once.',
+  'Se abre de vez en cuando: sigue la flecha morada. Dentro te espera un legendario, y si lo vences ganas un vínculo.':
+    'It opens every now and then: follow the purple arrow. A legendary awaits inside, and if you beat it you earn a bond.',
+  'Cada banner cuenta las tiradas seguidas sin sacar una Legendaria. Al llegar al tope, la siguiente es Legendaria seguro.':
+    'Each banner counts your pulls in a row without a Legendary. When it reaches the cap, the next one is a guaranteed Legendary.'
 });
