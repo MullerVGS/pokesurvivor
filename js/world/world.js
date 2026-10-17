@@ -41,7 +41,7 @@ G.World = (() => {
   // Cambio de bioma: durante FADE segundos se funde la paleta vieja con la nueva.
   const FADE = 2.6;
   let fade = null;                         // { from, images, t }
-  const MAX_IMAGES = 48, MAX_DATA = 400;
+  const MAX_IMAGES = 48, MAX_DATA = 1600;   // (era 400: el minimapa mira ~121 chunks alrededor)
   const broken = new Set();                // props destruidos: "tx,ty"
   let nextPropId = 1;
 
