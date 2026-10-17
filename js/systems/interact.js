@@ -59,7 +59,7 @@ G.Interact = (() => {
     pl.hp = Math.min(pl.maxHp, pl.hp + pl.maxHp * 0.14 * dt);
     healAcc += pl.hp - before;
     p.charge = Math.max(0, p.charge - dt * 0.09);
-    if (Math.random() < dt * 14) G.FX.px(pl.x + G.U.rand(-pl.r, pl.r), pl.y - G.U.rand(0, pl.bodyH), '#7dffb0', { vy: -50, life: 0.5 });
+    if (Math.random() < dt * 14) G.FX.px(pl.x + G.U.rand(-pl.vr, pl.vr), pl.y - G.U.rand(0, pl.bodyH), '#7dffb0', { vy: -50, life: 0.5 });
     healShown -= dt;
     if (healShown <= 0 && healAcc >= 1) {
       healShown = 0.6;

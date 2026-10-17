@@ -14,7 +14,8 @@ G.Player = class Player {
     this.shiny = shiny && G.Sprites.hasShiny(mon.dex);
     this.anim = new G.Sprites.Animator(mon.dex, 1, this.shiny);
     this.x = 0; this.y = 0;
-    this.r = G.Sprites.bodyRadius(mon.dex);
+    this.r = Player.HIT_R;                   // colisión: la misma para todos los jugadores
+    this.vr = G.Sprites.bodyRadius(mon.dex); // visual: aros, halos y efectos al borde del cuerpo
     this.bodyH = G.Sprites.bodyHeight(mon.dex);
 
     this.atkMul = perks.atkMul || 1;
@@ -77,6 +78,14 @@ G.Player = class Player {
 
   /** Segundos que hay que estar junto a un compañero caído para levantarlo. */
   static get REVIVE_TIME() { return 3; }
+
+  /**
+   * Radio de colisión de todo Pokémon de jugador (también los compañeros del
+   * cooperativo), sea cual sea su sprite: el de un Idle de 32 px de ancho
+   * (14.08), la mediana y lo más común del Pokédex. Así un Onix no se lleva
+   * más golpes que un Pikachu. Los enemigos siguen con el de su tamaño.
+   */
+  static get HIT_R() { return 32 * 0.22 * G.Sprites.PX; }
 
   // (×2 y luego ×4 el 2026-10-10: se subía de nivel demasiado rápido.)
   static xpFor(level) {
@@ -147,7 +156,7 @@ G.Player = class Player {
     G.Audio.sfx('select');
     for (const m of this.slots[i]) m.t = Math.min(m.t, m.cd * 0.35);
     const m = this.slots[i][0];
-    G.FX.ring(this.x, this.y - G.LIFT * 0.5, 6, this.r * 3.4, G.U.TYPE_COLOR[m.type], 0.3, 3);
+    G.FX.ring(this.x, this.y - G.LIFT * 0.5, 6, this.vr * 3.4, G.U.TYPE_COLOR[m.type], 0.3, 3);
   }
 
   cycle(dir) {
@@ -442,7 +451,7 @@ G.Player = class Player {
       ctx.globalAlpha = 0.22;
       ctx.strokeStyle = G.U.TYPE_COLOR[m.type];
       ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.ellipse(this.x, this.y, this.r * 1.5, this.r * 0.6, 0, 0, 6.2832); ctx.stroke();
+      ctx.beginPath(); ctx.ellipse(this.x, this.y, this.vr * 1.5, this.vr * 0.6, 0, 0, 6.2832); ctx.stroke();
       ctx.restore();
     }
     G.Sprites.drawShadow(ctx, this.dex, this.x, this.y);
@@ -451,7 +460,7 @@ G.Player = class Player {
       ctx.save();
       ctx.globalAlpha = 0.35 + Math.sin(performance.now() / 120) * 0.15;
       ctx.strokeStyle = this.power.def.color; ctx.lineWidth = 3;
-      ctx.beginPath(); ctx.ellipse(this.x, this.y, this.r * 2.1, this.r * 0.85, 0, 0, 6.2832); ctx.stroke();
+      ctx.beginPath(); ctx.ellipse(this.x, this.y, this.vr * 2.1, this.vr * 0.85, 0, 0, 6.2832); ctx.stroke();
       ctx.restore();
     }
 
@@ -469,7 +478,7 @@ G.Player = class Player {
       ctx.strokeStyle = COL[k];
       ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.ellipse(this.x, this.y, this.r * 1.8 + i * 5, (this.r * 1.8 + i * 5) * 0.42, 0, 0, 6.2832 * (b.n / 5));
+      ctx.ellipse(this.x, this.y, this.vr * 1.8 + i * 5, (this.vr * 1.8 + i * 5) * 0.42, 0, 0, 6.2832 * (b.n / 5));
       ctx.stroke();
       ctx.restore();
       i++;
@@ -481,7 +490,7 @@ G.Player = class Player {
       ctx.strokeStyle = '#5fe08a';
       ctx.lineWidth = 3;
       ctx.beginPath();
-      ctx.ellipse(this.x, this.y, this.r * 2.4, this.r * 1.0, 0, -Math.PI / 2, -Math.PI / 2 + 6.2832 * Math.min(1, this.reviveT / G.Player.REVIVE_TIME));
+      ctx.ellipse(this.x, this.y, this.vr * 2.4, this.vr * 1.0, 0, -Math.PI / 2, -Math.PI / 2 + 6.2832 * Math.min(1, this.reviveT / G.Player.REVIVE_TIME));
       ctx.stroke();
       ctx.restore();
     }

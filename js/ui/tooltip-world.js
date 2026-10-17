@@ -298,10 +298,10 @@
   const inBox = (wx, wy, x0, y0, x1, y1, pad) => wx >= x0 - pad && wx <= x1 + pad && wy >= y0 - pad && wy <= y1 + pad;
   const hit = (src, b) => Object.assign({ src }, screenRect(b[0], b[1], b[2], b[3]));
 
-  /** El cuerpo (de los pies a la cabeza) de un Pokémon. */
+  /** El cuerpo (de los pies a la cabeza) de un Pokémon. Los jugadores, por su sprite (vr), no por su colisión. */
   function body(o) {
-    const lift = (o.jumpLift || 0) + (o.flying && !o.boss ? 2 : 0);
-    return [o.x - o.r, o.y - o.bodyH - lift, o.x + o.r, o.y + 4];
+    const lift = (o.jumpLift || 0) + (o.flying && !o.boss ? 2 : 0), r = o.vr || o.r;
+    return [o.x - r, o.y - o.bodyH - lift, o.x + r, o.y + 4];
   }
 
   /** El más cercano al ratón (al centro de su caja) de los que lo tocan. */

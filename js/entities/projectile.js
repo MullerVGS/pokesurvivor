@@ -64,7 +64,7 @@ G.Projectiles = (() => {
           const [dx, dy] = G.U.norm(o.x - p.x, o.y - p.y);
           p.vx = G.U.damp(p.vx, dx * p.bsp, 7, dt);
           p.vy = G.U.damp(p.vy, dy * p.bsp, 7, dt);
-          if (G.U.dist2(p.x, p.y, o.x, o.y) < (o.r + 8) ** 2) { list.splice(i, 1); continue; }
+          if (G.U.dist2(p.x, p.y, o.x, o.y) < (o.vr + 8) ** 2) { list.splice(i, 1); continue; }
         }
       }
 

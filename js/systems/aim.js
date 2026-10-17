@@ -97,7 +97,7 @@ G.Aim = (() => {
   function draw(ctx, pl) {
     if (!pl || !pl.aimed || pl.dead || !ptr) return;
     const ca = Math.cos(pl.aim), sa = Math.sin(pl.aim);
-    const x = pl.x, y = pl.y - G.LIFT, r0 = pl.r + 8, r1 = pl.r + 30;
+    const x = pl.x, y = pl.y - G.LIFT, r0 = pl.vr + 8, r1 = pl.vr + 30;
     const cam = G.Camera;
     const cx = cam.left() + ptr[0] / cam.scale, cy = cam.top() + ptr[1] / cam.scale;
     ctx.save();

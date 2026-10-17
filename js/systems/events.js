@@ -167,7 +167,7 @@ G.Events = (() => {
       L.moving = false;
     } else {
       const p = L.follow && !L.follow.dead ? L.follow : players.find(o => !o.dead) || L.follow;
-      const d = G.U.dist(L.x, L.y, p.x, p.y), keep = p.r + L.r + 14;
+      const d = G.U.dist(L.x, L.y, p.x, p.y), keep = p.vr + L.r + 14;
       L.moving = d > keep;
       if (L.moving) {
         const sp = Math.min(d - keep, Math.max(120, p.spd * 1.15) * dt);
