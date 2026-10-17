@@ -860,7 +860,7 @@ a.btn { text-decoration: none; display: inline-block; color: var(--ink); }
 .tip-hd b { font-family: var(--font); font-size: 17px; text-shadow: 1px 1px 0 var(--shadow); }
 .tip-key {
   position: absolute; top: 8px; right: 8px; min-width: 22px; padding: 1px 5px; border-radius: 5px; text-align: center;
-  border: 2px solid rgba(244,248,255,.4); font-family: var(--font); font-size: 12px; font-weight: 700; color: var(--muted);
+  border: 2px solid rgba(244,248,255,.4); font-size: 12px; font-weight: 700; color: var(--muted);
 }
 .tip.pinned .tip-key { background: var(--gold); border-color: var(--gold); color: #20160a; text-shadow: none; }
 .tip-x {
