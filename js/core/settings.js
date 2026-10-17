@@ -6,6 +6,7 @@
  *   dmgNumbers  true/false                        números de daño
  *   calm        true/false                        menos sacudidas y destellos
  *   fps         true/false                        contador de FPS
+ *   minimap     true/false                        minimapa en la partida (también con la tecla M)
  *   stick       0.8 | 1 | 1.25                    tamaño del joystick táctil
  *   stickMode   'float' | 'fixed'                 joystick donde pones el dedo, o siempre en su sitio
  *   pad         { bar, pause, stick } | null      dónde van los botones en móvil (centro, en
@@ -16,7 +17,7 @@
  */
 G.Settings = (() => {
   const KEY = 'ps.settings';
-  const DEF = { quality: 'auto', dmgNumbers: true, calm: false, fps: false, stick: 1, stickMode: 'float', pad: null };
+  const DEF = { quality: 'auto', dmgNumbers: true, calm: false, fps: false, minimap: true, stick: 1, stickMode: 'float', pad: null };
   let s = Object.assign({}, DEF);
   try { Object.assign(s, JSON.parse(localStorage.getItem(KEY) || '{}')); } catch (e) { /* nada */ }
   const fns = new Set();

@@ -6,6 +6,10 @@
  * Cada línea en español y en inglés.
  */
 G.CHANGELOG = [
+  { d: '2026-10-17', title: ['Minimapa', 'Minimap'], new: [
+    ['Minimapa: un círculo arriba a la derecha con lo que hay a tu alrededor: el terreno, tus compañeros, los jefes, la grieta, los altares (en gris si ya los has usado), los manantiales, los cofres con candado y los enemigos cercanos. Si un jefe o la grieta están lejos, una flecha en el borde te dice hacia dónde ir. Se quita en Ajustes > Gráficos o con la tecla M.',
+     'Minimap: a circle at the top right showing what is around you: the terrain, your teammates, bosses, the rift, altars (gray once used), springs, locked chests and nearby enemies. If a boss or the rift is far away, an arrow on the edge shows you which way to go. Turn it off in Settings > Graphics or with the M key.']
+  ] },
   { d: '2026-10-15', title: ['Actualizaciones obligatorias', 'Required updates'], chg: [
     ['Cuando una actualización sea obligatoria (por ejemplo, para arreglar un fallo importante), la partida en curso se termina tras un aviso de 10 s y el juego se recarga. No pierdes nada: las monedas, los tickets, los récords y el ranking de esa partida se guardan como al abandonarla.',
      'When an update is required (for example, to fix an important bug), your current run ends after a 10 s notice and the game reloads. You lose nothing: that run’s coins, tickets, records and leaderboard entry are saved as if you had quit.']

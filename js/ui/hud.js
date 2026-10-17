@@ -99,6 +99,9 @@ G.HUD = (() => {
       ctx.fillText(txt, x0 + 32, y0 + 17);
     }
 
+    // ---------- minimapa (debajo del clima; ver minimap.js) ----------
+    G.Minimap.draw(ctx, w, h, pl);
+
     // ---------- barra del jefe ----------
     const boss = G.EnemyMgr.all().find(e => e.boss && !e.dead);
     if (boss) {
