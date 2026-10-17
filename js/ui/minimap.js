@@ -1,14 +1,17 @@
 /* ============ minimap.js — minimapa de la partida ============
- * Un círculo arriba a la derecha con el entorno de tu Pokémon. El mundo no
- * tiene fin, así que sólo enseña RANGE de mundo a tu alrededor:
- *   fondo     paredes y agua/lava con los colores del bioma, 1 px por tile.
- *             Cada chunk se pinta una vez (16×16) y se juntan en un lienzo
- *             que sólo se rehace al cambiar de chunk, de bioma o de arena.
- *             En calidad baja no hay fondo: sólo los iconos.
- *   iconos    tú (centro), compañeros, jefes, la grieta, altares (apagados en
- *             gris), manantiales, cofres con candado, el recuadro de la cámara
- *             y los enemigos de alrededor como puntitos
- *   bordes    un jefe o la grieta fuera del círculo: flecha en el borde
+ * Un recuadro arriba a la derecha con el entorno de tu Pokémon, en pixel art
+ * como el resto del juego: se pinta en un lienzo pequeño (1 px = 2×2 tiles) y
+ * se amplía ×2 sin suavizar, la misma escala que los sprites. El mundo no
+ * tiene fin, así que sólo enseña lo que cabe a tu alrededor:
+ *   fondo     el mapa de Mundo Misterioso: paredes en azul claro sobre el
+ *             panel, agua/lava con el color del bioma. Cada chunk se pinta una
+ *             vez (8×8) y se juntan en un lienzo que sólo se rehace al cambiar
+ *             de chunk, de bioma o de arena. En calidad baja, sólo los iconos.
+ *   iconos    (mapas de caracteres con contorno, como icons.js) tú en el
+ *             centro, compañeros, jefes, la grieta, altares (grises si ya se
+ *             usaron), manantiales, cofres con candado, el recuadro de la
+ *             cámara y los enemigos de alrededor como puntitos
+ *   bordes    un jefe o la grieta lejos: su icono pegado al borde, con flecha
  *
  * Se enciende y se apaga en Ajustes > Gráficos o con la tecla M (G.Settings
  * 'minimap'). En móvil es más pequeño y se aparta de la pausa, los ataques y
@@ -17,25 +20,53 @@
  * y los jefes llegan del anfitrión; los altares son de cada uno).
  */
 G.Minimap = (() => {
-  const RANGE = 3 * G.Camera.VIEW_W;     // radio de mundo que se ve (unas 3 vistas)
+  const CELL = G.World.TS * 2;           // mundo por píxel del minimapa (2 tiles)
+  const PS = 2;                          // cada píxel del minimapa, en pantalla (como G.Sprites.PX)
+  const B = 5;                           // grosor del marco
   const NEAR = 760;                      // enemigos comunes: sólo los de alrededor
   const BUDGET = 4;                      // chunks nuevos por fotograma, para no dar tirones
   const MAX_TILES = 300;
   const N = G.World.CW / G.World.TS;     // tiles por chunk (16)
-  const SPAN = Math.ceil((RANGE + G.World.CW / 2) / G.World.CW);   // chunks a cada lado del tuyo
-  const SIDE = (SPAN * 2 + 1) * N;       // lado del fondo compuesto, en px (= tiles)
+  const CN = N / 2;                      // píxeles de minimapa por chunk (8)
+  const MAX_RANGE = 70 * CELL / 2;       // el mayor alcance (PC)
+  const SPAN = Math.ceil((MAX_RANGE + G.World.CW / 2) / G.World.CW);   // chunks a cada lado del tuyo
+  const SIDE = (SPAN * 2 + 1) * CN;      // lado del fondo compuesto, en px
   const S = 54, GAP = 9, BAR_W = S + 18 + 4 * S + 3 * GAP;           // como en hud.js
+  const K = '#1b1528';                   // contorno (icons.js)
+  const WALL = [150, 158, 186], WALL_LIT = [222, 228, 244];         // paredes del mapa, sobre el panel azul
 
   let lastPl = null, biome = -1, arena = null;
   const ready = new Set();               // chunks que ya existen en world.js ("cx,cy")
-  const tiles = new Map();               // "cx,cy" -> lienzo de N×N
+  const tiles = new Map();               // "cx,cy" -> lienzo de CN×CN
   let bg = null, bgAt = '', dirty = true;
+  let lo = null;                         // el minimapa a su tamaño real, antes de ampliarlo
   let pois = [], poiAt = 0;
 
   const on = () => G.Settings.get('minimap') !== false;
   function toggle() { G.Settings.set('minimap', !on()); G.Audio.sfx('click'); }
 
   const rgb = hex => [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16));
+
+  // ---------------- iconos (5×5; k = contorno, a = color, b = brillo) ----------------
+
+  const ICON = {
+    me: ['.kkk.', 'kaaak', 'kabak', 'kaaak', '.kkk.'],
+    altar: ['..k..', '.kak.', 'kabak', '.kak.', '..k..'],
+    spring: ['..k..', '.kak.', 'kabak', 'kaaak', '.kkk.'],
+    chest: ['.kkk.', 'kbbbk', 'kkbkk', 'kaaak', 'kkkkk'],
+    boss: ['k.k.k', 'kakak', 'kaaak', 'kabak', 'kkkkk'],
+    rift: ['.kkk.', 'kabak', 'kbkbk', 'kabak', '.kkk.']
+  };
+  function icon(g, name, x, y, a, b) {
+    const rows = ICON[name];
+    x = Math.round(x) - 2; y = Math.round(y) - 2;
+    for (let j = 0; j < 5; j++) for (let i = 0; i < 5; i++) {
+      const c = rows[j][i];
+      if (c === '.') continue;
+      g.fillStyle = c === 'k' ? K : c === 'a' ? a : b;
+      g.fillRect(x + i, y + j, 1, 1);
+    }
+  }
 
   /** Olvida todo al empezar otra partida, al cambiar de bioma o al abrirse/cerrarse una arena. */
   function sync(pl) {
@@ -45,18 +76,34 @@ G.Minimap = (() => {
     tiles.clear(); pois = []; poiAt = 0; bgAt = ''; dirty = true;
   }
 
-  /** Paredes y líquido de un chunk, 1 px por tile (el suelo, transparente). */
+  /**
+   * Un chunk a 1 px por cada 2×2 tiles: pared si hay alguna, si no líquido si
+   * hay alguno (el suelo, transparente: se ve el panel). Las paredes que dan
+   * al suelo, más claras (el borde del pasillo, como en Mundo Misterioso), y
+   * el agua o la lava, con la espuma del bioma en la orilla.
+   */
   function paintChunk(cx, cy) {
-    const B = G.Tiles.BIOMES[biome];
-    const wall = rgb(B.wallLight), liq = rgb(B.liq);
+    const Bm = G.Tiles.BIOMES[biome], liq = rgb(Bm.liq), foam = rgb(Bm.foam), TS = G.World.TS;
+    const kind = new Array(CN * CN);
+    for (let j = 0; j < CN; j++) for (let i = 0; i < CN; i++) {
+      let k = 'floor';
+      for (let v = 0; v < 2 && k !== 'wall'; v++) for (let u = 0; u < 2; u++) {
+        const t = G.World.kindAt((cx * N + i * 2 + u) * TS + TS / 2, (cy * N + j * 2 + v) * TS + TS / 2);
+        if (t === 'wall') { k = 'wall'; break; }
+        if (t !== 'floor') k = 'liq';
+      }
+      kind[j * CN + i] = k;
+    }
     const c = document.createElement('canvas');
-    c.width = c.height = N;
-    const g = c.getContext('2d'), img = g.createImageData(N, N), TS = G.World.TS;
-    for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
-      const k = G.World.kindAt((cx * N + i) * TS + TS / 2, (cy * N + j) * TS + TS / 2);
+    c.width = c.height = CN;
+    const g = c.getContext('2d'), img = g.createImageData(CN, CN);
+    const at = (i, j) => (i < 0 || j < 0 || i >= CN || j >= CN ? 'wall' : kind[j * CN + i]);
+    for (let j = 0; j < CN; j++) for (let i = 0; i < CN; i++) {
+      const k = kind[j * CN + i];
       if (k === 'floor') continue;
-      const col = k === 'wall' ? wall : liq, o = (j * N + i) * 4;
-      img.data[o] = col[0]; img.data[o + 1] = col[1]; img.data[o + 2] = col[2]; img.data[o + 3] = 230;
+      const edge = [at(i - 1, j), at(i + 1, j), at(i, j - 1), at(i, j + 1)].includes('floor');
+      const col = k === 'liq' ? (edge ? foam : liq) : edge ? WALL_LIT : WALL, o = (j * CN + i) * 4;
+      img.data[o] = col[0]; img.data[o + 1] = col[1]; img.data[o + 2] = col[2]; img.data[o + 3] = k === 'liq' ? 235 : edge ? 255 : 150;
     }
     g.putImageData(img, 0, 0);
     if (tiles.size >= MAX_TILES) tiles.delete(tiles.keys().next().value);
@@ -85,7 +132,7 @@ G.Minimap = (() => {
         if (budget-- <= 0) { done = false; continue; }
         t = paintChunk(cx, cy);
       }
-      g.drawImage(t, (cx - pcx + SPAN) * N, (cy - pcy + SPAN) * N);
+      g.drawImage(t, (cx - pcx + SPAN) * CN, (cy - pcy + SPAN) * CN);
     }
     return done;
   }
@@ -124,12 +171,22 @@ G.Minimap = (() => {
 
   // ---------------- dibujo ----------------
 
+  function roundRect(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
   function draw(ctx, w, h, pl) {
     if (!on() || !pl) return;
     sync(pl);
-    const D = Math.min(G.Touch.active ? 104 : 140, Math.round(h * 0.3)), R = D / 2;
+    // L: lado del mapa en píxeles de minimapa (par, para que tú quedes en el centro).
+    const want = Math.min(G.Touch.active ? 104 : 150, Math.round(h * 0.3));
+    const L = Math.floor((want - B * 2) / PS / 2) * 2, D = L * PS + B * 2, half = L / 2;
+    const range = half * CELL;
     const [x0, y0] = place(w, h, D);
-    const cx = x0 + R, cy = y0 + R, k = R / RANGE;
     G.Tooltip.zone(x0, y0, D, D, 'term:minimap');     // popup con la leyenda (y tapa el mundo de debajo)
     const CW = G.World.CW, pcx = Math.floor(pl.x / CW), pcy = Math.floor(pl.y / CW);
     const terrain = G.Settings.fx > 0;
@@ -140,96 +197,89 @@ G.Minimap = (() => {
     const now = performance.now();
     if (!dirty && now - poiAt > 500) {
       poiAt = now;
-      pois = G.World.specialsNear(pl.x, pl.y, RANGE).filter(p => p.type !== 'trap');
+      pois = G.World.specialsNear(pl.x, pl.y, MAX_RANGE).filter(p => p.type !== 'trap');
     }
-    const X = wx => cx + (wx - pl.x) * k, Y = wy => cy + (wy - pl.y) * k;
-    const t = now / 1000, beat = 0.5 + Math.sin(t * 6) * 0.5;
 
-    ctx.save();
-    ctx.beginPath(); ctx.arc(cx, cy, R, 0, 6.2832);
-    ctx.fillStyle = 'rgba(10,16,28,.72)'; ctx.fill();
-    ctx.save();
-    ctx.clip();
+    // El mapa se mueve a saltos de píxel entero (si no, las paredes tiemblan).
+    const ox = Math.floor(pl.x / CELL), oy = Math.floor(pl.y / CELL);
+    const X = wx => Math.floor(wx / CELL) - ox + half, Y = wy => Math.floor(wy / CELL) - oy + half;
+    const inside = (x, y, m) => x >= m && y >= m && x < L - m && y < L - m;
+    const t = now / 1000, blink = Math.sin(t * 6) > 0;
+
+    if (!lo || lo.width !== L) lo = Object.assign(document.createElement('canvas'), { width: L, height: L });
+    const g = lo.getContext('2d');
+    g.clearRect(0, 0, L, L);
     if (terrain && bg) {
-      // Suelo con el color del bioma, oscurecido para que se lean los iconos.
-      ctx.fillStyle = G.Tiles.BIOMES[biome].floor[0];
-      ctx.globalAlpha = 0.45; ctx.fillRect(x0, y0, D, D); ctx.globalAlpha = 1;
-      ctx.imageSmoothingEnabled = true;
-      const s = G.World.TS * k;
-      ctx.drawImage(bg, X((pcx - SPAN) * CW), Y((pcy - SPAN) * CW), SIDE * s, SIDE * s);
-      ctx.imageSmoothingEnabled = false;
-      ctx.fillStyle = 'rgba(8,12,22,.35)'; ctx.fillRect(x0, y0, D, D);
+      const bx = (pcx - SPAN) * CN - ox + half, by = (pcy - SPAN) * CN - oy + half;
+      g.drawImage(bg, bx, by);
     }
 
-    // Lo que ve la cámara.
+    // Lo que ve la cámara (línea de 1 px).
     const cam = G.Camera;
-    ctx.lineWidth = 1; ctx.strokeStyle = 'rgba(234,242,255,.45)';
-    ctx.strokeRect(Math.round(X(cam.left())) + 0.5, Math.round(Y(cam.top())) + 0.5, Math.round(cam.w * k), Math.round(cam.h * k));
+    g.fillStyle = 'rgba(244,248,255,.45)';
+    {
+      const l = X(cam.left()), tp = Y(cam.top()), r = X(cam.left() + cam.w), b = Y(cam.top() + cam.h);
+      g.fillRect(l, tp, r - l + 1, 1); g.fillRect(l, b, r - l + 1, 1);
+      g.fillRect(l, tp, 1, b - tp + 1); g.fillRect(r, tp, 1, b - tp + 1);
+    }
 
-    // Enemigos de alrededor: puntitos.
-    ctx.fillStyle = 'rgba(255,110,120,.75)';
-    const dot = D > 120 ? 2 : 1.6;
-    for (const e of G.EnemyMgr.queryCircle(pl.x, pl.y, NEAR)) if (!e.boss) ctx.fillRect(X(e.x) - dot / 2, Y(e.y) - dot / 2, dot, dot);
+    // Enemigos de alrededor: un píxel rojo.
+    g.fillStyle = '#ff5f6d';
+    for (const e of G.EnemyMgr.queryCircle(pl.x, pl.y, NEAR)) if (!e.boss) g.fillRect(X(e.x), Y(e.y), 1, 1);
 
     // Altares, manantiales y cofres con candado.
     for (const p of pois) {
       const px = X(p.x), py = Y(p.y);
-      if ((px - cx) ** 2 + (py - cy) ** 2 > R * R) continue;
-      ctx.beginPath();
-      if (p.type === 'altar') {
-        ctx.moveTo(px, py - 4); ctx.lineTo(px + 3.5, py); ctx.lineTo(px, py + 4); ctx.lineTo(px - 3.5, py);
-        ctx.closePath();
-        ctx.fillStyle = p.used ? '#5d6678' : G.Interact.POWERS[p.kind].color;
-      } else if (p.type === 'spring') {
-        ctx.arc(px, py, 3, 0, 6.2832);
-        ctx.fillStyle = p.charge < 0.15 ? '#4a7a66' : '#7dffb0';
-      } else {
-        ctx.rect(px - 3, py - 2.5, 6, 5);
-        ctx.fillStyle = '#ffd23f';
-      }
-      ctx.lineWidth = 1.5; ctx.strokeStyle = 'rgba(0,0,0,.8)';
-      ctx.stroke(); ctx.fill();
+      if (!inside(px, py, 2)) continue;
+      if (p.type === 'altar') icon(g, 'altar', px, py, p.used ? '#5d6678' : G.Interact.POWERS[p.kind].color, p.used ? '#8a93a5' : '#ffffff');
+      else if (p.type === 'spring') icon(g, 'spring', px, py, p.charge < 0.15 ? '#3f6f62' : '#4fd1ff', p.charge < 0.15 ? '#5b8f80' : '#d6f6ff');
+      else icon(g, 'chest', px, py, '#b8742c', '#ffd23f');
     }
 
-    // Grieta y jefes: dentro del círculo, icono que late; fuera, flecha en el borde.
+    // Grieta y jefes: dentro, el icono parpadea; lejos, pegado al borde con flecha.
     const marks = [];
     const rift = G.Rift.rift;
-    if (rift) marks.push({ x: rift.x, y: rift.y, col: beat > 0.5 ? '#e2d0ff' : '#a06bff', rift: true });
-    for (const e of G.EnemyMgr.all()) if (e.boss && !e.dead) marks.push({ x: e.x, y: e.y, col: '#ffcb3d' });
+    if (rift) marks.push({ x: rift.x, y: rift.y, name: 'rift', a: blink ? '#e2d0ff' : '#a06bff', b: blink ? '#a06bff' : '#e2d0ff' });
+    for (const e of G.EnemyMgr.all()) if (e.boss && !e.dead) marks.push({ x: e.x, y: e.y, name: 'boss', a: '#ffcb3d', b: blink ? '#ff5f6d' : '#fff7d6' });
     for (const m of marks) {
-      const dx = (m.x - pl.x) * k, dy = (m.y - pl.y) * k, d = Math.hypot(dx, dy);
-      if (d < R - 7) {
-        ctx.beginPath(); ctx.arc(cx + dx, cy + dy, 4.5 + beat * 1.5, 0, 6.2832);
-        ctx.fillStyle = m.col; ctx.fill();
-        ctx.lineWidth = 1.5; ctx.strokeStyle = m.rift ? '#1a0b33' : '#20160a'; ctx.stroke();
-        continue;
-      }
-      const a = Math.atan2(dy, dx), ex = cx + Math.cos(a) * (R - 8), ey = cy + Math.sin(a) * (R - 8);
-      ctx.beginPath();
-      ctx.moveTo(ex + Math.cos(a) * 7, ey + Math.sin(a) * 7);
-      ctx.lineTo(ex + Math.cos(a + 2.4) * 6, ey + Math.sin(a + 2.4) * 6);
-      ctx.lineTo(ex + Math.cos(a - 2.4) * 6, ey + Math.sin(a - 2.4) * 6);
-      ctx.closePath();
-      ctx.fillStyle = m.col; ctx.fill();
-      ctx.lineWidth = 1.5; ctx.strokeStyle = 'rgba(0,0,0,.85)'; ctx.stroke();
+      let px = X(m.x), py = Y(m.y);
+      if (inside(px, py, 3)) { icon(g, m.name, px, py, m.a, m.b); continue; }
+      const dx = px - half, dy = py - half, f = (half - 5) / Math.max(Math.abs(dx), Math.abs(dy));
+      px = half + dx * f; py = half + dy * f;
+      icon(g, m.name, px, py, m.a, m.b);
+      // Flecha: dos píxeles hacia fuera.
+      const ux = Math.sign(Math.round(dx * f / (half - 5))), uy = Math.sign(Math.round(dy * f / (half - 5)));
+      g.fillStyle = m.a;
+      g.fillRect(Math.round(px) + ux * 3, Math.round(py) + uy * 3, 1, 1);
+      g.fillStyle = K;
+      g.fillRect(Math.round(px) + ux * 4, Math.round(py) + uy * 4, 1, 1);
     }
 
     // Compañeros (con su color; caído, parpadea en rojo) y tú en el centro.
     if (G.Coop.active) for (const m of G.Coop.mates) {
       if (!m.connected) continue;
-      const o = m.pl, dx = (o.x - pl.x) * k, dy = (o.y - pl.y) * k, d = Math.hypot(dx, dy), f = Math.min(1, (R - 5) / (d || 1));
-      ctx.beginPath(); ctx.arc(cx + dx * f, cy + dy * f, 3.5, 0, 6.2832);
-      ctx.fillStyle = o.dead ? (Math.sin(t * 8) > 0 ? '#ff5f6d' : '#ffd0d5') : m.color; ctx.fill();
-      ctx.lineWidth = 1.5; ctx.strokeStyle = 'rgba(0,0,0,.8)'; ctx.stroke();
+      const o = m.pl;
+      let px = X(o.x), py = Y(o.y);
+      if (!inside(px, py, 3)) {
+        const dx = px - half, dy = py - half, f = (half - 3) / Math.max(Math.abs(dx), Math.abs(dy));
+        px = half + dx * f; py = half + dy * f;
+      }
+      icon(g, 'me', px, py, o.dead ? (blink ? '#ff5f6d' : '#ffd0d5') : m.color, '#ffffff');
     }
-    ctx.beginPath(); ctx.arc(cx, cy, 3.5, 0, 6.2832);
-    ctx.fillStyle = pl.dead ? '#ff8a96' : '#ffffff'; ctx.fill();
-    ctx.lineWidth = 1.5; ctx.strokeStyle = '#0a101c'; ctx.stroke();
-    ctx.restore();
+    icon(g, 'me', half, half, pl.dead ? '#ff8a96' : '#ffd23f', '#fff7d6');
 
-    // Borde.
-    ctx.beginPath(); ctx.arc(cx, cy, R, 0, 6.2832);
-    ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(140,170,210,.45)'; ctx.stroke();
+    // Marco: el panel de las cajas del juego (azul, borde claro y contorno oscuro).
+    ctx.save();
+    roundRect(ctx, x0, y0, D, D, 9);
+    // (Más oscuro que las cajas del menú: si no, el agua azul se pierde en el fondo.)
+    const grad = ctx.createLinearGradient(0, y0, 0, y0 + D);
+    grad.addColorStop(0, 'rgba(22,40,90,.9)'); grad.addColorStop(1, 'rgba(12,24,62,.9)');
+    ctx.fillStyle = grad; ctx.fill();
+    ctx.lineWidth = 4; ctx.strokeStyle = '#0b1838'; ctx.stroke();
+    roundRect(ctx, x0 + 2, y0 + 2, D - 4, D - 4, 7);
+    ctx.lineWidth = 2; ctx.strokeStyle = '#f4f8ff'; ctx.stroke();
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(lo, x0 + B, y0 + B, L * PS, L * PS);
     ctx.restore();
   }
 
