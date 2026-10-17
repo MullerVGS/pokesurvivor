@@ -37,7 +37,7 @@ G.Spawner = (() => {
   }
 
   function ringPoint(pl, angle) {
-    const d = G.Camera.outerRadius() + G.U.rand(10, 70);
+    const d = G.View.reach(pl) + G.U.rand(10, 70);          // fuera de SU vista (view.js)
     return [pl.x + Math.cos(angle) * d, pl.y + Math.sin(angle) * d * 0.9];
   }
 
@@ -45,8 +45,7 @@ G.Spawner = (() => {
 
   /** ¿Lo vería algún jugador? (para no aparecer delante de nadie) */
   function seenByAnyone(x, y) {
-    const r = G.Camera.outerRadius() - 30;
-    return players.some(o => G.U.dist2(o.x, o.y, x, y) < r * r);
+    return G.View.seen(players, x, y, -30);                 // cada uno con su campo de visión
   }
 
   /** Punto del anillo donde quepa: no dentro de paredes ni en el agua. */

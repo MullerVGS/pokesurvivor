@@ -505,7 +505,7 @@ G.Game = (() => {
     }
     if (p.kind === 'bomb') {
       if (G.U.dist2(who.x, who.y, pl.x, pl.y) < 500 * 500) G.Camera.kick(0.8);
-      const R = G.Camera.outerRadius();
+      const R = G.View.reach(who);
       G.FX.ring(who.x, who.y, 20, R, '#ff7b3d', 0.5, 6);
       for (const e of G.EnemyMgr.all()) {
         if (mine ? !G.Camera.sees(e.x, e.y, 0) : G.U.dist2(e.x, e.y, who.x, who.y) > R * R) continue;

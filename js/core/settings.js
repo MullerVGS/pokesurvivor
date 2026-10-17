@@ -7,6 +7,7 @@
  *   calm        true/false                        menos sacudidas y destellos
  *   fps         true/false                        contador de FPS
  *   minimap     true/false                        minimapa en la partida (también con la tecla M)
+ *   view        640 .. 1100 (768)                 ancho de mundo que se ve (view.js); en móvil, hasta 960
  *   aimMode     'auto' | 'click' | 'manual'       apuntar con el ratón (aim.js); el táctil, siempre automático
  *   stick       0.8 | 1 | 1.25                    tamaño del joystick táctil
  *   stickMode   'float' | 'fixed'                 joystick donde pones el dedo, o siempre en su sitio
@@ -18,7 +19,7 @@
  */
 G.Settings = (() => {
   const KEY = 'ps.settings';
-  const DEF = { quality: 'auto', dmgNumbers: true, calm: false, fps: false, minimap: true, aimMode: 'click', stick: 1, stickMode: 'float', pad: null };
+  const DEF = { quality: 'auto', dmgNumbers: true, calm: false, fps: false, minimap: true, view: 768, aimMode: 'click', stick: 1, stickMode: 'float', pad: null };
   let s = Object.assign({}, DEF);
   try { Object.assign(s, JSON.parse(localStorage.getItem(KEY) || '{}')); } catch (e) { /* nada */ }
   const fns = new Set();

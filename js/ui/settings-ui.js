@@ -84,6 +84,7 @@ G.SettingsUI = (() => {
         + toggle('calm', 'Menos sacudidas y destellos', 'La cámara tiembla menos y los fogonazos son suaves.')
         + toggle('fps', 'Mostrar FPS', 'Fotogramas por segundo, en la esquina de abajo.')
         + toggle('minimap', 'Minimapa', 'Tu entorno arriba a la derecha durante la partida. En PC, también con la tecla M.')
+        + G.View.row()
         + (canFull() ? `<div class="set-row"><div class="grow"><b>Pantalla completa</b><small>Sin barras del navegador.</small></div>
              <button class="btn small" id="set-full">${isFull() ? 'Salir' : 'Activar'}</button></div>`
            : iosTip() ? `<div class="set-row"><div class="grow"><b>Pantalla completa</b><small>${esc(IOS_TIP)}</small></div></div>` : '');
@@ -154,6 +155,7 @@ G.SettingsUI = (() => {
     box.querySelectorAll('.chip[data-k]').forEach(b => {
       b.onclick = () => { const v = b.dataset.v; G.Settings.set(b.dataset.k, isNaN(+v) ? v : +v); render(); };
     });
+    G.View.wire(box);
     const full = $('set-full'); if (full) full.onclick = toggleFull;
     const lay = $('set-layout'); if (lay) lay.onclick = () => G.LayoutUI.open();
     box.querySelectorAll('[data-lang]').forEach(b => { b.onclick = () => { if (b.dataset.lang !== G.I18n.lang) G.I18n.set(b.dataset.lang); }; });

@@ -1,11 +1,13 @@
 /* ============ camera.js — vista y transformación mundo<->pantalla ============
  * El ancho visible del mundo es constante (VIEW_W) sea cual sea el tamaño de
- * ventana, así el juego se siente igual en cualquier pantalla.
+ * ventana, así el juego se siente igual en cualquier pantalla. Se puede
+ * cambiar en Ajustes (view.js): entonces manda `view`.
  */
 G.Camera = {
   x: 0, y: 0,
   scale: 1,
   VIEW_W: 768,              // un 20% más de vista que al principio (640)
+  view: 768,                // el ancho que se ve: VIEW_W o el elegido en Ajustes (view.js)
   shake: 0,
   _sx: 0, _sy: 0,
 
@@ -18,7 +20,8 @@ G.Camera = {
 
   resize(cssW, cssH, dpr = 1) {
     this.dpr = dpr;
-    this.scale = Math.min(cssW / this.VIEW_W, cssH / this.MIN_VIEW_H);
+    // Con más (o menos) vista, el alto mínimo cambia en la misma proporción.
+    this.scale = Math.min(cssW / this.view, cssH / (this.MIN_VIEW_H * this.view / this.VIEW_W));
     this.w = cssW / this.scale;
     this.h = cssH / this.scale;
   },
