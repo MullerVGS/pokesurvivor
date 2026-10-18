@@ -52,6 +52,8 @@ G.ItemUI = (() => {
       ${opts.length > 1 ? `<div class="item-options" role="group" aria-label="${T('Elige un objeto')}">${opts.map(id => `<button type="button" data-item-option="${id}" aria-pressed="${id === choice}">${G.Icons.html(id, 16)} ${T(G.Items.BY[id].name)}</button>`).join('')}</div>` : ''}
       <div class="item-actions"><small>${T(pl.item ? 'Tu objeto quedará en el suelo.' : 'Sólo se recoge al confirmar.')}</small><button class="btn small gold" type="button" data-take-item ${G.GroundItems.pending ? 'disabled' : ''}><kbd>F</kbd> ${T(G.GroundItems.pending ? 'Recogiendo…' : pl.item ? 'Cambiar objeto' : 'Recoger objeto')}</button></div>`;
     if (html !== lastHTML) { lastHTML = html; panel.innerHTML = html; }
+    const dock = G.BattlePanels.dockLayout(innerWidth, innerHeight);
+    panel.style.bottom = innerHeight > 520 ? (innerHeight - dock.y + 12) + 'px' : '';
     panel.classList.remove('hidden');
   }
   return { update, reset, swapped, dismiss, take, get open() { return !!panel && !panel.classList.contains('hidden'); } };

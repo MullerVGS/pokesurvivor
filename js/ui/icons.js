@@ -268,24 +268,26 @@ G.Icons = (() => {
     const cv = document.createElement('canvas');
     cv.width = cv.height = S;
     const c = cv.getContext('2d', { willReadFrequently: true });   // se lee en svgOf()
-    const col = G.U.TYPE_COLOR[type] || '#b0a99f';
-    const dark = shade(col, 0.55), lite = shade(col, 1.3);
-    // Disco con contorno, sombra abajo-derecha y brillo arriba-izquierda.
-    for (let y = 0; y < S; y++) for (let x = 0; x < S; x++) {
-      const d = Math.hypot(x - 7.5, y - 7.5);
-      if (d > 7.6) continue;
-      let f = col;
-      if (d > 6.6) f = K;
-      else if ((x - 7.5) + (y - 7.5) > 6) f = dark;
-      else if ((x - 7.5) + (y - 7.5) < -6.5) f = lite;
-      c.fillStyle = f; c.fillRect(x, y, 1, 1);
+    if (!G.TypeIcons.draw(c, type, 0, 0, S)) {
+      const col = G.U.TYPE_COLOR[type] || '#b0a99f';
+      const dark = shade(col, 0.55), lite = shade(col, 1.3);
+      // Disco con contorno, sombra abajo-derecha y brillo arriba-izquierda.
+      for (let y = 0; y < S; y++) for (let x = 0; x < S; x++) {
+        const d = Math.hypot(x - 7.5, y - 7.5);
+        if (d > 7.6) continue;
+        let f = col;
+        if (d > 6.6) f = K;
+        else if ((x - 7.5) + (y - 7.5) > 6) f = dark;
+        else if ((x - 7.5) + (y - 7.5) < -6.5) f = lite;
+        c.fillStyle = f; c.fillRect(x, y, 1, 1);
+      }
+      const g = TYPE_GLYPH[type] || TYPE_GLYPH.normal;
+      // Sombra del glifo y glifo.
+      c.fillStyle = dark;
+      g.forEach((row, y) => [...row].forEach((ch, x) => { if (ch === '#') c.fillRect(x + 5, y + 5, 1, 1); }));
+      c.fillStyle = '#ffffff';
+      g.forEach((row, y) => [...row].forEach((ch, x) => { if (ch === '#') c.fillRect(x + 4, y + 4, 1, 1); }));
     }
-    const g = TYPE_GLYPH[type] || TYPE_GLYPH.normal;
-    // Sombra del glifo y glifo.
-    c.fillStyle = dark;
-    g.forEach((row, y) => [...row].forEach((ch, x) => { if (ch === '#') c.fillRect(x + 5, y + 5, 1, 1); }));
-    c.fillStyle = '#ffffff';
-    g.forEach((row, y) => [...row].forEach((ch, x) => { if (ch === '#') c.fillRect(x + 4, y + 4, 1, 1); }));
 
     if (kind && KIND_GLYPH[kind]) {
       c.fillStyle = K; c.fillRect(9, 9, 7, 7);
@@ -312,6 +314,7 @@ G.Icons = (() => {
   }
 
   function url(name) {
+    if (name.startsWith('type:')) return G.TypeIcons.url(name.slice(5));
     let u = urls.get(name);
     if (!u) {
       // Los de interfaz, directamente de su dibujo; los emblemas (tipos, movimientos), del canvas.
@@ -379,11 +382,13 @@ G.Icons = (() => {
 
   /** <img> pixelado para el DOM. */
   function html(name, size = 20, cls = '') {
+    if (name.startsWith('type:')) return G.TypeIcons.html(name.slice(5), size);
     const cv = canvas(name), w = snap(name, size), h = w * cv.height / cv.width;
     return `<img class="pix ${cls}" src="${url(name)}" width="${w}" height="${h}" alt="" draggable="false">`;
   }
 
   function draw(ctx, name, x, y, size) {
+    if (name.startsWith('type:') && G.TypeIcons.draw(ctx, name.slice(5), x, y, size)) return;
     const cv = canvas(name);
     const s2 = snap(name, size);
     x += (size - s2) / 2; y += (size - s2) / 2; size = s2;

@@ -493,7 +493,7 @@ G.Player = class Player {
     }
     if (this.tag) {
       ctx.save();
-      ctx.font = '700 7px Pixelify,"Segoe UI",sans-serif';
+      ctx.font = G.Presentation.font(700, 7);
       ctx.textAlign = 'center';
       const y = this.y - this.bodyH - 8;
       ctx.lineWidth = 2.5; ctx.strokeStyle = 'rgba(0,0,0,.75)';
@@ -501,7 +501,7 @@ G.Player = class Player {
       ctx.fillStyle = this.dead ? '#ff8a96' : this.tagColor || '#fff';
       ctx.fillText(this.tag, this.x, y);
       if (this.dead) {
-        ctx.font = '700 6px Pixelify,"Segoe UI",sans-serif';
+        ctx.font = G.Presentation.font(700, 6);
         ctx.strokeText(this.revLabel || '', this.x, y - 8);
         ctx.fillText(this.revLabel || '', this.x, y - 8);
       }

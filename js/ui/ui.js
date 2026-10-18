@@ -12,15 +12,17 @@ G.UI = (() => {
                    'scr-nick', 'scr-friends', 'scr-lobby', 'scr-rank', 'scr-goals', 'scr-bond', 'scr-mod'];
 
   function show(id, keepMenu = false) {
-    for (const s of SCREENS) if (s !== id && !(keepMenu && s === 'scr-menu')) $(s).classList.add('hidden');
+    G.Tooltip?.hide();
+    for (const s of SCREENS) if (s !== id && !(keepMenu && s === 'scr-menu')) { $(s).classList.add('hidden'); $(s).querySelectorAll('.readout').forEach(p => G.InfoPanel?.release(p)); }
     $(id).classList.remove('hidden');
   }
   function hide(id) { $(id).classList.add('hidden'); }
-  function hideAll() { for (const s of SCREENS) $(s).classList.add('hidden'); }
+  function hideAll() { G.Tooltip?.hide(); for (const s of SCREENS) $(s).classList.add('hidden'); }
   function isOpen(id) { return !$(id).classList.contains('hidden'); }
 
   /** Barra superior (monedas, usuario, sonido) sólo fuera de las runs. */
   function chrome(on) {
+    document.documentElement.toggleAttribute('data-in-run', !on);
     $('topbar').classList.toggle('hidden', !on);
     $('credits-line').classList.toggle('hidden', !on);
     if (!on) $('sound-panel').classList.add('hidden');
@@ -42,6 +44,18 @@ G.UI = (() => {
     $('user-pill').title = TIP[st] || '';
   }
 
+  let noticeLayout = '';
+  function placeNotices(dock, height) {
+    const p = dock.panel, bottom = height - p.y + 10, left = p.x + p.w / 2, width = Math.min(360, p.w);
+    const key = bottom + ':' + left + ':' + width;
+    if (key === noticeLayout) return;
+    noticeLayout = key;
+    const style = document.documentElement.style;
+    style.setProperty('--hud-notice-bottom', bottom + 'px');
+    style.setProperty('--hud-notice-left', left + 'px');
+    style.setProperty('--hud-notice-width', width + 'px');
+  }
+
   let toastEl = null, toastT = 0;
   function toast(msg, ms = 2200) {
     if (!toastEl) { toastEl = document.createElement('div'); toastEl.className = 'toast'; document.body.appendChild(toastEl); }
@@ -52,7 +66,7 @@ G.UI = (() => {
   }
 
   function typeChips(types) {
-    return types.map(t => `<span class="type" data-tip="type:${t}" style="background:${G.U.TYPE_COLOR[t]}">${G.U.TYPE_NAME[t]}</span>`).join('');
+    return types.map(t => `<span data-tip="type:${t}">${G.TypeIcons.badge(t)}</span>`).join('');
   }
 
   /** Rareza: la Poké Ball que le corresponde (ver G.Icons.rarity). */
@@ -64,6 +78,16 @@ G.UI = (() => {
   let lastHover = null;
 
   function wireSounds() {
+    document.addEventListener('keydown', e => {
+      if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(e.key)) return;
+      if (!isOpen('scr-menu') || document.querySelector('.scr:not(.hidden):not(#scr-menu)')) return;
+      if (e.target.closest('input, textarea, select, [contenteditable]')) return;
+      const buttons = [...document.querySelectorAll('#scr-menu .menu-item:not(:disabled)')];
+      const index = buttons.indexOf(document.activeElement);
+      const next = e.key === 'Home' ? 0 : e.key === 'End' ? buttons.length - 1
+        : index < 0 ? 0 : (index + (e.key === 'ArrowDown' ? 1 : -1) + buttons.length) % buttons.length;
+      e.preventDefault(); buttons[next]?.focus(); G.Audio.sfx('select');
+    });
     document.addEventListener('pointerover', e => {
       const el = e.target.closest(CLICKABLE);
       if (el && el !== lastHover && !el.disabled) G.Audio.sfx('hover');
@@ -195,7 +219,7 @@ G.UI = (() => {
     for (const s of live) {
       if (!s.cv.isConnected) { live.delete(s); if (io) io.unobserve(s.cv); continue; }
       if (s.cv.offsetParent === null) continue;            // pantalla oculta
-      if (io && seen.get(s.cv) === false) continue;         // fuera de la vista
+      if (io && seen.get(s.cv) !== true) continue;         // fuera de la vista
       s.a.update(dt);
 
       if (s.opts.lively) {
@@ -263,6 +287,6 @@ G.UI = (() => {
     return cv;
   }
 
-  return { $, show, hide, hideAll, isOpen, chrome, refreshCoins, toast, typeChips, stars, confirmDelete,
+  return { $, show, hide, hideAll, isOpen, chrome, refreshCoins, toast, placeNotices, typeChips, stars, confirmDelete,
            sprite, spriteCanvas, tick, initChrome, soundControls };
 })();

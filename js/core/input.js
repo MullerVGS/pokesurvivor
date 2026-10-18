@@ -25,11 +25,12 @@ G.Input = (() => {
   function code(e) { return (e.code || e.key).toLowerCase(); }
 
   addEventListener('keydown', e => {
+    if (e.defaultPrevented || e.target.closest?.('input, textarea, select, [contenteditable]')) return;
     const c = code(e);
     if (!down.has(c)) pressed.add(c);
     down.add(c);
     // Evita que el navegador haga scroll con flechas/espacio durante el juego.
-    if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', 'space', 'tab'].includes(c)) e.preventDefault();
+    if (G.Game?.state === 'playing' && ['arrowup', 'arrowdown', 'arrowleft', 'arrowright', 'space', 'tab'].includes(c)) e.preventDefault();
   });
   addEventListener('keyup', e => down.delete(code(e)));
   addEventListener('blur', () => { down.clear(); });

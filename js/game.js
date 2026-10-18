@@ -469,6 +469,7 @@ G.Game = (() => {
   // ---------------- teclado ----------------
 
   function handleKeys() {
+    if (G.Tooltip.isOpen) return;
     if (G.SettingsUI.isOpen) { if (G.Input.tap('escape')) G.SettingsUI.close(); return; }
     // La Sentencia de Arceus: Espacio, Intro o Esc saltan la animación (si se puede).
     if (G.Judgment.cinematic && state === 'playing') {
@@ -545,7 +546,7 @@ G.Game = (() => {
     if (state === 'playing') G.Settings.sample(real);
     fpsAcc += real; fpsN++;
     if (fpsAcc >= 0.5) { fpsShown = Math.round(fpsN / fpsAcc); fpsAcc = 0; fpsN = 0; }
-    // Un popup de información fijado con T para la partida en solitario (tooltip.js).
+    // La consulta explícita pausa la partida en solitario; nunca se abre por hover.
     const held = state === 'playing' && G.Tooltip.holds();
     frameDt = state === 'playing' && !held ? dt : 0;
 
@@ -712,7 +713,7 @@ G.Game = (() => {
     G.Touch.draw(ctx);
     if (G.Settings.get('fps')) {
       ctx.save();
-      ctx.font = '700 11px Pixelify, monospace';
+      ctx.font = G.Presentation.font(700, 11);
       ctx.textAlign = 'right';
       ctx.fillStyle = fpsShown >= 50 ? '#5fe08a' : fpsShown >= 30 ? '#ffd23f' : '#ff5f6d';
       ctx.fillText(fpsShown + ' FPS', w - 10, h - 8);
@@ -857,7 +858,7 @@ G.Flow = {
     G.DB.ready({ restore: !G.LoginUI.pendingReset }).then(restored => {
       document.getElementById('boot').classList.add('hidden');
       // En otra tarea: crear el sonido para comprobarlo cuesta ~60 ms y no debe bloquear la carga.
-      setTimeout(() => this.tapToStart(() => { if (restored) this.afterLogin(); else this.toLogin(); }), 0);
+      setTimeout(() => this.tapToStart(() => { if (G.CollectionPreview.start()) return; if (restored) this.afterLogin(); else this.toLogin(); }), 0);
     });
   },
   /**

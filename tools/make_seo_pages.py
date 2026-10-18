@@ -133,7 +133,7 @@ def page(pid, lang, title, desc, body, ld=None):
 def write(pid, lang, html_):
     p = os.path.join(ROOT, PATH[lang][pid], 'index.html')
     os.makedirs(os.path.dirname(p), exist_ok=True)
-    open(p, 'w', encoding='utf-8').write(html_)
+    open(p, 'w', encoding='utf-8', newline='\r\n').write(html_)
 
 def crumbs(pid, lang, name):
     return {'@type': 'BreadcrumbList', 'itemListElement': [
@@ -556,7 +556,7 @@ you can make a <b>voluntary donation</b>. <b>All the money goes to the servers a
 <table class="list"><tbody>{rows}</tbody></table>
 <p>The servers store saves and accounts, the leaderboards and group games: the more people play, the more they cost.</p>
 <h2>How to support</h2>
-<p>{btns or 'You\'ll be able to donate from here very soon.'}</p>
+<p>{btns or "You'll be able to donate from here very soon."}</p>
 <p>Sharing the game with your friends, recommending it and reporting bugs helps a lot too, and it\'s free.</p>
 {cta(pid, lang, 'Back to the game')}</article>"""
         title, desc = 'Support PokéSurvivor: donations for the servers', 'PokéSurvivor is free and ad-free. Voluntary donations only pay for the servers and the domain.'
@@ -576,7 +576,7 @@ def game_en():
     src = re.sub(r'<!-- seo:(begin|end) -->\n?', '', src)
     src = re.sub(r'<meta name="robots" content="noindex">\s*', '', src)
     src = re.sub(r'<!-- dev\.html: página fuente[^>]*-->\n?', '', src)
-    s = src.replace('<html lang="es">', '<html lang="en">')
+    s = src.replace('<html lang="es"', '<html lang="en"', 1)
     s = s.replace('<head>\n<meta charset="utf-8">', '<head>\n<meta charset="utf-8">\n<base href="../">', 1)
     rep = [
         ('<title>PokéSurvivor – Juego Pokémon gratis online estilo Survivor.io</title>', '<title>PokéSurvivor – Free online Pokémon survival game (Survivor.io style)</title>'),
@@ -603,7 +603,7 @@ def game_en():
                   '"description": "A free Pokémon survival fan game (bullet heaven, Survivor.io style): pick a partner, survive the hordes, level up, evolve your moves, fight legendaries in rifts and play co-op with up to 4 friends."')
     s = s.replace('"inLanguage": "es"', '"inLanguage": ["es", "en"]')
     os.makedirs(os.path.join(ROOT, 'en'), exist_ok=True)
-    open(os.path.join(ROOT, 'en', 'index.html'), 'w', encoding='utf-8').write(s)
+    open(os.path.join(ROOT, 'en', 'index.html'), 'w', encoding='utf-8', newline='\r\n').write(s)
 
 # ================= 404, robots y sitemap =================
 def extra():
@@ -614,8 +614,8 @@ def extra():
 <p class="lead" lang="en">This page doesn't exist. But the hordes are still waiting…</p>
 <p class="cta"><a class="btn" href="/">Volver al juego</a> <a class="btn ghost" href="/en/">Play in English</a></p></article></main></body></html>
 '''
-    open(os.path.join(ROOT, '404.html'), 'w', encoding='utf-8').write(nf)
-    open(os.path.join(ROOT, 'robots.txt'), 'w', encoding='utf-8').write(f'# PokéSurvivor\nUser-agent: *\nAllow: /\nDisallow: /tools/\nDisallow: /docs/\nDisallow: /dev.html\n\nSitemap: {SITE}sitemap.xml\n')
+    open(os.path.join(ROOT, '404.html'), 'w', encoding='utf-8', newline='\r\n').write(nf)
+    open(os.path.join(ROOT, 'robots.txt'), 'w', encoding='utf-8', newline='\r\n').write(f'# PokéSurvivor\nUser-agent: *\nAllow: /\nDisallow: /tools/\nDisallow: /docs/\nDisallow: /dev.html\n\nSitemap: {SITE}sitemap.xml\n')
     PRI = {'home': '1.0', 'guide': '0.8', 'pokedex': '0.7', 'legends': '0.7', 'moves': '0.6', 'types': '0.6', 'shinies': '0.6', 'achievements': '0.5', 'items': '0.5', 'news': '0.5', 'support': '0.4'}
     urls = []
     for pid in PAGES:
@@ -623,7 +623,7 @@ def extra():
             alts = ''.join(f'<xhtml:link rel="alternate" hreflang="{l}" href="{SITE}{PATH[l][pid]}"/>' for l in ('es', 'en'))
             alts += f'<xhtml:link rel="alternate" hreflang="x-default" href="{SITE}{PATH["es"][pid]}"/>'
             urls.append(f'  <url><loc>{SITE}{PATH[lang][pid]}</loc><lastmod>{TODAY}</lastmod><priority>{PRI[pid]}</priority>{alts}</url>\n')
-    open(os.path.join(ROOT, 'sitemap.xml'), 'w', encoding='utf-8').write(
+    open(os.path.join(ROOT, 'sitemap.xml'), 'w', encoding='utf-8', newline='\r\n').write(
         '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">\n' + ''.join(urls) + '</urlset>\n')
 
 for lang in ('es', 'en'):

@@ -53,7 +53,7 @@ const URL = process.env.UX_TEST_URL || 'http://127.0.0.1:3089/dev.html';
       wheel(100); check(p.active === 1, 'wheel forward');
       p.equip('choiceband'); wheel(-100); check(p.active === 1, 'Choice Band locks wheel'); p.equip(null);
       G.Tooltip.show('move:ember', 600, 200, { pin: true });
-      wheel(-100, document.querySelector('.tip-content')); check(p.active === 1, 'tooltip scroll is not a switch');
+      wheel(-100, document.querySelector('.inspection-content .readout-body')); check(p.active === 1, 'tooltip scroll is not a switch');
       G.Tooltip.hide();
       press('Escape'); wheel(-100); check(p.active === 1, 'pause blocks wheel'); press('Escape');
       check(G.Tooltip.content('term:minimap') && !G.Tooltip.content('enemy:1'), 'minimap help remains without world probes');
@@ -117,20 +117,21 @@ const URL = process.env.UX_TEST_URL || 'http://127.0.0.1:3089/dev.html';
       check(!G.Progress.knowsEvolution('ember'), 'discovery does not leak into another save');
     });
     await page.evaluate(() => G.Tooltip.show('move:swords-dance', 700, 150, { pin: true }));
-    await page.locator('.tip [data-tip="movelevel:swords-dance:2"]').dispatchEvent('pointerover', { pointerType: 'mouse' });
-    await page.waitForFunction(() => document.querySelectorAll('.tip').length === 2, null, { polling: 50, timeout: 5000 });
-    assert.equal(await page.locator('.tip').last().locator('.preview-caption').textContent(), 'Lv. 2: +1 max stack');
+    await page.locator('.inspection-content [data-info-source="movelevel:swords-dance:2"]').click();
+    assert.equal(await page.locator('.inspection-content .preview-caption').textContent(), 'Lv. 2: +1 max stack');
+    assert.equal(await page.locator('.inspection-screen:not([hidden])').count(), 1);
+    assert.equal(await page.locator('.tip').count(), 0);
     await page.evaluate(() => {
-      const counts = [0, 0];
-      document.querySelectorAll('.move-preview canvas').forEach((cv, i) => {
-        const ctx = cv.getContext('2d'), draw = ctx.clearRect.bind(ctx);
-        ctx.clearRect = (...args) => { counts[i]++; draw(...args); };
-      });
+      const cv = document.querySelector('.inspection-content .move-preview canvas');
+      let draws = 0; const ctx = cv.getContext('2d'), clear = ctx.clearRect.bind(ctx);
+      ctx.clearRect = (...args) => { draws++; clear(...args); };
       G.MovePreview.tick(0.05);
-      check(counts[0] === 0 && counts[1] === 1, 'only the deepest preview animates');
+      check(draws === 1 && G.MovePreview.count === 1, 'one mounted preview in the same panel');
     });
-    await page.evaluate(() => { G.Tooltip.hide(); check(G.MovePreview.count === 0, 'closed previews released'); });
-    console.log('PASS future-level lines open nested animated tooltips and release scenes on close');
+    await page.locator('.inspection-content .readout-back').click();
+    assert.equal(await page.locator('.inspection-content .preview-caption').textContent(), 'Lv. 1: Base move');
+    await page.evaluate(() => { G.Tooltip.hide(); check(G.MovePreview.count === 0, 'closed preview released'); });
+    console.log('PASS future-level navigation replaces the same panel and releases previews on close');
 
     // Force overflow in every closable screen: header/footer must not move with it.
     for (const viewport of [{ width: 1280, height: 800 }, { width: 844, height: 390 }]) {
@@ -151,10 +152,10 @@ const URL = process.env.UX_TEST_URL || 'http://127.0.0.1:3089/dev.html';
           filler.remove(); screen.classList.add('hidden');
         }
         G.Tooltip.show('move:ember', 500, 150, { pin: true, touch: true });
-        const x = document.querySelector('.tip-x'), top = x.getBoundingClientRect().top;
-        document.querySelector('.tip-content').scrollTop = 2000;
+        const x = document.querySelector('[data-inspection-close]'), top = x.getBoundingClientRect().top;
+        document.querySelector('.inspection-content .readout-body').scrollTop = 2000;
         check(x.getBoundingClientRect().top === top && top >= 0, 'touch close outside tooltip scroll');
-        x.click(); check(!document.querySelector('.tip'), 'touch close still works');
+        x.click(); check(!G.Tooltip.isOpen, 'explicit close still works');
       });
     }
     await test('landscape item comparison keeps the player and attack bar visible', () => {

@@ -72,6 +72,9 @@ G.SettingsUI = (() => {
     if (tab === 'sound') {
       box.innerHTML = section('Sonido') + '<div id="set-sound" class="sound-inline"></div>';
       G.UI.soundControls($('set-sound'));
+      const library = document.createElement('div');
+      library.className = 'sound-library'; box.appendChild(library);
+      G.SoundLibraryUI.mount(library);
     } else if (tab === 'gfx') {
       const auto = ['baja', 'media', 'alta'][G.Settings.autoLevel];
       box.innerHTML = section('Idioma', 'El juego se recarga al cambiarlo.')
@@ -114,9 +117,10 @@ G.SettingsUI = (() => {
         + section('Créditos')
         + `<ul class="credits">
              <li><b>Sprites:</b> PMD SpriteCollab y sus artistas (CC BY-NC 4.0).</li>
+             <li>Iconos de tipo de Pokémon Scarlet/Violet, distribuidos por PokéAPI.</li>
              <li><b>Datos de los Pokémon:</b> PokéAPI.</li>
-             <li><b>Música y sonidos:</b> originales, generados por el propio juego.</li>
-             <li><b>Fuente:</b> Pixelify Sans (OFL).</li>
+             <li><b>Música y sonidos:</b> Pokémon (Nintendo/Creatures/GAME FREAK), ENLS’s Pre-Looped Music Library; efectos del juego y archivos personales.</li>
+             <li><b>Fuente:</b> Pokémon Gen III · ArcaneNibble/pokefont.</li>
            </ul>`
         + `<div class="row wrap" style="justify-content:center;gap:8px">
              ${window.PS_PAGES ? `<a class="btn small" href="${G.I18n.lang === 'en' ? 'en/guide/' : 'guia/'}" target="_blank">Guía y preguntas</a>

@@ -31,7 +31,6 @@ G.Minimap = (() => {
   const MAX_RANGE = 70 * CELL / 2;       // el mayor alcance (PC)
   const SPAN = Math.ceil((MAX_RANGE + G.World.CW / 2) / G.World.CW);   // chunks a cada lado del tuyo
   const SIDE = (SPAN * 2 + 1) * CN;      // lado del fondo compuesto, en px
-  const S = 54, GAP = 9, BAR_W = S + 18 + 4 * S + 3 * GAP;           // como en hud.js
   const K = '#1b1528';                   // contorno (icons.js)
   const WALL = [150, 158, 186], WALL_LIT = [222, 228, 244];         // paredes del mapa, sobre el panel azul
 
@@ -141,15 +140,14 @@ G.Minimap = (() => {
 
   /** Rectángulos (x, y, ancho, alto) de los botones táctiles, como los pone hud.js. */
   function padRects(w, h) {
-    const sa = G.Touch.safeArea(), out = [];
-    const pp = G.Touch.spot('pause');
-    out.push([pp ? G.U.clamp(pp[0] * w - 20, 4, w - 44) : w - 52 - Math.min(44, sa.right),
-              pp ? G.U.clamp(pp[1] * h - 20, 10, h - 44) : 12 + Math.min(20, sa.top), 40, 40]);
-    const pb = G.Touch.spot('bar');
-    const by = pb ? G.U.clamp(pb[1] * h - S / 2, 24, h - S - 6) : h - S - 18 - Math.min(28, sa.bottom);
-    const bx = pb ? G.U.clamp(pb[0] * w - BAR_W / 2, 6, Math.max(6, w - BAR_W - 6)) : (w - 4 * S - 3 * GAP) / 2 - S - 18;
-    out.push([bx, by - 22, BAR_W, S + 22]);                 // con el nombre del ataque encima
-    if (G.Settings.get('stickMode') === 'fixed') {
+    const out = [];
+    const pause = G.BattlePanels.pauseLayout(w, h);
+    if (pause) out.push([pause.x, pause.y, pause.w, pause.h]);
+    const dock = G.BattlePanels.dockLayout(w, h);
+    out.push([dock.x - 2, dock.y - 2, dock.w + 4, dock.h + 4]);
+    const status = G.BattlePanels.healthLayout(w, h, G.Coop.active ? G.Coop.mates.filter(m => m.connected).length : 0);
+    for (const r of [status.player, ...status.allies]) out.push([r.x, r.y, r.w + 15, r.h + 6]);
+    if (G.Touch.active && G.Settings.get('stickMode') === 'fixed') {
       const b = G.Touch.stickBase(w, h), r = G.Touch.R();
       out.push([b.x - r, b.y - r, r * 2, r * 2]);
     }
@@ -157,16 +155,16 @@ G.Minimap = (() => {
   }
 
   /** Esquina de arriba a la izquierda del minimapa. */
-  function place(w, h, D) {
-    if (!G.Touch.active) return [w - D - 16, 48];          // debajo del clima
+  function place(w, h, D, avoid) {
     const sa = G.Touch.safeArea(), right = w - D - 12 - Math.min(44, sa.right), top = 12 + Math.min(20, sa.top);
     // Debajo de la pausa; si ahí hay algo (el jugador lo ha movido), a media
     // altura o abajo a la derecha, o a la izquierda.
-    const spots = [[right, top + 50], [right, top], [right, (h - D) / 2], [right, h - D - 16 - Math.min(28, sa.bottom)],
+    const spots = [[right, G.Touch.active ? top + 50 : 48], [right, top],
+                   ...avoid.map(r => [right, r.y + r.h + 8]), [right, (h - D) / 2], [right, h - D - 16 - Math.min(28, sa.bottom)],
                    [12 + Math.min(44, sa.left), (h - D) / 2]];
-    const rects = padRects(w, h), M = 6;
-    const free = ([x, y]) => rects.every(r => x + D + M < r[0] || x - M > r[0] + r[2] || y + D + M < r[1] || y - M > r[1] + r[3]);
-    return spots.find(free) || spots[0];
+    const rects = [...padRects(w, h), ...avoid.map(r => [r.x, r.y, r.w, r.h])], M = 6;
+    const free = ([x, y]) => y >= top && y + D <= h - 8 && rects.every(r => x + D + M < r[0] || x - M > r[0] + r[2] || y + D + M < r[1] || y - M > r[1] + r[3]);
+    return spots.find(free);
   }
 
   // ---------------- dibujo ----------------
@@ -179,14 +177,17 @@ G.Minimap = (() => {
     ctx.closePath();
   }
 
-  function draw(ctx, w, h, pl) {
+  function draw(ctx, w, h, pl, avoid = []) {
     if (!on() || !pl) return;
     sync(pl);
     // L: lado del mapa en píxeles de minimapa (par, para que tú quedes en el centro).
     const want = Math.min(G.Touch.active ? 104 : 150, Math.round(h * 0.3));
-    const L = Math.floor((want - B * 2) / PS / 2) * 2, D = L * PS + B * 2, half = L / 2;
-    const range = half * CELL;
-    const [x0, y0] = place(w, h, D);
+    let L = Math.floor((want - B * 2) / PS / 2) * 2, D = L * PS + B * 2;
+    let spot = place(w, h, D, avoid);
+    // Reduce only when the full map cannot fit between the HUD panels.
+    while (!spot && L > 24) { L -= 8; D = L * PS + B * 2; spot = place(w, h, D, avoid); }
+    if (!spot) return;
+    const half = L / 2, range = half * CELL, [x0, y0] = spot;
     G.Tooltip.zone(x0, y0, D, D, 'term:minimap');     // popup con la leyenda (y tapa el mundo de debajo)
     const CW = G.World.CW, pcx = Math.floor(pl.x / CW), pcy = Math.floor(pl.y / CW);
     const terrain = G.Settings.fx > 0;

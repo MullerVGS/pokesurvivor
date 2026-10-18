@@ -1,5 +1,5 @@
 /* ============ audio.js — sintetizador, secuenciador y efectos de sonido ============
- * Todo el sonido se genera en el momento con Web Audio: no hay ficheros.
+ * Audio personal por contexto; el sintetizador mantiene el sonido cuando no hay archivo.
  *
  *   G.Audio.music('village')   cambia de tema con fundido (ver data/music.js)
  *   G.Audio.sfx('coin')        efecto de sonido (con límite de repetición)
@@ -61,7 +61,8 @@ G.Audio = (() => {
     if (!init()) return;
     // 'suspended' o 'interrupted' (iPhone al volver de otra app): se reanuda.
     if (ctx.state !== 'running') ctx.resume().catch(() => {});
-    if (wanted && !current) startSong(wanted);
+    if (wanted && !current && !pending) startSong(wanted);
+    primeEffects();
   }
   // En móvil, tocar la pantalla (pointerdown) no cuenta como gesto para el
   // sonido: sí levantar el dedo (pointerup / touchend). Se escuchan todos.
@@ -297,12 +298,16 @@ G.Audio = (() => {
     return { steps, ev, bpm: song.bpm, swing: song.swing || 0 };
   }
 
-  let wanted = null, current = null;
+  let wanted = null, current = null, pending = null;
+  let requestId = 0;
+  const effectBuffers = new Map(), effectLoads = new Map();
   const compiled = {};
 
-  function startSong(name) {
-    if (!ctx || !G.MUSIC[name]) return;
-    const song = compiled[name] || (compiled[name] = compile(G.MUSIC[name]));
+  function startSynth(name) {
+    const fallback = G.SOUND_CUES[name]?.fallback || name;
+    if (!ctx || !G.MUSIC[fallback]) { stopCurrent(); return; }
+    stopCurrent();
+    const song = compiled[fallback] || (compiled[fallback] = compile(G.MUSIC[fallback]));
     const bus = ctx.createGain();
     bus.gain.setValueAtTime(0.0001, ctx.currentTime);
     bus.gain.linearRampToValueAtTime(1, ctx.currentTime + 0.8);
@@ -310,29 +315,160 @@ G.Audio = (() => {
     current = { name, song, bus, step: 0, next: ctx.currentTime + 0.1 };
   }
 
+  function disposeFile(track) {
+    track.media.pause();
+    track.media.removeAttribute('src'); track.media.load();
+    track.source.disconnect(); track.bus.disconnect();
+    URL.revokeObjectURL(track.url);
+  }
+
+  function cancelPending() {
+    requestId++;
+    if (pending) { const track = pending; pending = null; if (track.abort) track.abort.abort(); else disposeFile(track); }
+  }
+
   function stopCurrent() {
     if (!current) return;
-    const b = current.bus;
+    const track = current, b = track.bus;
+    current = null;
     b.gain.cancelScheduledValues(ctx.currentTime);
     b.gain.setValueAtTime(b.gain.value, ctx.currentTime);
     b.gain.linearRampToValueAtTime(0.0001, ctx.currentTime + 0.7);
-    setTimeout(() => b.disconnect(), 900);
-    current = null;
+    setTimeout(() => {
+      if (track.media) disposeFile(track);
+      else { if (track.sample) { track.sample.stop(); track.sample.disconnect(); } b.disconnect(); }
+    }, 900);
   }
 
-  /** Cambia de tema (con fundido). null = silencio. */
+  function startSong(name) {
+    if (!ctx) return;
+    const record = G.SoundLibrary.pick(name);
+    if (!record) { startSynth(name); return; }
+    if (record.src) { startPack(name, record); return; }
+    const id = requestId;
+    const media = new Audio(), url = URL.createObjectURL(record.file);
+    media.loop = true; media.preload = 'auto'; media.src = url;
+    const source = ctx.createMediaElementSource(media), bus = ctx.createGain();
+    bus.gain.value = 0; source.connect(bus).connect(musicBus);
+    const track = { name, media, source, bus, url, title: record.name };
+    pending = track;
+    const failed = () => {
+      if (id !== requestId) return;
+      if (pending === track) { pending = null; disposeFile(track); }
+      // A broken import never leaves the player without the normal soundtrack.
+      if (wanted === name) startSynth(name);
+    };
+    media.addEventListener('error', failed, { once: true });
+    media.play().then(() => {
+      if (id !== requestId || pending !== track) return;
+      pending = null;
+      stopCurrent(); current = track;
+      bus.gain.setValueAtTime(0, ctx.currentTime);
+      bus.gain.linearRampToValueAtTime(0.8, ctx.currentTime + 0.8);
+    }).catch(failed);
+  }
+
+  // Decode only the active track: original intro and exact sample loop points.
+  // Retired buffers are released after the crossfade, never a whole album in RAM.
+  async function startPack(name, record) {
+    const id = requestId, track = { name, abort: new AbortController() };
+    pending = track;
+    try {
+      const response = await fetch(record.src, { signal: track.abort.signal });
+      if (!response.ok) throw new Error('Audio unavailable');
+      const data = await response.arrayBuffer();
+      if (id !== requestId) return;
+      const buffer = await ctx.decodeAudioData(data);
+      if (id !== requestId) return;
+      const sample = ctx.createBufferSource(), bus = ctx.createGain();
+      sample.buffer = buffer; sample.loop = true;
+      sample.loopStart = Math.min(record.loopStart || 0, buffer.duration);
+      sample.loopEnd = Math.min(record.loopEnd || buffer.duration, buffer.duration);
+      bus.gain.setValueAtTime(0, ctx.currentTime);
+      sample.connect(bus).connect(musicBus);
+      pending = null; stopCurrent();
+      current = { name, sample, bus, title: record.name };
+      bus.gain.linearRampToValueAtTime(0.8, ctx.currentTime + 0.8);
+      sample.start();
+    } catch (_) {
+      if (id !== requestId) return;
+      pending = null;
+      if (wanted === name) startSynth(name);
+    }
+  }
+
+  /** Cambia de contexto con fundido. null = silencio. No reinicia el mismo tema. */
   function music(name) {
     if (wanted === name) return;
     wanted = name;
-    if (!ctx) return;                    // arrancará al primer clic
-    stopCurrent();
-    if (name) startSong(name);
+    G.SoundLibrary.enter(name);
+    primeEffects();
+    cancelPending();
+    if (!ctx) return;
+    if (name) startSong(name); else stopCurrent();
+  }
+
+  async function loadEffect(name) {
+    const record = G.SoundLibrary.effect(name);
+    if (!ctx || !record || effectLoads.get(name) === record) return;
+    if (effectBuffers.get(name)?.record === record) return;
+    effectLoads.set(name, record);
+    try {
+      let data;
+      if (record.file) data = await record.file.arrayBuffer();
+      else { const response = await fetch(record.src); if (!response.ok) throw new Error('Audio unavailable'); data = await response.arrayBuffer(); }
+      const buffer = await ctx.decodeAudioData(data);
+      if (G.SoundLibrary.effect(name) === record && buffer.duration <= 5) effectBuffers.set(name, { record, buffer });
+    } catch (_) { /* El sintetizador sigue disponible. */ }
+  }
+  function primeEffects() {
+    for (const [name, cue] of Object.entries(G.SOUND_CUES)) if (cue.kind === 'sfx') loadEffect(name);
+  }
+  G.SoundLibrary.ready.then(() => {
+    if (ctx) {
+      primeEffects();
+      if (wanted && G.SoundLibrary.get(wanted)) { cancelPending(); startSong(wanted); }
+    }
+  });
+  G.SoundLibrary.onChange(name => {
+    effectBuffers.delete(name); effectLoads.delete(name);
+    if (G.SOUND_CUES[name].kind === 'sfx') loadEffect(name);
+    else if (ctx && wanted === name) { cancelPending(); startSong(name); }
+  });
+
+  async function validateFile(name, file) {
+    const cue = G.SOUND_CUES[name];
+    if (!cue || !file.size) throw new Error('Invalid audio');
+    const max = (cue.kind === 'sfx' ? 2 : 32) * 1024 * 1024;
+    if (file.size > max) throw new Error('Audio too large');
+    if (cue.kind === 'sfx') {
+      if (!init()) throw new Error('Invalid audio');
+      let buffer;
+      try { buffer = await ctx.decodeAudioData(await file.arrayBuffer()); }
+      catch (_) { throw new Error('Invalid audio'); }
+      if (buffer.duration > 5) throw new Error('Audio too large');
+      return;
+    }
+    await new Promise((resolve, reject) => {
+      const media = new Audio(), url = URL.createObjectURL(file);
+      const done = error => {
+        clearTimeout(timer); media.onloadeddata = media.onerror = null;
+        media.removeAttribute('src'); media.load(); URL.revokeObjectURL(url);
+        if (error) reject(new Error('Invalid audio')); else resolve();
+      };
+      const timer = setTimeout(() => done(true), 10000);
+      media.onloadeddata = () => done(!Number.isFinite(media.duration) || media.duration <= 0);
+      media.onerror = () => done(true);
+      media.preload = 'auto'; media.src = url;
+    });
   }
 
   // Planificador: programa con 150 ms de antelación.
   setInterval(() => {
-    if (!ctx || !current || ctx.state !== 'running') return;
+    if (!ctx || !current || !current.song || ctx.state !== 'running') return;
     const c = current, sd = 60 / c.song.bpm / 4;
+    // Do not replay a backlog of notes after a suspended tab.
+    if (c.next < ctx.currentTime - 0.2) c.next = ctx.currentTime;
     while (c.next < ctx.currentTime + 0.15) {
       const i = c.step % c.song.steps;
       // Swing: retrasa las corcheas a contratiempo.
@@ -348,7 +484,7 @@ G.Audio = (() => {
 
   // ---------------- efectos de sonido ----------------
 
-  const last = {};
+  const last = {}, sampleVoices = new Map();
   let xpCombo = 0, xpT = 0, voices = 0;
 
   const SHOT_PITCH = {
@@ -467,6 +603,16 @@ G.Audio = (() => {
     if (now - (last[key] || 0) < (MIN_GAP[name] || 0)) return;
     if (voices > 24) return;                    // tope de voces simultáneas
     last[key] = now;
+    const sample = effectBuffers.get(name);
+    if (sample && sample.record === G.SoundLibrary.effect(name)) {
+      if (sampleVoices.has(key)) return;
+      const source = ctx.createBufferSource(), gain = ctx.createGain();
+      source.buffer = sample.buffer; gain.gain.value = 0.32;
+      source.connect(gain).connect(sfxBus);
+      voices++; sampleVoices.set(key, source);
+      source.onended = () => { voices--; sampleVoices.delete(key); source.disconnect(); gain.disconnect(); };
+      source.start(); return;
+    }
     voices++; setTimeout(() => voices--, 150);
     try { fn(opts); } catch (e) { /* un efecto nunca debe romper el juego */ }
   }
@@ -506,11 +652,13 @@ G.Audio = (() => {
   }
 
   return {
-    music, sfx, setVolume, toggleMute, unlock, debugMeter, debugStream,
+    music, sfx, setVolume, toggleMute, unlock, debugMeter, debugStream, validateFile,
     /** ¿Ya puede sonar? (el navegador sólo deja tras tocar algo, salvo excepciones) */
     canPlay() { return !!ctx && ctx.state === 'running'; },
     get settings() { return settings; },
     get running() { return !!ctx && ctx.state === 'running'; },
-    get track() { return current && current.name; }
+    get track() { return current && current.name; },
+    get source() { return current ? (current.media || current.sample ? 'file' : 'synth') : null; },
+    get title() { return current?.title || null; }
   };
 })();

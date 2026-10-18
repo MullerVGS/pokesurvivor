@@ -13,6 +13,7 @@ G.RunUI = (() => {
     renderCards(list);
     $('lvl-reroll').onclick = reroll;
     G.UI.show('scr-levelup');
+    G.ChoiceCards.focusFirst($('cards'));
   }
 
   /**
@@ -30,7 +31,9 @@ G.RunUI = (() => {
     const p = G.Game.player;
     p.rerolls = (p.rerolls || 0) + 1;
     G.Audio.sfx('select');
+    G.Tooltip.hide();
     renderCards(G.LevelUp.offer(p));
+    G.ChoiceCards.focusFirst($('cards'));
   }
 
   function renderCards(list) {
@@ -40,36 +43,22 @@ G.RunUI = (() => {
     $('lvl-reroll').classList.toggle('hidden', left <= 0);
     const box = $('cards');
     box.innerHTML = '';
-    list.forEach((c, i) => {
-      const el = document.createElement('div');
-      el.className = 'card';
-      const tag = c.type === 'new'
-        ? `<span class="tag-chip" style="background:${c.color}">Nuevo · ${c.tag}</span>`
-        : c.type === 'up' || c.type === 'evo'
-          ? `<span class="tag-chip" style="background:${c.color}">${c.tag}</span>`
-          : `<span class="tag-chip" style="background:${c.color === '#ffd23f' ? '#ffd23f' : '#9fb1c9'}">${c.tag}</span>`;
-      if (c.type === 'evo') el.classList.add('evo');
-      el.innerHTML =
-        `<div class="ico" style="background:${c.color}33">${G.Icons.html(c.icon, 32)}</div>
-         <div class="txt"><div class="nm">${c.title} ${tag}</div><div class="ds">${c.desc}</div></div>
-         <div class="key">${i + 1}</div>`;
-      el.dataset.sfx = 'none';             // el juego pone su propio sonido al elegir
-      el.dataset.tip = 'card:' + c.key;    // popup de información (tooltip.js)
-      el.onclick = () => pick(i);
-      box.appendChild(el);
-    });
+    G.ChoiceCards.render(box, list.map((c, i) => {
+      const tag = `<span class="tag-chip" style="background:${c.color}">${c.type === 'new' ? 'Nuevo · ' : ''}${c.tag}</span>`;
+      return { icon: c.icon, title: c.title, tag: c.type === 'new' ? '<span class="tag-chip">Nuevo</span>' : tag, desc: c.desc, type: G.Moves.BY_ID[c.icon?.slice(5)]?.type, source: 'card:' + c.key, onPick: () => pick(i), variant: c.type === 'evo' ? 'evo' : '' };
+    }));
   }
 
   function pick(i) {
     if (!offers || !offers[i]) return;
     const c = offers[i], cb = offerCb;
     offers = null; offerCb = null;
+    G.Tooltip.hide();
     $('lvl-reroll').classList.add('hidden');
     if (coopMode) {
       // Se queda la carta elegida a la vista mientras eligen los demás.
-      $('cards').querySelectorAll('.card').forEach((el, j) => el.classList.toggle('picked', j === i));
-      $('cards').classList.add('done');
-    } else G.UI.hide('scr-levelup');
+      G.ChoiceCards.lock($('cards'), i);
+    } else { G.ChoiceCards.release($('cards')); G.UI.hide('scr-levelup'); }
     cb(c);
   }
 
@@ -87,6 +76,8 @@ G.RunUI = (() => {
   function closeLevelUp() {
     offers = null; offerCb = null;
     $('cards').classList.remove('done');
+    G.ChoiceCards.release($('cards'));
+    G.Tooltip.hide();
     G.UI.hide('scr-levelup');
   }
 
@@ -113,10 +104,10 @@ G.RunUI = (() => {
       ${r.judge ? `<div style="grid-column:1/-1"><span>Ante Arceus</span><b class="gold">${G.U.mmss(r.judge.time)} · ${r.judge.bosses} ${r.judge.bosses === 1 ? 'legendario' : 'legendarios'}</b></div>` : ''}
       <div style="grid-column:1/-1"><span>Pokémonedas ganadas</span>
         <b class="gold"><span class="coin"></span> +${r.coins}</b>
-        <div style="font-size:12px;color:var(--muted)">${r.breakdown}</div></div>
+        <div class="result-breakdown">${r.breakdown}</div></div>
       ${r.t1 || r.t10 ? `<div style="grid-column:1/-1"><span>Tickets del gacha</span><b>
         ${r.t1 ? G.Icons.html('ticket', 22) + ' +' + r.t1 + ' ' : ''}${r.t10 ? G.Icons.html('ticket10', 22) + ' +' + r.t10 + ' ×10' : ''}</b></div>` : ''}
-      <div style="grid-column:1/-1"><span>Movimientos</span><b style="font-size:15px">
+      <div style="grid-column:1/-1"><span>Movimientos</span><b class="result-moves">
         ${r.moves.map(m => `${G.Icons.html('move:' + m.id, 16)} ${m.name} Nv.${m.lvl}`).join(' · ') || '—'}</b></div>
       ${r.caught && r.caught.length ? `<div style="grid-column:1/-1" class="caught"><span>${G.Icons.html('shiny', 12)} Shinies conseguidos</span>
         <div class="caught-row" id="over-caught"></div></div>` : ''}
@@ -154,6 +145,7 @@ G.RunUI = (() => {
     $('bond-back').onclick = bondBack;
     renderBond();
     G.UI.show('scr-bond');
+    G.ChoiceCards.focusFirst($('bond-cards'));
   }
 
   function renderBond() {
@@ -166,36 +158,28 @@ G.RunUI = (() => {
     bond.list = step2 ? opt.loose.filter(m => m !== first) : opt.loose;
     const box = $('bond-cards');
     box.innerHTML = '';
-    bond.list.forEach((m, i) => {
-      const col = G.U.TYPE_COLOR[m.type];
-      const desc = opt.mode === 'add' ? 'Se lanzará a la vez que ' + names(opt.group) + '.'
-        : step2 ? 'Se lanzará a la vez que ' + first.name + '. Queda un hueco libre.'
-        : m.desc || '';
-      const el = document.createElement('div');
-      el.className = 'card' + (opt.mode === 'add' || step2 ? ' bond' : '');
-      el.innerHTML =
-        `<div class="ico" style="background:${col}33">${G.Icons.html('move:' + m.id, 32)}</div>
-         <div class="txt"><div class="nm">${m.name} <span class="tag-chip" style="background:${col}">Nv.${m.lvl}</span></div><div class="ds">${desc}</div></div>
-         <div class="key">${i + 1}</div>`;
-      el.dataset.sfx = 'none';
-      el.dataset.tip = 'inst:' + m.id;
-      el.onclick = () => pickBond(i);
-      box.appendChild(el);
-    });
+    G.ChoiceCards.render(box, bond.list.map((m, i) => ({
+      icon: 'move:' + m.id, title: m.name,
+      tag: `<span class="tag-chip">Nv.${m.lvl}</span>`, type: m.type, desc: m.def.desc,
+      source: 'inst:' + m.id, onPick: () => pickBond(i), variant: opt.mode === 'add' || step2 ? 'bond' : ''
+    })));
   }
 
   function pickBond(i) {
     if (!bond || !bond.list[i]) return;
     const m = bond.list[i];
+    G.Tooltip.hide();
     if (bond.opt.mode === 'pair' && !bond.first) {
       bond.first = m;
       G.Audio.sfx('select');
       renderBond();
+      G.ChoiceCards.focusFirst($('bond-cards'));
       return;
     }
     const picked = bond.opt.mode === 'add' ? [m] : [bond.first, m];
     const cb = bond.cb;
     bond = null;
+    G.ChoiceCards.release($('bond-cards'));
     G.UI.hide('scr-bond');
     cb(picked);
   }
@@ -203,10 +187,14 @@ G.RunUI = (() => {
   function bondBack() {
     if (!bond) return;
     bond.first = null;
+    G.Tooltip.hide();
     renderBond();
+    G.ChoiceCards.focusFirst($('bond-cards'));
   }
 
   function showPause(coop = false) {
+    const p = G.Game.player;
+    $('pause-partner').innerHTML = p ? `<div><b>${p.mon.name}</b> <span>Nv. ${p.level}</span></div><div>${G.UI.typeChips(p.mon.types)}<span>${Math.max(0, Math.ceil(p.hp))} / ${Math.round(p.maxHp)} HP</span></div>` : '';
     G.UI.soundControls($('pause-sound'));
     $('pause-coop').classList.toggle('hidden', !coop);
     $('btn-quit').textContent = coop ? 'Salir de la partida' : 'Abandonar run';

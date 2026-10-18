@@ -2,7 +2,7 @@
 
 Bullet-heaven con Pokémon al estilo de Survivor.io y Megabonk, con sprites de
 *Pokémon Mundo Misterioso*, capa roguelike, **966 Pokémon de las 9 generaciones**,
-shinies y gacha por región. Música y efectos compuestos para el juego.
+shinies y gacha por región. Trilhas de Pokémon das nove gerações, efeitos e interface estável inspirada em FireRed/LeafGreen. Este fork é de uso pessoal; detalhes em `docs/UI-AUDIO.md`.
 
 HTML + CSS + JavaScript vanilla sobre Canvas 2D. Sin build, sin dependencias y
 **todo local**: no necesita internet para jugar.
@@ -114,7 +114,7 @@ index.html              pantallas + orden de carga
 css/style.css           interfaz estilo Mundo Misterioso
 assets/pokemon/{dex}/   hojas de sprites PMD (Idle, Walk, Attack, Shoot, Charge, Hurt, Faint)
 assets/pokemon/{dex}/s/ las mismas en versión shiny
-assets/fonts/           Pixelify Sans (OFL) y su versión con números redibujados (tools/make_font.py)
+assets/fonts/           Fuente Gen III, procedencia y fuentes heredadas (tools/make_gen3_font.py)
 js/
   net/      social (apodo, amigos, salas), net (WebRTC + relé),
             coop (partida en grupo), ranking
@@ -166,9 +166,63 @@ python tools/fetch_credits.py    # CREDITS.md
 - **Iconos.** Mapas de caracteres convertidos a canvas y data URLs; siempre a
   múltiplos enteros de su tamaño para que el píxel quede limpio.
 
+## HUD de batalla
+
+Vida con marcos clásicos de Pokémon un 15 % mayores para ti y tus compañeros, con EXP en tu ficha.
+Tiempo, bioma, derrotados y monedas se reúnen en un panel compacto arriba.
+Los ataques están centrados abajo: nombre, icono, tipo, nivel y recarga real,
+o una fila de iconos en pantallas pequeñas, con un contorno para el activo. Los vínculos y controles existentes se conservan.
+El editor táctil usa el mismo dibujo y medidas del HUD; el minimapa deja espacio al resumen, clima, jefe y pausa.
+Pruebas y medición: `tools/test-battle-hud.cjs`.
+
+## Tipos y filtros avanzados
+
+La Pokédex abre una fila de 18 iconos con **Filtros avanzados**. Permite seleccionar
+hasta dos tipos: Agua + Dragón muestra Pokémon que tienen ambos. Las opciones sin
+coincidencias con la generación y el filtro de colección se desactivan. Seleccionar
+de nuevo un tipo lo retira; **Limpiar tipos** reinicia la combinación.
+
+Al seleccionar un movimiento se abre directamente la consulta interactiva de **T**,
+con la Pokédex visible detrás. Cerrar, Escape o T devuelve el foco al movimiento,
+conservando los filtros, la selección y la posición de la lista.
+
+Se conservan los sprites animados de Pokémon. Los símbolos oficiales de tipo se
+comparten entre filtros, etiquetas y emblemas del HUD mediante `js/ui/type-icons.js`.
+`python3 tools/fetch_type_icons.py --check` verifica las 18 imágenes locales (24.304 bytes).
+
+Para probar con los 966 Pokémon desbloqueados, abrir
+<http://localhost:3095/dev.html?preview=collection>. Es una colección de invitado en
+memoria, con las variantes shiny disponibles; no modifica una cuenta ni se guarda.
+El parámetro sólo funciona en `dev.html`, no en el build publicado.
+
+Pruebas: `tools/test-pokemon-ui.cjs`, `tools/test-collection-preview.cjs` y `tools/test-ux.cjs`.
+
+## Mejoras y cartas de nivel
+
+Las mejoras permanentes muestran el bonus actual, el siguiente nivel, el precio y
+cuántas Pokémonedas faltan. Mantienen las mejoras por Pokémon y el foco al comprar.
+Nivel y vínculo vuelven a una lista sencilla con elección directa, descripción y
+etiqueta de tipo en la esquina superior izquierda. Sin Detalles ni confirmación adicional.
+Tras **1 segundo de hover sobre un movimiento**, aparece una ficha compacta FRLG:
+datos/efecto a la izquierda y golpe/animación a la derecha. Se cierra al salir;
+no pausa ni bloquea clics. T o mantener pulsado permite explorar sin elegir.
+Las etiquetas rectangulares de tipo se inspiran en FRLG; los símbolos de los
+filtros avanzados y las sprites animadas se conservan.
+Pruebas: `tools/test-progression-ui.cjs` (precios, límites, consultas, elección,
+cooperativo y vínculo), `tools/test-inspection-ui.cjs` (consulta explícita y
+controles visibles), además de UI Pokémon y UX.
+
 ## Créditos y licencia
 
 Sprites de [SpriteCollab](https://github.com/PMDCollab/SpriteCollab) bajo
 **CC BY-NC 4.0** — uso **no comercial** y con atribución; la lista de artistas
 está en [`CREDITS.md`](CREDITS.md). Pokémon es propiedad de Nintendo, Creatures
 Inc. y GAME FREAK. Proyecto de fan sin ánimo de lucro.
+
+## Interfaz FireRed/LeafGreen
+
+Fuente de generación III en menús y combate, ventanas estables y ficha Pokémon
+con datos, características y movimientos seleccionables. Los controles y reglas
+del survivor se mantienen. Iniciar la vista local: `bash tools/preview-ui.sh`;
+abrir `http://localhost:3095/dev.html`. El build está en `/` y `/en/`.
+Detalles y validación en [docs/UI-AUDIO.md](docs/UI-AUDIO.md).

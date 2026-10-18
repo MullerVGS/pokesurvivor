@@ -1,6 +1,6 @@
 <!doctype html>
 <!-- dev.html: página fuente. Aquí se edita; index.html lo genera tools/build.js. -->
-<html lang="es">
+<html lang="es" data-ui="frlg">
 <head>
 <meta charset="utf-8">
 <meta name="robots" content="noindex">
@@ -41,8 +41,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="PokéSurvivor">
 <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
-<link rel="preload" href="assets/fonts/PixelifyPS-400.ttf" as="font" type="font/ttf" crossorigin>
-<link rel="preload" href="assets/fonts/PixelifyPS-700.ttf" as="font" type="font/ttf" crossorigin>
+<link rel="preload" href="assets/fonts/gen3/PokemonGen3-mono.woff2" as="font" type="font/woff2" crossorigin>
 <!-- seo:begin -->
 <!-- Datos estructurados para Google (tipo de página: videojuego gratuito) -->
 <script type="application/ld+json">
@@ -91,7 +90,7 @@
   <div class="box auth-box">
     <div class="logo">
       <div class="t1">PokéSurvivor</div>
-      <div class="t2">Mundo Misterioso</div>
+      <div class="t2">Una nueva aventura</div>
     </div>
     <p class="login-tag">Tu aventura continúa aquí.</p>
     <button id="btn-google" class="auth-button auth-google hidden" type="button">
@@ -177,7 +176,7 @@
   <div class="menu-left">
     <div class="logo">
       <div class="t1">PokéSurvivor</div>
-      <div class="t2">Mundo Misterioso</div>
+      <div class="t2">Una nueva aventura</div>
     </div>
     <div class="partner-card">
       <canvas id="menu-partner" class="stage" width="260" height="200"></canvas>
@@ -268,8 +267,8 @@
     <h3>Contenido de terceros</h3>
     <p>Sprites de <a href="https://github.com/PMDCollab/SpriteCollab" target="_blank" rel="noopener">SpriteCollab</a>
       (CC BY-NC 4.0, créditos completos en CREDITS.md del repositorio). Datos de la Pokédex de
-      <a href="https://pokeapi.co/" target="_blank" rel="noopener">PokeAPI</a>. Fuente Pixelify Sans (OFL).
-      La música y los efectos de sonido son originales del proyecto.</p>
+      <a href="https://pokeapi.co/" target="_blank" rel="noopener">PokeAPI</a>. Fuente Pokémon Gen III · ArcaneNibble/pokefont.
+      La banda sonora incluye música de Pokémon (Nintendo/Creatures/GAME FREAK), recopilada por ENLS’s Pre-Looped Music Library. Los efectos restantes se generan en el juego.</p>
     <h3>Contacto y retirada de contenido</h3>
     <p>Si eres titular de derechos y quieres que retiremos algo, escríbenos y lo quitaremos lo
       antes posible: <a id="legal-mail" href="#"></a></p>
@@ -438,12 +437,16 @@
   <div class="box wide">
     <div class="row between"><h2>Pokémon <span id="dex-total" class="sub" style="font-size:15px"></span></h2><button class="btn small ghost" data-back>Volver</button></div>
     <div class="gen-tabs" id="dex-gens"></div>
+    <div class="dex-advanced">
+      <div class="dex-advanced-bar"><button type="button" class="btn small ghost" id="dex-type-toggle" aria-expanded="false" aria-controls="dex-type-options">Filtros avanzados</button><span id="dex-type-selection"></span><button type="button" class="btn small ghost" id="dex-type-clear" hidden>Limpiar tipos</button><span class="dex-matches"><span id="dex-matches" aria-live="polite"></span> <span id="dex-results-label">resultados</span></span></div>
+      <div id="dex-type-options" class="dex-type-options" role="group" aria-label="Tipos de Pokémon" hidden></div>
+    </div>
     <div class="split" style="margin-top:8px">
       <div>
         <div class="filters" id="dex-filters"></div>
         <div class="grid" id="dex-grid"></div>
       </div>
-      <div class="panel" id="dex-detail"></div>
+      <div class="panel pokemon-summary" id="dex-detail" aria-label="Datos del Pokémon"></div>
     </div>
   </div>
 </section>
@@ -455,13 +458,15 @@
     <div class="upg-head">
       <canvas id="upg-stage" class="stage" width="120" height="96"></canvas>
       <div class="grow">
-        <p class="sub" style="margin:0">Cada Pokémon tiene sus propias mejoras: sólo cuentan cuando juegas con él.</p>
-        <div class="row" style="margin-top:8px">
-          <label for="upg-mon" style="margin:0">Pokémon</label>
-          <select id="upg-mon" class="field" style="width:auto;min-width:220px"></select>
+        <div class="upg-identity"><h3 id="upg-name"></h3><div id="upg-types"></div></div>
+        <div class="row upg-selector">
+          <label for="upg-mon">Pokémon</label>
+          <select id="upg-mon" class="field"></select>
         </div>
+        <p class="sub upg-help">Cada Pokémon tiene sus propias mejoras: sólo cuentan cuando juegas con él.</p>
       </div>
     </div>
+    <div class="upg-section"><h3>Mejoras permanentes</h3><span><span class="coin"></span> <b id="upg-balance"></b></span></div>
     <div class="upg" id="upg-list"></div>
   </div>
 </section>
@@ -500,31 +505,30 @@
 
 <!-- ====== Durante la run ====== -->
 <section id="scr-levelup" class="scr dim hidden">
-  <div class="box center">
-    <h2>¡Nivel <span id="lvl-num">2</span>!</h2>
+  <div class="box reward-window">
+    <h2>¡Nivel <span id="lvl-num"></span>!</h2>
     <p class="sub">Elige una recompensa · <kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd></p>
     <div id="cards" class="cards"></div>
-    <button id="lvl-reroll" class="btn small ghost hidden" data-sfx="none" style="margin-top:10px">Cambiar opciones (<span id="lvl-rr-n">1</span>) · <kbd>R</kbd></button>
-    <p id="lvl-wait" class="note hidden"></p>
+    <div class="reward-foot"><button id="lvl-reroll" class="btn small ghost" data-sfx="none">Cambiar opciones (<span id="lvl-rr-n"></span>) · R</button><span id="lvl-wait" class="note hidden"></span></div>
   </div>
 </section>
 
 <section id="scr-bond" class="scr dim hidden">
-  <div class="box center">
-    <h2 class="bond-title">¡Vínculo!</h2>
-    <p class="sub bond-hint">Los movimientos unidos se lanzan a la vez y ocupan un solo hueco</p>
-    <p id="bond-sub" class="sub"></p>
+  <div class="box reward-window">
+    <h2>Vínculo</h2><p id="bond-sub" class="sub"></p>
     <div id="bond-cards" class="cards"></div>
-    <div class="row" style="justify-content:center"><button id="bond-back" class="btn hidden">Atrás</button></div>
+    <div class="reward-foot"><button id="bond-back" class="btn small ghost hidden" data-sfx="none">Volver</button><p class="note">Los movimientos unidos se lanzan a la vez, cada uno con su recarga.</p></div>
   </div>
 </section>
 
 <section id="scr-pause" class="scr dim hidden">
   <div class="box center" style="width:min(460px,100%)">
     <h2>Pausa</h2>
+    <div id="pause-partner" class="run-partner"></div>
     <p class="sub kbd-hint"><kbd>WASD</kbd> moverse · <kbd>1</kbd>–<kbd>4</kbd> movimiento · <kbd>Q</kbd>/<kbd>E</kbd> o rueda ciclar · <kbd>F</kbd> recoger objeto · <kbd>Esc</kbd> pausa</p>
     <p class="sub touch-hint">Arrastra el dedo para moverte · toca un ataque para cambiarlo</p>
     <p id="pause-coop" class="note hidden">Partida en grupo: el juego sigue mientras estás aquí.</p>
+    <p class="sub">Movimientos: pasa el ratón 1 segundo para consultar. T o mantener pulsado para explorar.</p>
     <div id="pause-sound" class="sound-inline"></div>
     <div class="row" style="justify-content:center">
       <button id="btn-resume" class="btn gold">Continuar</button>
@@ -549,12 +553,16 @@
 <script defer src="js/data/lang-en.js"></script>
 <script defer src="js/core/settings.js"></script>
 <script defer src="js/data/music.js"></script>
+<script defer src="js/data/sound-cues.js"></script>
+<script defer src="js/data/sound-pack.js"></script>
+<script defer src="js/core/presentation.js"></script>
 <script defer src="js/data/pokedex.js"></script>
 <script defer src="js/data/sprites-meta.js"></script>
 <!-- núcleo -->
 <script defer src="js/core/firebase-config.js"></script>
 <script defer src="js/core/auth.js"></script>
 <script defer src="js/core/db.js"></script>
+<script defer src="js/core/sound-library.js"></script>
 <script defer src="js/core/audio.js"></script>
 <script defer src="js/core/input.js"></script>
 <script defer src="js/core/touch.js"></script>
@@ -609,25 +617,32 @@
 <script defer src="js/net/coop.js"></script>
 <script defer src="js/net/ranking.js"></script>
 <!-- interfaz -->
+<script defer src="js/ui/type-icons.js"></script>
 <script defer src="js/ui/icons.js"></script>
 <script defer src="js/ui/ui.js"></script>
 <script defer src="js/ui/dialogs.js"></script>
+<script defer src="js/ui/battle-panels.js"></script>
 <script defer src="js/ui/hud.js"></script>
 <script defer src="js/ui/minimap.js"></script>
 <script defer src="js/ui/move-preview.js"></script>
 <script defer src="js/ui/tooltip.js"></script>
 <script defer src="js/ui/tooltip-sources.js"></script>
+<script defer src="js/ui/info-panel.js"></script>
 <script defer src="js/ui/login.js"></script>
 <script defer src="js/ui/test.js"></script>
+<script defer src="js/ui/pokemon-summary.js"></script>
+<script defer src="js/ui/upgrade-view.js"></script>
 <script defer src="js/ui/menu.js"></script>
 <script defer src="js/ui/slots.js"></script>
 <script defer src="js/ui/gacha-ui.js"></script>
+<script defer src="js/ui/choice-cards.js"></script>
 <script defer src="js/ui/run-ui.js"></script>
 <script defer src="js/ui/item-ui.js"></script>
 <script defer src="js/ui/social-ui.js"></script>
 <script defer src="js/ui/ranking-ui.js"></script>
 <script defer src="js/ui/mod-ui.js"></script>
 <script defer src="js/ui/goals-ui.js"></script>
+<script defer src="js/ui/sound-library-ui.js"></script>
 <script defer src="js/ui/settings-ui.js"></script>
 <script defer src="js/ui/layout-ui.js"></script>
 <script defer src="js/ui/support-ui.js"></script>
@@ -635,6 +650,7 @@
 <script defer src="js/core/updater.js"></script>
 <!-- juego -->
 <script defer src="js/game.js"></script>
+<script defer src="js/ui/collection-preview.js"></script>
 <script defer src="js/main.js"></script>
 <!-- scripts:end -->
 </body>

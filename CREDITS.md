@@ -1,5 +1,14 @@
 # Créditos
 
+## Iconos de tipos
+
+18 símbolos originales de Pokémon Scarlet/Violet (Nintendo / Creatures Inc. / GAME FREAK),
+distribuidos por [PokéAPI/sprites](https://github.com/PokeAPI/sprites), commit
+`289e842364648ec0495ae4ba12f48d5cbfbf670b`. Son los archivos `small` de 60×60 px,
+sin modificar, usados en filtros, etiquetas y emblemas de movimientos de la UI/HUD.
+Origen y SHA-256 por archivo: [assets/ui/types/sources.json](assets/ui/types/sources.json).
+La licencia del repositorio de distribución no transfiere los derechos del arte Pokémon.
+
 ## Sprites
 
 Los sprites estilo *Pokémon Mundo Misterioso* vienen de
@@ -131,12 +140,23 @@ descargados una vez y guardados en `js/data/pokedex.js`.
 
 ## Fuente
 
-[Pixelify Sans](https://github.com/eifetx/Pixelify-Sans) (SIL Open Font License 1.1,
-licencia en `assets/fonts/OFL.txt`). El juego usa una versión modificada,
-"Pixelify PS", con los números redibujados para distinguirlos mejor
-(`tools/make_font.py`).
+La interfaz usa la conversión OpenType de generación III (LG/FR/E) de
+[ArcaneNibble/pokefont](https://github.com/ArcaneNibble/pokefont), release `0f5c9f`.
+Se conservan los contornos; sólo se retiran las capas de color para adaptar el
+texto a ventanas claras y overlays oscuros. Procedencia, hash y alcance de la
+licencia del conversor en [assets/fonts/gen3/SOURCE.txt](assets/fonts/gen3/SOURCE.txt).
+
+Los archivos heredados de [Pixelify Sans](https://github.com/eifetx/Pixelify-Sans)
+y "Pixelify PS" permanecen con su licencia SIL OFL en `assets/fonts/OFL.txt`.
+Ya no se cargan en la interfaz del juego.
 
 ## Marca
 
 Pokémon es propiedad de Nintendo, Creatures Inc. y GAME FREAK.
 Este es un proyecto de fan sin ánimo de lucro.
+
+## Música e efeitos deste fork
+
+Trilhas originais de Pokémon: Nintendo / Creatures Inc. / GAME FREAK. Coleção de áudio e pontos de loop: [ENLS’s Pre-Looped Music Library](https://enls.eu/prelooped/). A seleção local cobre as nove gerações, com 65 arquivos para menu, biomas, chefes, fendas, julgamento, cura, nível e confirmação. Os demais efeitos continuam no sintetizador do jogo.
+
+Origem por faixa, jogo, geração, URL, SHA-256 original e SHA-256 da cópia otimizada em [sources.json](assets/audio/pokemon/sources.json). As cópias locais foram convertidas para Vorbis a 32 kHz e preservam introdução e trecho de loop; não são composições próprias do projeto.

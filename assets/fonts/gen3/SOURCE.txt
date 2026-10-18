@@ -1,0 +1,21 @@
+Font asset, acquired 2026-10-18.
+
+Source: ArcaneNibble/pokefont — Pokémon Generation III (LG/FR/E) OpenType font
+Repository: https://github.com/ArcaneNibble/pokefont
+Release: 0f5c9f
+Version embedded in font: 0f5c9f5ff577287b3a5baa5b9ffbeba0796feadc
+Asset: https://github.com/ArcaneNibble/pokefont/releases/download/0f5c9f/Emerald.ttf
+Original SHA-256: 8d60fed0b277d81e525daa5579737814f7897269595c5618d98304110491f19a
+
+Emerald.ttf is an unmodified original. PokemonGen3-mono.woff2 preserves its
+outlines, metrics and character maps; removes COLR/CPAL so CSS/canvas colors
+work on both light windows and dark combat tooltips; compresses to WOFF2.
+Rebuild: python3 tools/make_gen3_font.py
+
+UPSTREAM-LICENSE and UPSTREAM-README.md were retrieved from repository main
+on 2026-10-18. The author's 0-Clause BSD statement applies to the conversion
+software and custom glyphs in xtra.png, not a new license for Pokémon artwork.
+Pokémon and original game artwork: Nintendo / Creatures / GAME FREAK.
+
+Latin coverage checked: ÁÉÍÓÚáéíóúÑñÜü¿¡ÀÂÃÇÊÔÕàâãçêôõ, numbers, ×, …, ♂, ♀.
+Unsupported symbols such as the ordinary → use the existing system fallback.

@@ -2,7 +2,7 @@
  * Se dibuja en coordenadas de PANTALLA (sin la transformación de cámara).
  */
 G.HUD = (() => {
-  const F = (w, s) => `${w} ${s}px Pixelify,"Segoe UI",system-ui,sans-serif`;
+  const F = (w, s) => G.Presentation.font(w, s);
 
   function roundRect(ctx, x, y, w, h, r) {
     ctx.beginPath();
@@ -78,31 +78,11 @@ G.HUD = (() => {
     G.Tooltip.clearZones();          // zonas con popup de información (tooltip.js)
     const touch = G.Touch.active;
 
-    // ---------- barra de experiencia (borde superior) ----------
-    const xpF = pl.xp / pl.xpNext;
-    ctx.fillStyle = 'rgba(0,0,0,.5)';
-    ctx.fillRect(0, 0, w, 7);
-    const g = ctx.createLinearGradient(0, 0, w, 0);
-    g.addColorStop(0, '#4fd1ff'); g.addColorStop(1, '#a98bff');
-    ctx.fillStyle = g;
-    ctx.fillRect(0, 0, w * G.U.clamp(xpF, 0, 1), 7);
-
-    // ---------- vida + nivel ----------
-    const px = 16, py = 20;
-    ctx.font = F(800, 13);
-    ctx.fillStyle = '#eaf2ff';
-    ctx.textAlign = 'left';
-    ctx.fillText(pl.mon.name, px, py + 10);
-
-    ctx.font = F(700, 11);
-    ctx.fillStyle = '#ffcb3d';
-    ctx.fillText('Nv. ' + pl.level, px, py + 26);
-
-    bar(ctx, px + 48, py + 17, 168, 11, pl.hp / pl.maxHp, '#ff5f6d');
-    ctx.font = F(700, 10);
-    ctx.fillStyle = 'rgba(255,255,255,.95)';
-    ctx.textAlign = 'center';
-    ctx.fillText(Math.ceil(pl.hp) + ' / ' + Math.round(pl.maxHp), px + 48 + 84, py + 26);
+    const mates = G.Coop.active ? G.Coop.mates.filter(m => m.connected) : [];
+    const status = G.BattlePanels.healthLayout(w, h, mates.length);
+    G.BattlePanels.health(ctx, status.player, pl);
+    G.Tooltip.zone(status.player.x, status.player.y, status.player.w, status.player.h, 'mon:' + pl.dex);
+    const px = status.player.x + 8, py = status.buffsY - 34;
 
     // buffs activos
     const COL = { atk: '#ff6b4d', spd: '#7fe0ff', def: '#b0b8c8', regen: '#5fe08a' };
@@ -123,43 +103,34 @@ G.HUD = (() => {
       bx += tw + 5;
     }
 
-    // ---------- reloj / bioma / kills ----------
-    ctx.textAlign = 'center';
-    ctx.font = F(800, 26);
-    ctx.fillStyle = 'rgba(255,255,255,.95)';
-    ctx.fillText(G.U.mmss(st.time), w / 2, 42);
-    ctx.font = F(600, 10);
-    ctx.fillStyle = '#8fa3c4';
-    ctx.fillText(G.World.biomeName().toUpperCase() + '  ·  ' + pl.kills + ' DERROTADOS  ·  ' + pl.coins + ' MONEDAS', w / 2, 58);
-
-    // ---------- clima (arriba a la derecha) ----------
-    const wx = G.Weather.current;
+    // Shared top layout keeps summary, climate, boss and touch pause apart.
+    const wx = G.Weather.current, boss = G.EnemyMgr.all().find(e => e.boss && !e.dead && !G.RoamingBosses.roaming(e));
+    const top = G.BattlePanels.topLayout(w, h, status, wx, boss);
+    G.BattlePanels.summary(ctx, top.summary, pl, st);
     if (wx) {
-      ctx.font = F(800, 11);
-      ctx.textAlign = 'left';
-      const txt = wx.name.toUpperCase() + ' · ' + Math.ceil(wx.left) + 's';
-      const tw = ctx.measureText(txt).width + 40;
-      const x0 = w - tw - 16 - (touch ? 56 : 0), y0 = 14;
-      roundRect(ctx, x0, y0, tw, 26, 9);
-      ctx.fillStyle = 'rgba(0,0,0,.55)'; ctx.fill();
-      G.Icons.draw(ctx, wx.icon, x0 + 6, y0 + 3, 20);
-      ctx.fillStyle = wx.color;
-      ctx.fillText(txt, x0 + 32, y0 + 17);
-      G.Tooltip.zone(x0, y0, tw, 26, 'wx:' + wx.kind);
+      const r = top.weather;
+      roundRect(ctx, r.x, r.y, r.w, r.h, 6);
+      ctx.fillStyle = 'rgba(0,0,0,.65)'; ctx.fill();
+      ctx.font = F(800, 12); ctx.textAlign = 'left'; ctx.fillStyle = wx.color;
+      if (r.narrow) {
+        ctx.fillText(G.T(wx.name).toUpperCase(), r.x + 6, r.y + 16, r.w - 12);
+        G.Icons.draw(ctx, wx.icon, r.x + 6, r.y + 22, 18);
+        ctx.fillText(Math.ceil(wx.left) + 's', r.x + 30, r.y + 37, r.w - 36);
+      } else {
+        G.Icons.draw(ctx, wx.icon, r.x + 6, r.y + 4, 20);
+        ctx.fillText(G.T(wx.name).toUpperCase() + ' · ' + Math.ceil(wx.left) + 's', r.x + 32, r.y + 19, r.w - 38);
+      }
+      G.Tooltip.zone(r.x, r.y, r.w, r.h, 'wx:' + wx.kind);
     }
-
-    // ---------- minimapa (debajo del clima; ver minimap.js) ----------
-    G.Minimap.draw(ctx, w, h, pl);
-
-    // ---------- barra del jefe ----------
-    const boss = G.EnemyMgr.all().find(e => e.boss && !e.dead && !G.RoamingBosses.roaming(e));
     if (boss) {
-      const bw = Math.min(420, w - 80);
-      bar(ctx, (w - bw) / 2, 70, bw, 12, boss.hp / boss.maxHp, '#ffcb3d');
-      ctx.font = F(800, 10);
-      ctx.fillStyle = '#20160a';
-      ctx.fillText(boss.name.toUpperCase(), w / 2, 80);
+      const r = top.boss;
+      bar(ctx, r.x, r.y, r.w, r.h, boss.hp / boss.maxHp, '#ffcb3d');
+      ctx.font = F(800, 14); ctx.textAlign = 'center'; ctx.fillStyle = '#fff8dc';
+      ctx.strokeStyle = '#20160a'; ctx.lineWidth = 3;
+      ctx.strokeText(G.T(boss.name).toUpperCase(), r.x + r.w / 2, r.y + 16, r.w - 12);
+      ctx.fillText(G.T(boss.name).toUpperCase(), r.x + r.w / 2, r.y + 16, r.w - 12);
     }
+    G.Minimap.draw(ctx, w, h, pl, [top.summary, top.weather, top.boss].filter(Boolean));
 
     // ---------- aviso ----------
     // ---------- shinies fuera de pantalla: destello en el borde ----------
@@ -200,7 +171,7 @@ G.HUD = (() => {
       bx += tw + 5;
     }
 
-    if (G.Coop.active) drawCoop(ctx, w, h, pl, px, py + (bx > px ? 56 : 40));
+    if (G.Coop.active) drawCoop(ctx, w, h, pl, status.allies, mates);
 
     // Grieta: flecha grande que late en el borde si no se ve, y si se ve, una
     // flecha que bota encima; en la arena, cuenta atrás.
@@ -295,143 +266,14 @@ G.HUD = (() => {
       ctx.restore();
     }
 
-    // ---------- ranura de movimientos ----------
-    const S = 54, GAP = 9;
-    const n = Math.max(1, pl.slots.length);
-    const totalW = n * S + (n - 1) * GAP;
-    let sx = (w - totalW) / 2;
-    // Por encima de la barra de inicio del iPhone (allí los toques a veces no llegan).
-    let sy = h - S - 18 - (touch ? Math.min(28, G.Touch.safeArea().bottom) : 0);
-    // En móvil, donde la haya puesto el jugador: el bloque objeto + todos los
-    // huecos (aunque aún no estén llenos), por su centro, como en el editor
-    // (layout-ui.js); los ataques nuevos van saliendo hacia la derecha.
-    const pb = touch && G.Touch.spot('bar');
-    if (pb) {
-      const nAll = Math.max(n, pl.maxMoves), bw = S + 18 + nAll * S + (nAll - 1) * GAP;
-      sx = G.U.clamp(pb[0] * w - bw / 2, 6, Math.max(6, w - bw - 6)) + S + 18;
-      sy = G.U.clamp(pb[1] * h - S / 2, 24, h - S - 6);
-    }
-    const BOND = '#ff8ad8';
-    const cdOf = m => m.kind === 'orbit' ? 0 : G.U.clamp(m.t / (m.cd * pl.cdMul), 0, 1);
-
-    for (let i = 0; i < n; i++) {
-      const g = pl.slots[i] || [];
-      const m = g[0];
-      const fused = g.length > 1;
-      const on = i === pl.active;
-      const x = sx + i * (S + GAP);
-      const y = on ? sy - 6 : sy;
-      // Tocar (o hacer clic en) un icono activa ese movimiento.
-      if (m) G.Touch.addButton(x, y, S, S, () => { if (G.Game.state === 'playing' && pl.active !== i) { pl.setActive(i); G.Audio.sfx('click'); } }, GAP / 2 + 3);
-      if (m) G.Tooltip.zone(x, y, S, S, 'slot:' + i);
-      const col = m ? G.U.TYPE_COLOR[m.type] : '#4a5468';
-
-      // fondo
-      roundRect(ctx, x, y, S, S, 12);
-      ctx.fillStyle = on ? 'rgba(20,30,50,.95)' : 'rgba(10,16,28,.8)';
-      ctx.fill();
-      if (on) {
-        ctx.strokeStyle = '#f4f8ff'; ctx.lineWidth = 2;
-        ctx.strokeRect(x - 4, y - 4, S + 8, S + 8);
-      }
-      roundRect(ctx, x, y, S, S, 12);
-      ctx.lineWidth = on ? 2.5 : fused || (m && m.evolved) ? 2 : 1.2;
-      // Vínculo: borde rosa. Evolucionado: dorado.
-      ctx.strokeStyle = fused ? BOND : m && m.evolved ? '#ffd23f' : on ? col : 'rgba(140,170,210,.22)';
-      ctx.stroke();
-
-      if (!m) continue;
-
-      if (fused) {
-        // Vínculo: los movimientos en una cuadrícula de 2×2, cada uno con su recarga.
-        const C = 22, P = (S - C * 2) / 3;
-        g.forEach((gm, k) => {
-          const cx = x + P + (k % 2) * (C + P), cy = y + P + Math.floor(k / 2) * (C + P);
-          G.Icons.draw(ctx, 'move:' + gm.id, cx, cy, C);
-          const f = cdOf(gm);
-          if (f > 0) { ctx.fillStyle = 'rgba(0,0,0,.55)'; ctx.fillRect(cx, cy, C, C * f); }
-          if (gm.evolved) { ctx.strokeStyle = '#ffd23f'; ctx.lineWidth = 1; ctx.strokeRect(cx + 0.5, cy + 0.5, C - 1, C - 1); }
-          // Destello al lanzarse.
-          const fl = 1 - (performance.now() - (gm.castAt || 0)) / 180;
-          if (fl > 0) { ctx.fillStyle = 'rgba(255,255,255,' + (fl * 0.55).toFixed(2) + ')'; ctx.fillRect(cx, cy, C, C); }
-        });
-      } else {
-        // recarga: se vacía de abajo a arriba
-        const cdFrac = cdOf(m);
-        if (cdFrac > 0) {
-          ctx.save();
-          roundRect(ctx, x, y, S, S, 12); ctx.clip();
-          ctx.fillStyle = 'rgba(0,0,0,.6)';
-          ctx.fillRect(x, y, S, S * cdFrac);
-          ctx.restore();
-        }
-
-        // emblema del tipo + insignia de la familia
-        G.Icons.draw(ctx, 'move:' + m.id, x + (S - 32) / 2, y + (S - 32) / 2 - 2, 32);
-
-        // nivel del movimiento (puntitos)
-        const dots = m.def.maxLvl;
-        const dw = 4, dgap = 2;
-        const tw = dots * dw + (dots - 1) * dgap;
-        for (let d = 0; d < dots; d++) {
-          ctx.fillStyle = d < m.lvl ? col : 'rgba(255,255,255,.18)';
-          ctx.fillRect(x + (S - tw) / 2 + d * (dw + dgap), y + S - 9, dw, 3);
-        }
-      }
-
-      // tecla
-      ctx.font = F(800, 9);
-      ctx.fillStyle = fused ? BOND : on ? col : 'rgba(180,200,230,.6)';
-      ctx.textAlign = 'left';
-      ctx.fillText(String(i + 1), x + 3, y + 10);
-
-      // nombre encima del activo (con un vínculo: "Ascuas +2")
-      if (on) {
-        ctx.font = F(700, 10);
-        ctx.textAlign = 'center';
-        ctx.fillStyle = fused ? BOND : col;
-        ctx.fillText(fused ? m.name + ' +' + (g.length - 1) : m.name, x + S / 2, y - 7);
-      }
-    }
-
-    // ---------- vínculo guardado (aún no hay dos movimientos sueltos) ----------
-    if (pl.bonds > 0) {
-      const bx = sx + totalW + 12, by = sy + S / 2 - 12;
-      G.Icons.draw(ctx, 'bond', bx, by, 24);
-      G.Tooltip.zone(bx, by, 24, 24, 'term:bond');
-      if (pl.bonds > 1) {
-        ctx.font = F(800, 10);
-        ctx.textAlign = 'left';
-        ctx.fillStyle = BOND;
-        ctx.fillText('×' + pl.bonds, bx + 25, by + 20);
-      }
-    }
-
-    // ---------- objeto equipado (a la izquierda de los movimientos) ----------
-    {
-      const ix = sx - S - 18, iy = sy;
-      roundRect(ctx, ix, iy, S, S, 12);
-      ctx.fillStyle = pl.item ? 'rgba(40,30,10,.9)' : 'rgba(10,16,28,.55)';
-      ctx.fill();
-      ctx.lineWidth = pl.item ? 2 : 1;
-      ctx.strokeStyle = pl.item ? '#ffd23f' : 'rgba(140,170,210,.18)';
-      ctx.stroke();
-      if (pl.item) {
-        G.Tooltip.zone(ix, iy, S, S, 'item:' + pl.item);
-        G.Icons.draw(ctx, pl.item, ix + (S - 36) / 2, iy + (S - 36) / 2, 36);
-        ctx.font = F(700, 9);
-        ctx.textAlign = 'center';
-        ctx.fillStyle = '#ffd23f';
-        ctx.fillText(G.Items.BY[pl.item].name, ix + S / 2, iy - 6);
-      }
-    }
+    // Written cards and compact icons share bounds with touch, minimap and editor.
+    const dock = G.BattlePanels.dockLayout(w, h);
+    G.BattlePanels.dock(ctx, dock, pl);
+    G.UI.placeNotices(dock, h);
 
     // ---------- botón de pausa (táctil) ----------
     if (touch) {
-      const sa = G.Touch.safeArea();
-      const pp = G.Touch.spot('pause');
-      const bx = pp ? G.U.clamp(pp[0] * w - 20, 4, w - 44) : w - 52 - Math.min(44, sa.right);
-      const by = pp ? G.U.clamp(pp[1] * h - 20, 10, h - 44) : 12 + Math.min(20, sa.top), bs = 40;
+      const { x: bx, y: by, w: bs } = top.pause;
       roundRect(ctx, bx, by, bs, bs, 10);
       ctx.fillStyle = 'rgba(10,16,28,.7)'; ctx.fill();
       ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(244,248,255,.8)'; ctx.stroke();
@@ -460,26 +302,14 @@ G.HUD = (() => {
    *   y a cuántos metros están (roja y parpadeando si está caído).
    * - Si has caído tú: aviso y barra de "te están levantando".
    */
-  function drawCoop(ctx, w, h, pl, px, top) {
+  function drawCoop(ctx, w, h, pl, rects, mates) {
     const cam = G.Camera;
     const t = performance.now() / 1000;
-    let y = top;
-    ctx.textAlign = 'left';
-    for (const m of G.Coop.mates) {
-      if (!m.connected) continue;
-      const o = m.pl;
-      ctx.font = F(800, 10);
-      ctx.fillStyle = m.color;
-      ctx.fillText(m.name, px, y + 9);
-      const lx = px + 78;
-      bar(ctx, lx, y + 1, 110, 8, o.dead ? 0 : o.hp / o.maxHp, o.dead ? '#ff5f6d' : '#5fe08a');
-      if (o.dead) {
-        ctx.font = F(800, 9);
-        ctx.fillStyle = Math.sin(t * 8) > 0 ? '#ff8a96' : '#ffd0d5';
-        ctx.fillText('CAÍDO', lx + 116, y + 9);
-      }
-      y += 15;
-    }
+    mates.forEach((mate, i) => {
+      G.BattlePanels.health(ctx, rects[i], mate.pl, mate);
+      const r = rects[i];
+      G.Tooltip.zone(r.x, r.y, r.w, r.h, 'mon:' + mate.pl.dex);
+    });
 
     // Flechas hacia los compañeros fuera de la vista.
     for (const m of G.Coop.mates) {

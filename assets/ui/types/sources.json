@@ -1,0 +1,241 @@
+{
+  "repository": "https://github.com/PokeAPI/sprites",
+  "commit": "289e842364648ec0495ae4ba12f48d5cbfbf670b",
+  "copyright": "Pok\u00e9mon \u00a9 Nintendo / Creatures Inc. / GAME FREAK. Repository licensing does not relicense the game images.",
+  "images": [
+    {
+      "type": "normal",
+      "id": 1,
+      "file": "normal.png",
+      "source": "https://raw.githubusercontent.com/PokeAPI/sprites/289e842364648ec0495ae4ba12f48d5cbfbf670b/sprites/types/generation-ix/scarlet-violet/small/1.png",
+      "game": "Scarlet / Violet",
+      "sha256": "201e5b8c3d00b197938e9bb61438e74f5008a76507a3690988529f22a399ced1",
+      "bytes": 1485,
+      "size": [
+        60,
+        60
+      ]
+    },
+    {
+      "type": "fighting",
+      "id": 2,
+      "file": "fighting.png",
+      "source": "https://raw.githubusercontent.com/PokeAPI/sprites/289e842364648ec0495ae4ba12f48d5cbfbf670b/sprites/types/generation-ix/scarlet-violet/small/2.png",
+      "game": "Scarlet / Violet",
+      "sha256": "2d28c8a1d64904cd4a5e234393094ce214a327c1a8e1d9e4bc409217df5fbdb5",
+      "bytes": 1116,
+      "size": [
+        60,
+        60
+      ]
+    },
+    {
+      "type": "flying",
+      "id": 3,
+      "file": "flying.png",
+      "source": "https://raw.githubusercontent.com/PokeAPI/sprites/289e842364648ec0495ae4ba12f48d5cbfbf670b/sprites/types/generation-ix/scarlet-violet/small/3.png",
+      "game": "Scarlet / Violet",
+      "sha256": "7860d8279906e45b1936e50bbb6b76a504fe19e666b1ba44daff28bbe60d2583",
+      "bytes": 1191,
+      "size": [
+        60,
+        60
+      ]
+    },
+    {
+      "type": "poison",
+      "id": 4,
+      "file": "poison.png",
+      "source": "https://raw.githubusercontent.com/PokeAPI/sprites/289e842364648ec0495ae4ba12f48d5cbfbf670b/sprites/types/generation-ix/scarlet-violet/small/4.png",
+      "game": "Scarlet / Violet",
+      "sha256": "758c04bb7a4b39ad7150ee4bb5b742d61e18b78ee2bc5fb0d9f184d85c38b3fe",
+      "bytes": 1446,
+      "size": [
+        60,
+        60
+      ]
+    },
+    {
+      "type": "ground",
+      "id": 5,
+      "file": "ground.png",
+      "source": "https://raw.githubusercontent.com/PokeAPI/sprites/289e842364648ec0495ae4ba12f48d5cbfbf670b/sprites/types/generation-ix/scarlet-violet/small/5.png",
+      "game": "Scarlet / Violet",
+      "sha256": "8b402298a27637722d20b5f5bf2c46811739022c1e15eac5101e4e197aed6401",
+      "bytes": 1423,
+      "size": [
+        60,
+        60
+      ]
+    },
+    {
+      "type": "rock",
+      "id": 6,
+      "file": "rock.png",
+      "source": "https://raw.githubusercontent.com/PokeAPI/sprites/289e842364648ec0495ae4ba12f48d5cbfbf670b/sprites/types/generation-ix/scarlet-violet/small/6.png",
+      "game": "Scarlet / Violet",
+      "sha256": "968ba5a79c7b19b3722e27b56e640c89bd48aa8dcdf52ad71616053ba6dc23e7",
+      "bytes": 1308,
+      "size": [
+        60,
+        60
+      ]
+    },
+    {
+      "type": "bug",
+      "id": 7,
+      "file": "bug.png",
+      "source": "https://raw.githubusercontent.com/PokeAPI/sprites/289e842364648ec0495ae4ba12f48d5cbfbf670b/sprites/types/generation-ix/scarlet-violet/small/7.png",
+      "game": "Scarlet / Violet",
+      "sha256": "d2e0c13e0f2a5e3f6516730ad7f7416840347c3546572fd964091ae99cac2e6f",
+      "bytes": 1482,
+      "size": [
+        60,
+        60
+      ]
+    },
+    {
+      "type": "ghost",
+      "id": 8,
+      "file": "ghost.png",
+      "source": "https://raw.githubusercontent.com/PokeAPI/sprites/289e842364648ec0495ae4ba12f48d5cbfbf670b/sprites/types/generation-ix/scarlet-violet/small/8.png",
+      "game": "Scarlet / Violet",
+      "sha256": "fe1c71c13e707bbe250c487cdac184897718a0de6dbf7041a273a8eeee533fbb",
+      "bytes": 1311,
+      "size": [
+        60,
+        60
+      ]
+    },
+    {
+      "type": "steel",
+      "id": 9,
+      "file": "steel.png",
+      "source": "https://raw.githubusercontent.com/PokeAPI/sprites/289e842364648ec0495ae4ba12f48d5cbfbf670b/sprites/types/generation-ix/scarlet-violet/small/9.png",
+      "game": "Scarlet / Violet",
+      "sha256": "e3abd8808c74925db96bcb14930a9441bbaef7468be0bf92b7765a0063353a1e",
+      "bytes": 1651,
+      "size": [
+        60,
+        60
+      ]
+    },
+    {
+      "type": "fire",
+      "id": 10,
+      "file": "fire.png",
+      "source": "https://raw.githubusercontent.com/PokeAPI/sprites/289e842364648ec0495ae4ba12f48d5cbfbf670b/sprites/types/generation-ix/scarlet-violet/small/10.png",
+      "game": "Scarlet / Violet",
+      "sha256": "9856958805631302676110e687d29a1e2d974b33ea9ff8fcc8e200b1cfa770da",
+      "bytes": 1326,
+      "size": [
+        60,
+        60
+      ]
+    },
+    {
+      "type": "water",
+      "id": 11,
+      "file": "water.png",
+      "source": "https://raw.githubusercontent.com/PokeAPI/sprites/289e842364648ec0495ae4ba12f48d5cbfbf670b/sprites/types/generation-ix/scarlet-violet/small/11.png",
+      "game": "Scarlet / Violet",
+      "sha256": "ffb98c212555575e83d56fa83e77dc49772e51d17cd1c85bc232c673faca6987",
+      "bytes": 1206,
+      "size": [
+        60,
+        60
+      ]
+    },
+    {
+      "type": "grass",
+      "id": 12,
+      "file": "grass.png",
+      "source": "https://raw.githubusercontent.com/PokeAPI/sprites/289e842364648ec0495ae4ba12f48d5cbfbf670b/sprites/types/generation-ix/scarlet-violet/small/12.png",
+      "game": "Scarlet / Violet",
+      "sha256": "815bbc7863567202e33a5698826554364afb898f67420e47c170c0fc2944a109",
+      "bytes": 1614,
+      "size": [
+        60,
+        60
+      ]
+    },
+    {
+      "type": "electric",
+      "id": 13,
+      "file": "electric.png",
+      "source": "https://raw.githubusercontent.com/PokeAPI/sprites/289e842364648ec0495ae4ba12f48d5cbfbf670b/sprites/types/generation-ix/scarlet-violet/small/13.png",
+      "game": "Scarlet / Violet",
+      "sha256": "0fef3ef85716ae092f794c77c16bc907e7efad8a2a8cc5b5a5f5175db5cf0c95",
+      "bytes": 1132,
+      "size": [
+        60,
+        60
+      ]
+    },
+    {
+      "type": "psychic",
+      "id": 14,
+      "file": "psychic.png",
+      "source": "https://raw.githubusercontent.com/PokeAPI/sprites/289e842364648ec0495ae4ba12f48d5cbfbf670b/sprites/types/generation-ix/scarlet-violet/small/14.png",
+      "game": "Scarlet / Violet",
+      "sha256": "8151448da03de4c09603ea5b4fe2c52f0e2648af94e8f0570f16007d1dde5587",
+      "bytes": 1368,
+      "size": [
+        60,
+        60
+      ]
+    },
+    {
+      "type": "ice",
+      "id": 15,
+      "file": "ice.png",
+      "source": "https://raw.githubusercontent.com/PokeAPI/sprites/289e842364648ec0495ae4ba12f48d5cbfbf670b/sprites/types/generation-ix/scarlet-violet/small/15.png",
+      "game": "Scarlet / Violet",
+      "sha256": "59127775fdf83488aeeeee9388ac6112736e6d490493e1cf144ef815c9f6c372",
+      "bytes": 1289,
+      "size": [
+        60,
+        60
+      ]
+    },
+    {
+      "type": "dragon",
+      "id": 16,
+      "file": "dragon.png",
+      "source": "https://raw.githubusercontent.com/PokeAPI/sprites/289e842364648ec0495ae4ba12f48d5cbfbf670b/sprites/types/generation-ix/scarlet-violet/small/16.png",
+      "game": "Scarlet / Violet",
+      "sha256": "af7f697602ff6250cce265220651222e08e8211cc38549ae8ae050b06f2e6bf8",
+      "bytes": 1542,
+      "size": [
+        60,
+        60
+      ]
+    },
+    {
+      "type": "dark",
+      "id": 17,
+      "file": "dark.png",
+      "source": "https://raw.githubusercontent.com/PokeAPI/sprites/289e842364648ec0495ae4ba12f48d5cbfbf670b/sprites/types/generation-ix/scarlet-violet/small/17.png",
+      "game": "Scarlet / Violet",
+      "sha256": "a1309de1544e307e9d466bdc8e08b14a3d47d362abf1f99616a75f1c3dafe001",
+      "bytes": 1187,
+      "size": [
+        60,
+        60
+      ]
+    },
+    {
+      "type": "fairy",
+      "id": 18,
+      "file": "fairy.png",
+      "source": "https://raw.githubusercontent.com/PokeAPI/sprites/289e842364648ec0495ae4ba12f48d5cbfbf670b/sprites/types/generation-ix/scarlet-violet/small/18.png",
+      "game": "Scarlet / Violet",
+      "sha256": "44b04797c47a387f0d297413e666b9b1f060441d647e029478b846e670b1176a",
+      "bytes": 1227,
+      "size": [
+        60,
+        60
+      ]
+    }
+  ]
+}
