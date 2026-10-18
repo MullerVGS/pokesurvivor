@@ -51,6 +51,23 @@ async function server(t, dir = fs.mkdtempSync('/tmp/pokesurvivor-auth-test-')) {
   return { request, mail, follow, signup, login, socket, origin, dir, logs: () => logs };
 }
 
+test('WebSocket is closed if activation moves its session to a different player UID', async t => {
+  const s = await server(t), email = 'uid-change@example.com';
+  const user = await s.signup(email);
+  await s.follow(s.mail(email, 'Verificar'));
+  const cookie = await s.login(email), ws = await s.socket(cookie);
+  const db = new DatabaseSync(path.join(s.dir, 'pokesurvivor.sqlite'));
+  db.exec('PRAGMA foreign_keys=ON; BEGIN IMMEDIATE; PRAGMA defer_foreign_keys=ON');
+  db.prepare('UPDATE user SET id=? WHERE id=?').run('restored-player', user.id);
+  db.prepare('UPDATE account SET userId=? WHERE userId=?').run('restored-player', user.id);
+  db.prepare('UPDATE session SET userId=? WHERE userId=?').run('restored-player', user.id);
+  db.exec('COMMIT'); db.close();
+  const closed = once(ws, 'close');
+  ws.send(JSON.stringify({t:'rt',op:'get',path:'rooms/test',rid:'stale-uid'}));
+  assert.equal((await closed)[0], 1008);
+  assert.equal((await s.request('/api/auth/get-session', undefined, cookie)).body.user.id, 'restored-player');
+});
+
 test('verified accounts, cookie sessions, authorization, logout, recovery and deletion', {timeout:30000}, async t => {
   const s = await server(t), email = 'tester@example.com';
   assert.equal((await s.request('/api/auth/sign-up/email', {name:'Tester',email,password:'short'})).status, 400);

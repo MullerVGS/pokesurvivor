@@ -154,7 +154,7 @@ server.on('upgrade', async (req, sock, head) => {
 async function validateConnection(conn) {
   if (conn.closed) return false;
   const session = await identity.session(conn.request);
-  if (!session || session.session.id !== conn.sessionId) {
+  if (!session || session.session.id !== conn.sessionId || session.user.id !== conn.uid) {
     conn.closed = true;
     conn.ws.close(1008, 'Session expired');
     return false;
