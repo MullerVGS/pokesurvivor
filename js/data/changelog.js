@@ -18,6 +18,8 @@ G.CHANGELOG = [
     ['Dos objetos de evento: Eco de Ditto repite cada tercer ataque con un 60% de daño; Rastro de la Manada da +10% velocidad y deja una estela que daña a los enemigos. Usan el mismo hueco de objeto que los demás y duran la partida.',
      'Two encounter items: Ditto Echo repeats every third cast at 60% damage; Herd Trail gives +10% speed and leaves a damaging trail. They use the existing item slot and last for the run.']
   ], chg: [
+    ['El pasillo seguro de la estampida de Tauros es un 15% más ancho y ya no muestra texto en el suelo.',
+     'The safe corridor in Tauros’s stampede is 15% wider and no longer shows text on the ground.'],
     ['Se retiran Casa Monstruo y Operación Rocket. Los encuentros con Tauros y Ditto ya no se activan esperando en un círculo.',
      'Monster House and Operation Rocket have been removed. Tauros and Ditto encounters no longer start by waiting in a circle.'],
     ['Las actualizaciones se instalan cuando tú elijas: si hay una versión nueva, aparece «Actualizar juego» en el menú principal. Se eliminan las recargas automáticas y las actualizaciones forzadas; antes de recargar se intenta sincronizar tu progreso.',

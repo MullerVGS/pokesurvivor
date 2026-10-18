@@ -26,7 +26,7 @@ G.I18n.add({
   'acércate y quédate en el círculo para empezar': 'approach and stay in the circle to begin',
   'Salir con el premio': 'Leave with your reward', 'Abrir el siguiente cofre': 'Open the next chest',
   'Salir en {x} s': 'Leaving in {x} s', 'Quédate 1,2 s para empezar': 'Stay for 1.2 s to begin',
-  'Oleada': 'Wave', 'Paso seguro': 'Safe passage', 'Gas': 'Gas', 'Barreras': 'Barriers', 'Refuerzos': 'Reinforcements',
+  'Oleada': 'Wave', 'Gas': 'Gas', 'Barreras': 'Barriers', 'Refuerzos': 'Reinforcements',
   '¡Ditto se está transformando!': 'Ditto is transforming!',
   'Eco de Ditto': 'Ditto Echo', 'Rastro de la Manada': 'Herd Trail',
   'Cada 3 ataques repite el último con un 60% de daño. Los ecos no generan ecos.': 'Every 3 casts, repeats the last move at 60% damage. Echoes cannot trigger echoes.',

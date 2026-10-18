@@ -58,7 +58,6 @@ G.ChallengeArt = (() => {
     if (!a) return;
     if (a.t < a.wind) {
       for (const z of a.zones) G.Hazards.drawWarning(ctx, z, a.t / a.wind);
-      if (a.id === 'stampede') label(ctx, 'Paso seguro', a.x, a.y, '#b4edac', 11);
     } else if (a.id === 'stampede') {
       const k = G.U.clamp((a.t - a.wind) / a.duration, 0, 1), ca = Math.cos(a.angle), sa = Math.sin(a.angle);
       for (const z of a.zones) {

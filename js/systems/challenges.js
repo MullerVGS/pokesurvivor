@@ -135,7 +135,7 @@ G.Challenges = (() => {
       a.zones = [{ kind: 'beam', x: e.x, y: e.y, angle, len: a.len, w: e.r * 2, color: '#eead63' }];
     } else {
       const reach = Math.max(600, ...G.Game.everyone().map(p => G.View.reach(p)));
-      a.x = pl.x; a.y = pl.y; a.len = (reach + 200) * 2; a.gap = 110; a.width = reach * 0.75;
+      a.x = pl.x; a.y = pl.y; a.len = (reach + 200) * 2; a.gap = 126.5; a.width = reach * 0.75;
       const ca = Math.cos(angle), sa = Math.sin(angle);
       a.zones = [-1, 1].map(side => {
         const offset = side * (a.gap + a.width) / 2;
