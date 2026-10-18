@@ -13,6 +13,9 @@ G.CHANGELOG = [
      'Ditto copies the player who starts the encounter, including in co-op: it flashes for three seconds like an evolution, revealing a dark copy with negative colors. Its moves keep their types, with corrupted palettes and warnings before attacks.'],
     ['Dos objetos de evento: Eco de Ditto repite cada tercer ataque con un 60% de daño; Rastro de la Manada da +10% velocidad y deja una estela que daña a los enemigos. Usan el mismo hueco de objeto que los demás y duran la partida.',
      'Two encounter items: Ditto Echo repeats every third cast at 60% damage; Herd Trail gives +10% speed and leaves a damaging trail. They use the existing item slot and last for the run.']
+  ], chg: [
+    ['Las actualizaciones se instalan cuando tú elijas: si hay una versión nueva, aparece «Actualizar juego» en el menú principal. Se eliminan las recargas automáticas y las actualizaciones forzadas; antes de recargar se intenta sincronizar tu progreso.',
+     'Updates install when you choose: when a new version is available, an “Update game” button appears in the main menu. Automatic reloads and forced updates are removed; the game tries to sync your progress before reloading.']
   ], fix: [
     ['La ventana de subida de nivel se ajusta a las cartas y las centra, sin dejar un gran espacio vacío a la derecha.',
      'The level-up window fits and centers its cards, without leaving a large empty space on the right.']

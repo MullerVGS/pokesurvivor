@@ -8,13 +8,13 @@ Normas fijas del dueño del proyecto. Se aplican SIEMPRE.
    - `build.js` genera `index.html`, `js/app.min.js` y **`version.json`** (la huella de esta versión).
 3. Commit (sin "Co-Authored-By" ni ninguna firma de IA) y `git push origin main` sólo cuando el dueño lo pida.
 
-## Actualización automática de los jugadores (obligatorio)
-Al publicar, todos los jugadores deben pasar a la versión nueva sin perder nada
-(`js/core/updater.js`, mira `version.json` cada 5 min):
-- **Fuera de partida** (menú, sala de cooperativo incluida): aviso de 5 s y la página se recarga.
-  Si está en el gacha, la tienda de mejoras, los ajustes o escribiendo en un campo, espera a que termine.
-- **En partida**: no se toca. Al acabar, la run se guarda como siempre y, al volver al menú, se recarga.
-- Antes de recargar se sube a la nube lo pendiente.
+## Actualización manual de los jugadores (obligatorio)
+`js/core/updater.js` consulta `version.json` cada 5 min y al volver a la pestaña:
+- Si hay una versión nueva, aparece **Actualizar juego** en el menú principal.
+- Sólo se recarga cuando el jugador pulsa ese botón. No hay cuentas atrás,
+  recargas automáticas ni actualizaciones forzadas, tampoco en el menú o en cooperativo.
+- Antes de recargar se intenta subir a la nube lo pendiente, conservando la copia local.
+  Si el jugador sale del menú mientras espera, se cancela la recarga.
 No quitar `updater.js` ni la escritura de `version.json` en `tools/build.js`.
 
 ## Novedades (changelog)

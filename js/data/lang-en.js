@@ -4,6 +4,8 @@
  * son los oficiales en inglés.
  */
 G.I18n.add({
+  'Actualizar juego': 'Update game', 'Nueva versión disponible': 'New version available',
+  'Actualizando…': 'Updating…',
   'Casa Monstruo': 'Monster House', 'Operación Rocket': 'Operation Rocket',
   'Estampida de Tauros': 'Tauros Stampede', 'Ditto impostor': 'Ditto Impostor',
   'acércate y quédate en el círculo para empezar': 'approach and stay in the circle to begin',
