@@ -382,6 +382,8 @@ label { display: block; font-size: 14px; color: var(--muted); margin: 8px 0 4px;
 @keyframes legend { to { box-shadow: 0 0 40px var(--rc), 0 0 80px var(--rc); } }
 
 /* ---------- cartas de nivel ---------- */
+#scr-levelup > .box { width: min(614px, 100%); }
+#scr-levelup .cards { margin-inline: auto; }
 .cards { display: flex; flex-direction: column; gap: 10px; width: min(560px, 100%); }
 .card {
   display: flex; align-items: center; gap: 14px; text-align: left; cursor: pointer;

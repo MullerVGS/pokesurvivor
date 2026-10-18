@@ -13,6 +13,9 @@ G.CHANGELOG = [
      'Ditto copies the player who starts the encounter, including in co-op: it flashes for three seconds like an evolution, revealing a dark copy with negative colors. Its moves keep their types, with corrupted palettes and warnings before attacks.'],
     ['Dos objetos de evento: Eco de Ditto repite cada tercer ataque con un 60% de daño; Rastro de la Manada da +10% velocidad y deja una estela que daña a los enemigos. Usan el mismo hueco de objeto que los demás y duran la partida.',
      'Two encounter items: Ditto Echo repeats every third cast at 60% damage; Herd Trail gives +10% speed and leaves a damaging trail. They use the existing item slot and last for the run.']
+  ], fix: [
+    ['La ventana de subida de nivel se ajusta a las cartas y las centra, sin dejar un gran espacio vacío a la derecha.',
+     'The level-up window fits and centers its cards, without leaving a large empty space on the right.']
   ] },
   { d: '2026-10-17', title: ['Trae tu partida, minimapa, información al pasar el ratón, apuntar con clic y campo de visión', 'Bring your save, minimap, info on hover, click to aim and field of view'], new: [
     ['Trae tu partida de pokesurvivor.com: en la pantalla de entrada, el botón verde «Trazer meu save» te explica cómo (un favorito que se arrastra a la barra, o copiar y pegar). Tus Pokémon, shinies, monedas, tickets, mejoras y logros entran en la cuenta que crees aquí, con tu mismo apodo, que ya sale escrito. Si ya tenías cuenta aquí, se junta con lo que tenías y no se pierde nada.',
