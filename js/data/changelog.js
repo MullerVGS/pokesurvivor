@@ -7,8 +7,8 @@
  */
 G.CHANGELOG = [
   { d: '2026-10-18', title: ['Encuentros, objetos y movimientos', 'Encounters, items and moves'], new: [
-    ['Los jefes cercanos, incluidos Tauros alfa y Ditto, tienen una flecha dorada con su nombre y distancia cuando quedan fuera de pantalla, hasta 30 metros. Desaparece al verlos o derrotarlos.',
-     'Nearby bosses, including Alpha Tauros and Ditto, have a golden arrow with their name and distance when off screen, up to 30 metres away. It disappears when they enter the screen or are defeated.'],
+    ['Los jefes cercanos, incluidos Tauros alfa y Ditto, tienen una flecha dorada con su nombre y distancia cuando quedan fuera de pantalla, hasta 100 metros. Desaparece al verlos o derrotarlos.',
+     'Nearby bosses, including Alpha Tauros and Ditto, have a golden arrow with their name and distance when off screen, up to 100 metres away. It disappears when they enter the screen or are defeated.'],
     ['Los objetos permanecen en el suelo, brillando. Al acercarte comparas el que llevas con el del suelo; F o el botón táctil lo recoge, incluso si no llevas ninguno. Al cambiar, tu objeto anterior queda disponible para tus compañeros. La comparación no pausa el combate.',
      'Items stay on the ground, glowing. Approach to compare your held item with the ground item; press F or the touch button to pick it up, even with an empty slot. Swapping drops your previous item for your teammates. Comparing items does not pause combat.'],
     ['Los recuadros de los movimientos muestran una demostración animada. Fija el recuadro con T: las líneas de los próximos niveles y la evolución abren otro recuadro con su animación, manteniendo las mejoras a la vista. La demostración usa los mismos ataques y efectos que la partida.',
@@ -20,6 +20,10 @@ G.CHANGELOG = [
     ['Dos objetos de evento: Eco de Ditto repite cada tercer ataque con un 60% de daño; Rastro de la Manada da +10% velocidad y deja una estela que daña a los enemigos. Usan el mismo hueco de objeto que los demás y duran la partida.',
      'Two encounter items: Ditto Echo repeats every third cast at 60% damage; Herd Trail gives +10% speed and leaves a damaging trail. They use the existing item slot and last for the run.']
   ], chg: [
+    ['Los jefes del mapa, incluidos Tauros alfa y Ditto, aparecen a 100 metros y vagan sin atacar hasta que los desafías. Un jefe que está paseando no bloquea las grietas ni los demás eventos.',
+     'Map bosses, including Alpha Tauros and Ditto, spawn 100 metres away and wander peacefully until attacked. Roaming bosses do not block rifts or other events.'],
+    ['Un jefe del mapa sólo desaparece tras 2 minutos seguidos a más de 250 metros de todos los jugadores vivos. Si cualquiera vuelve a acercarse, la cuenta se reinicia; estar cerca lo mantiene en el mapa.',
+     'A map boss only despawns after spending 2 consecutive minutes more than 250 metres from every living player. Any player returning within range resets the countdown; staying nearby keeps the boss on the map.'],
     ['Las cuentas de la beta pueden recuperar su partida con un enlace personal y Google, sin perder amigos ni marcas del ranking.',
      'Beta accounts can recover their save with a personal link and Google, keeping friends and leaderboard records.'],
     ['El acceso reúne Google y correo en una pantalla más clara, con recuperación e importación como acciones secundarias. Google reconoce las cuentas migradas al confirmar el correo, sin perder la partida.',

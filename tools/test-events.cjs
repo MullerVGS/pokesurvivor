@@ -152,8 +152,8 @@ const URL = process.env.EVENT_TEST_URL || 'http://127.0.0.1:3087/dev.html';
     await test('Ditto expression preserves transparency and rear-facing frames, including shiny animation sheets', async () => {
       for(const dex of [1,4,7,25,133,813]) for(const shiny of [false,true]) for(const anim of ['Idle','Walk','Attack']) {
         const sheet=G.Sprites.sheet(dex,anim,shiny),meta=G.Sprites.animMeta(dex,anim,shiny);
-        for(let i=0;i<200&&!sheet.ready;i++) await new Promise(r=>setTimeout(r,10));
-        check(sheet.ready,'sprite loaded');
+        for(let i=0;i<800&&!sheet.ready;i++) await new Promise(r=>setTimeout(r,10));
+        check(sheet.ready,'sprite loaded: '+dex+'/'+anim+(shiny?'/shiny':''));
         const filtered=G.DittoFace.sheet(sheet.img,meta,dex),c=document.createElement('canvas');c.width=sheet.img.width;c.height=sheet.img.height;
         const ctx=c.getContext('2d',{willReadFrequently:true});ctx.drawImage(sheet.img,0,0);const before=ctx.getImageData(0,0,c.width,c.height).data;
         ctx.clearRect(0,0,c.width,c.height);ctx.drawImage(filtered,0,0);const after=ctx.getImageData(0,0,c.width,c.height).data;

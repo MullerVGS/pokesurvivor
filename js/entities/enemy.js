@@ -100,6 +100,7 @@
     hurt(amount, color = '#fff', dirX = 0, dirY = 0, knock = 0, eff = null, attacker = null, attackSnapshot = null) {
       if (this.dead || this.invulnerable) return;
       if (attacker && !this.remote && G.Challenges.onHit(this, attacker, attackSnapshot)) return;
+      if (!this.remote) G.RoamingBosses.engage(this, attacker);
       const d = Math.max(1, Math.round(amount));
       // Copia de un enemigo del anfitrión: el golpe se le manda a él, que es
       // quien decide si cae. Aquí sólo se ve (número, destello y animación).
@@ -266,6 +267,7 @@
       if (this.dead) return;
 
       if (this.eventRole) { G.Challenges.updateEnemy(this, dt, pl); return; }
+      if (G.RoamingBosses.roaming(this)) { G.RoamingBosses.wander(this, dt); return; }
       // --- terreno ---
       let terrainMul = 1;
       // (El legendario está en su casa: su arena no le afecta. Los de Arceus, tampoco.)
@@ -746,7 +748,7 @@
     const grid = new Map();
 
     const byId = new Map();
-    function clear() { list = []; corpses = []; grid.clear(); byId.clear(); }
+    function clear() { list = []; corpses = []; stashed = null; grid.clear(); byId.clear(); }
     function all() { return list; }
     function add(e) {
       list.push(e);
@@ -763,6 +765,7 @@
       const e = new Enemy(def, o.x, o.y, { hp: 1, spd: 1, dmg: 1 }, o.boss);
       e.id = o.id;
       e.remote = true;
+      if (o.roaming) G.RoamingBosses.attach(e);
       if (o.shiny) e.makeShiny();
       e.maxHp = o.hp; e.hp = o.hp;
       e.net = { x: o.x, y: o.y, vx: 0, vy: 0, age: 0, dir: 0, anim: 0, st: 0 };
@@ -798,9 +801,10 @@
 
     /** Quita una copia (el anfitrión dice que ha caído o que se ha alejado). */
     function removeRemote(id, died) {
-      const e = byId.get(id);
+      const e = byId.get(id) || (stashed || []).find(e => e.id === id);
       if (!e) return;
       byId.delete(id);
+      if (stashed) stashed = stashed.filter(o => o !== e);
       if (died) { e.die(); G.Progress.kill(e); }
       const i = list.indexOf(e);
       if (i >= 0) list.splice(i, 1);
@@ -890,6 +894,15 @@
     function update(dt, players) {
       if (!Array.isArray(players)) players = [players];
       const pl = players[0];
+      // También cuentan los jefes guardados mientras el grupo está en una grieta.
+      for (const e of [...list, ...(stashed || [])]) {
+        if (!G.RoamingBosses.expired(e, dt, players)) continue;
+        if (e.eventRole) G.Challenges.despawn(e);
+        else {
+          if (G.Coop.isHost) G.Coop.enemyGone(e, false);
+          removeRemote(e.id, false);
+        }
+      }
       // Velocidad suavizada de cada jugador (vale también para los compañeros).
       for (const p of players) {
         if (p._px != null && dt > 0) {
@@ -958,9 +971,10 @@
     }
 
     function bossAlive() { return list.some(e => e.boss && !e.dead); }
+    function bossFighting() { return list.some(e => e.boss && !e.dead && !G.RoamingBosses.roaming(e)); }
     function shinies() { return list.filter(e => e.shiny && !e.dead); }
 
-    return { clear, all, add, get, addRemote, removeRemote, stash, restore, clearRemote, update, drawables, queryCircle, rebuildGrid, bossAlive, shinies, nearestPlayer,
+    return { clear, all, add, get, addRemote, removeRemote, stash, restore, clearRemote, update, drawables, queryCircle, rebuildGrid, bossAlive, bossFighting, shinies, nearestPlayer,
              get count() { return list.length; } };
   })();
 })();

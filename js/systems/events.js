@@ -48,7 +48,7 @@ G.Events = (() => {
     if (thieves < 2) {
       thiefT -= dt;
       if (thiefT <= 0) {
-        if (G.EnemyMgr.bossAlive()) thiefT = 8;
+        if (G.EnemyMgr.bossFighting()) thiefT = 8;
         else { spawnThief(players, time); thieves++; thiefT = G.U.rand(THIEF_NEXT[0], THIEF_NEXT[1]); }
       }
     }
@@ -56,7 +56,7 @@ G.Events = (() => {
     if (cur) return;
     nextT -= dt;
     if (nextT > 0) return;
-    if (G.EnemyMgr.bossAlive()) { nextT = 10; return; }
+    if (G.EnemyMgr.bossFighting()) { nextT = 10; return; }
     nextT = G.U.rand(EVERY[0], EVERY[1]);
     const ids = ['horde', 'gold', 'lost', ...G.Challenges.available(time)].filter(id => id !== last);
     start(G.U.pick(ids), time, players);

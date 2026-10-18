@@ -22,11 +22,11 @@ G.Spawner = (() => {
   // hacia el minuto 6, cuando ya tienes ataques para tumbarlos.
   const hpK = t => 3.3 + Math.min(1.7, t / 210);
   const SHINY_RATE = 1 / 4096;
-  let acc = 0, bossIdx = 0, surgeT = 32, announce = null, announceT = 0, preloadT = 0;
+  let acc = 0, bossIdx = 0, bossRetry = 0, surgeT = 32, announce = null, announceT = 0, preloadT = 0;
   let forceShiny = 0;           // para pruebas: los N próximos salen shiny
 
   function reset() {
-    acc = 0; bossIdx = 0; surgeT = 32; announce = null; announceT = 0; preloadT = 0;
+    acc = 0; bossIdx = 0; bossRetry = 0; surgeT = 32; announce = null; announceT = 0; preloadT = 0;
     G.Enemies.rollRun();
     G.Sprites.preload(G.Enemies.upcomingDex(0, 80));
   }
@@ -94,8 +94,10 @@ G.Spawner = (() => {
   }
 
   function spawnBoss(pl, t, b) {
-    const [x, y] = ringPoint(pl, Math.random() * 6.2832);
-    const e = new G.Enemy(b, x, y, scaled(G.Enemies.bossScale(t), G.Coop.scaleHp(players.length) * (players.length > 1 ? 1.4 : 1)), true);
+    const point = G.RoamingBosses.site(pl, players);
+    if (!point) return null;
+    const e = new G.Enemy(b, point.x, point.y, scaled(G.Enemies.bossScale(t), G.Coop.scaleHp(players.length) * (players.length > 1 ? 1.4 : 1)), true);
+    G.RoamingBosses.attach(e);
     if (rollShiny(b.dex)) e.makeShiny();
     G.EnemyMgr.add(e);
     say('¡' + e.name + (e.shiny ? ' shiny' : '') + ' salvaje apareció!', 3.2);
@@ -118,11 +120,15 @@ G.Spawner = (() => {
 
     // --- jefes ---
     const b = G.Enemies.BOSSES[bossIdx];
-    if (b && t >= b.at && !G.Challenges.fighting) { spawnBoss(anchor(), t, b); bossIdx++; }
+    bossRetry -= dt;
+    if (b && t >= b.at && !G.Challenges.fighting && bossRetry <= 0) {
+      if (spawnBoss(anchor(), t, b)) bossIdx++;
+      else bossRetry = 1;
+    }
 
     // Combate de jefe: las oleadas bajan al 25% y no hay mareas, para que el
     // jefe sea un momento propio y se le pueda apuntar entre la multitud.
-    const bossFight = G.EnemyMgr.bossAlive();
+    const bossFight = G.EnemyMgr.bossFighting();
 
     // --- goteo normal ---
     if (G.EnemyMgr.count < CAP) {

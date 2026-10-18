@@ -35,7 +35,7 @@ G.Rift = (() => {
   // ---------------- grieta en el mapa ----------------
 
   function update(dt, pl, time) {
-    if (G.Challenges.blocksEncounters) return;
+    if (!arena && G.Challenges.blocksEncounters) return;
     if (rift) {
       rift.t += dt;
       rift.ttl -= dt;
@@ -45,7 +45,7 @@ G.Rift = (() => {
       checkT -= dt;
       if (checkT <= 0) {
         checkT = CHECK;
-        if (G.EnemyMgr.bossAlive()) return;           // con un jefe vivo no cuenta como intento
+        if (G.EnemyMgr.bossFighting()) return;           // con un jefe vivo no cuenta como intento
         if (Math.random() < CHANCE * (1 + misses)) { misses = 0; open(); }
         else misses++;
       }

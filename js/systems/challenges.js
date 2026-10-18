@@ -12,22 +12,11 @@ G.Challenges = (() => {
     units.clear(); used.clear(); G.EventItems.reset();
   }
   function available(time) {
-    if (state || recovery > 0 || G.Rift.rift || G.Rift.inArena || G.Judgment.active || G.EnemyMgr.bossAlive()) return [];
+    if (state || recovery > 0 || G.Rift.rift || G.Rift.inArena || G.Judgment.active || G.EnemyMgr.bossFighting()) return [];
     const next = G.Enemies.BOSSES.find(b => b.at > time);
     if (Math.min(next ? next.at : Infinity, G.Judgment.AT) - time < 45) return [];
     if (IDS.every(id => used.has(id))) used.clear();
     return IDS.filter(id => !used.has(id));
-  }
-  function site(pl) {
-    for (let i = 0; i < 100; i++) {
-      const a = i * 2.4, d = 240 + (i % 8) * 45;
-      const x = pl.x + Math.cos(a) * d, y = pl.y + Math.sin(a) * d;
-      if (!G.World.isFree(x, y, 48)) continue;
-      let reachable = true;
-      for (let q = 0; q <= 1; q += 0.05) if (!G.World.isFree(pl.x + (x - pl.x) * q, pl.y + (y - pl.y) * q, 15)) { reachable = false; break; }
-      if (reachable) return { x, y };
-    }
-    return null;
   }
   function stats(time, n) {
     const tier = [...G.Enemies.TIERS].reverse().find(t => time >= t.from) || G.Enemies.TIERS[0];
@@ -36,10 +25,10 @@ G.Challenges = (() => {
   }
   function offer(id, time, players, at) {
     if (!authority() || !IDS.includes(id) || state) return false;
-    const pl = players.find(p => !p.dead), p = pl && (at || site(pl));
+    const pl = players.find(p => !p.dead), p = pl && (at || G.RoamingBosses.site(pl, players));
     if (!p) return false;
-    state = { id, seq: ++serial, phase: 'roam', t: 0, x: p.x, y: p.y, homeX: p.x, homeY: p.y,
-      time, n: players.length, units: [], castT: 0.6, moveIndex: 0, attackSeq: 0, walkT: 0, walkAngle: 0 };
+    state = { id, seq: ++serial, phase: 'roam', t: 0, x: p.x, y: p.y,
+      time, n: players.length, units: [], castT: 0.6, moveIndex: 0, attackSeq: 0 };
     used.add(id); localHit = -1;
     const dex = id === 'stampede' ? 128 : 132, b = stats(time, players.length);
     const e = new G.Enemy({ dex, ...b, dmg: 0, behavior: 'chase' }, p.x, p.y, { hp: 1, spd: 1, dmg: 1 });
@@ -60,7 +49,7 @@ G.Challenges = (() => {
   /** Se llama sólo desde el daño de un jugador, nunca por proximidad ni por un temporizador. */
   function onHit(e, pl, data) {
     if (!authority() || !roaming(e) || !pl || pl.dead || pl.hostile) return false;
-    if (G.EnemyMgr.bossAlive() || G.Rift.inArena || G.Judgment.active) return true;
+    if (G.EnemyMgr.bossFighting() || G.Rift.inArena || G.Judgment.active) return true;
     state.phase = 'fight'; state.t = 0; state.castT = 0.6; G.Spawner.say('', 0);
     if (state.id === 'ditto') {
       const snap = data || snapshot(pl);
@@ -91,6 +80,7 @@ G.Challenges = (() => {
         e.r = Math.min(54, G.Sprites.bodyRadius(e.dex, scale)); e.bodyH = G.Sprites.bodyHeight(e.dex, scale);
         e.types = (G.DEX_BY[e.dex] || {}).types || ['normal'];
       }
+      G.RoamingBosses.attach(e); e.roam.engaged = state.phase !== 'roam';
       e.invulnerable = state.phase === 'transform';
       e.dmg = state.phase === 'fight' ? stats(state.time, state.n).dmg * 0.5 : 0;
       units.set(e.id, e);
@@ -108,13 +98,7 @@ G.Challenges = (() => {
     if (!state || e.eventId !== state.seq || e.invulnerable) return;
     e.kx = e.ky = 0;
     if (state.phase === 'roam') {
-      state.walkT -= dt;
-      if (state.walkT <= 0) {
-        state.walkT = G.U.rand(1.4, 3.2);
-        state.walkAngle = distance(e, { x: state.homeX, y: state.homeY }) > 130
-          ? Math.atan2(state.homeY - e.y, state.homeX - e.x) : Math.random() * Math.PI * 2;
-      }
-      move(e, e.x + Math.cos(state.walkAngle) * 80, e.y + Math.sin(state.walkAngle) * 80, 32, dt);
+      G.RoamingBosses.wander(e, dt);
       return;
     }
     const a = state.attack;
@@ -257,17 +241,16 @@ G.Challenges = (() => {
   }
   function update(dt, players, time) {
     recovery = Math.max(0, recovery - dt);
-    if (!state) return;
+    if (!state || G.Rift.inArena) return;
     bindUnits(); state.t += dt;
     const e = boss();
     if (!e) return;
     if (authority()) {
       state.x = e.x; state.y = e.y;
       if (e.dead) { if (state.phase === 'roam') finish(); else win(); return; }
-      if (G.Rift.inArena || G.Judgment.active || players.every(p => p.dead)) { finish(); return; }
-      // Un encuentro ignorado no bloquea la siguiente aparición de jefe ni las grietas.
-      if (state.phase === 'roam' && (G.EnemyMgr.bossAlive() || state.t > 120)) { finish(); return; }
-      if (state.phase === 'fight' && players.every(p => p.dead || distance(p, e) > 1200)) { finish(); return; }
+      if (G.Judgment.active || players.every(p => p.dead)) { finish(); return; }
+      // La distancia y el tiempo de abandono se comparten con los demás jefes
+      // del mapa (RoamingBosses / EnemyMgr), sin caducidad por estar cerca.
     }
     if (state.phase === 'transform') {
       if (authority() && state.t >= 3) { state.phase = 'fight'; state.t = 0; state.castT = 0.5; bindUnits(); sync(); }
@@ -292,7 +275,8 @@ G.Challenges = (() => {
     markers() { const e = authority() && boss(); return state ? [{ x: e ? e.x : state.x, y: e ? e.y : state.y, id: state.id }] : []; },
     get state() { return state; }, get warning() { return warning; },
     get fighting() { return !!state && state.phase !== 'roam'; },
-    get blocksEncounters() { return !!state || recovery > 0; },
+    get blocksEncounters() { return (!!state && state.phase !== 'roam') || recovery > 0; },
+    despawn(e) { if (state && state.units.some(u => u.id === e.id)) finish(); },
     get spawnFactor() { return state && state.phase !== 'roam' ? 0.35 : 1; }
   };
 })();

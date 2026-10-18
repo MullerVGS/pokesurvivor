@@ -25,11 +25,11 @@ G.HUD = (() => {
     }
   }
 
-  // Como los compañeros: sólo fuera de pantalla y hasta 30 metros.
+  // Como los compañeros: sólo fuera de pantalla y hasta 100 metros.
   // Los encuentros usan también su estado sincronizado: el invitado puede no
   // tener la entidad todavía, porque los enemigos le llegan por proximidad.
   function drawBossIndicators(ctx, w, h, pl) {
-    const cam = G.Camera, range = 30 * 32;
+    const cam = G.Camera, range = G.RoamingBosses.SPAWN_DISTANCE;
     const bosses = G.EnemyMgr.all().filter(e => e.boss && !e.dead);
     const encounter = G.Challenges.state;
     if (encounter && !G.Rift.inArena && !G.Judgment.active) {
@@ -41,7 +41,7 @@ G.HUD = (() => {
     }
     for (const e of bosses) {
       const distance = G.U.dist(pl.x, pl.y, e.x, e.y);
-      if (distance > range) continue;
+      if (distance > range + 2) continue; // tolerancia al redondeo de posiciones en cooperativo
       const sx = (e.x - cam.left()) * cam.scale, sy = (e.y - e.bodyH * 0.5 - cam.top()) * cam.scale;
       if (sx >= 0 && sx <= w && sy >= 0 && sy <= h) continue;
       const M = 42;
@@ -152,7 +152,7 @@ G.HUD = (() => {
     G.Minimap.draw(ctx, w, h, pl);
 
     // ---------- barra del jefe ----------
-    const boss = G.EnemyMgr.all().find(e => e.boss && !e.dead);
+    const boss = G.EnemyMgr.all().find(e => e.boss && !e.dead && !G.RoamingBosses.roaming(e));
     if (boss) {
       const bw = Math.min(420, w - 80);
       bar(ctx, (w - bw) / 2, 70, bw, 12, boss.hp / boss.maxHp, '#ffcb3d');

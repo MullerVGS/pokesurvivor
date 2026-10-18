@@ -626,7 +626,7 @@ G.Game = (() => {
     G.Weather.update(dt, time, pl);
     G.FX.update(dt);
 
-    G.Audio.music(G.Judgment.active ? G.Judgment.music : G.Rift.inArena ? 'rift' : (G.EnemyMgr.bossAlive() || G.Challenges.fighting) ? 'boss' : G.BIOME_MUSIC[biome % G.BIOME_MUSIC.length]);
+    G.Audio.music(G.Judgment.active ? G.Judgment.music : G.Rift.inArena ? 'rift' : (G.EnemyMgr.bossFighting() || G.Challenges.fighting) ? 'boss' : G.BIOME_MUSIC[biome % G.BIOME_MUSIC.length]);
     if (!coop || G.Coop.isHost) maybeLevelUp();
     if (pl.bonds > 0) offerBond(true);
     if (G.Coop.isHost) checkAllDown(dt);
