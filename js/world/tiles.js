@@ -136,6 +136,16 @@ G.Tiles = (() => {
   for (const t of ARENA_TYPES) BIOMES.push(arenaBiome(ARENA_THEMES[t]));
   BIOMES[ARENA + ARENA_TYPES.indexOf('judgment')].name = ARENA_THEMES.judgment.name;
 
+  // Append regional palettes after all arenas: their protocol indices are stable.
+  const REGION_START = BIOMES.length;
+  for (const b of G.Biomes.all) {
+    const palette = arenaBiome(b.palette);
+    palette.name = b.name;
+    palette.dirt = [b.palette.dirt, shade(b.palette.dirt,.05), shade(b.palette.dirt,-.07)];
+    palette.groundStyle = b.palette.groundStyle;
+    BIOMES.push(palette);
+  }
+
   // ---------------- utilidades de color / píxel ----------------
 
   function rgb(hex) {
@@ -204,16 +214,21 @@ G.Tiles = (() => {
     return (x, y) => mask[(y + 1) * W + x] === 1;
   }
 
-  function paintChunk(cx, cy, n, at, dirtField, bi, seed = 0) {
-    const B = BIOMES[bi];
-    const P = Pix(n * T, n * T);
-    const C = {};
+  const packedPalettes = new Map();
+  function packedPalette(bi) {
+    if (packedPalettes.has(bi)) return packedPalettes.get(bi);
+    const B = BIOMES[bi], C = { groundStyle:B.groundStyle };
     for (const k of ['floor', 'dirt', 'wallTop', 'wallFace', 'flowers', 'grass'])
       C[k] = B[k].map(h => pack(h));
     for (const k of ['speck', 'light', 'wallLight', 'wallEdge', 'wallFaceDark', 'liq', 'liqDeep', 'foam', 'shore'])
       C[k] = pack(B[k]);
     C.liqLight = mixPack(B.liq, B.foam, 0.28);
-
+    packedPalettes.set(bi,C);
+    return C;
+  }
+  function paintChunk(cx, cy, n, at, dirtField, bi, seed = 0) {
+    const P = Pix(n*T,n*T);
+    const paletteAt = typeof bi === 'function' ? (x,y)=>packedPalette(bi(x,y)) : ()=>packedPalette(bi);
     const tx0 = cx * n, ty0 = cy * n;
     const dirtAt = dirtMask(tx0 * T, ty0 * T, n * T, dirtField, seed);
 
@@ -221,10 +236,11 @@ G.Tiles = (() => {
       for (let i = 0; i < n; i++) {
         const tx = tx0 + i, ty = ty0 + j;
         const ox = i * T, oy = j * T;
-        const kind = at(tx, ty);
+        const kind = at(tx, ty), C = paletteAt(tx,ty);
+        const blend = [paletteAt(tx-1,ty),paletteAt(tx+1,ty),paletteAt(tx,ty-1),paletteAt(tx,ty+1)];
 
         // 1) Suelo bajo todo (las esquinas redondeadas de las paredes lo dejan ver).
-        paintFloor(P, C, ox, oy, tx, ty, dirtAt, at);
+        paintFloor(P, C, ox, oy, tx, ty, dirtAt, at, blend);
 
         if (kind === 'wall') paintWall(P, C, ox, oy, tx, ty, at);
         else if (kind === 'liquid') paintLiquid(P, C, ox, oy, tx, ty, at);
@@ -233,21 +249,31 @@ G.Tiles = (() => {
     return P.canvas();
   }
 
-  function paintFloor(P, C, ox, oy, tx, ty, dirtAt, at) {
+  function paintFloor(P, C, ox, oy, tx, ty, dirtAt, at, blend) {
     let dirtCount = 0;
+    const boundary = blend.some(p => p !== C);
     for (let y = 0; y < T; y++) {
       for (let x = 0; x < T; x++) {
         const gx = tx * T + x, gy = ty * T + y;
         const lx = ox + x, ly = oy + y;           // coordenadas locales del chunk
         const dirt = dirtAt(lx, ly);
         if (dirt) dirtCount++;
-        const pal = dirt ? C.dirt : C.floor;
+        // Dither a narrow band across regional borders, in global pixel coordinates.
+        let color = C;
+        if (boundary) {
+          let distance=x, nearest=0;
+          if(T-1-x<distance){distance=T-1-x;nearest=1;}
+          if(y<distance){distance=y;nearest=2;}
+          if(T-1-y<distance){distance=T-1-y;nearest=3;}
+          if(blend[nearest] !== C && distance<4 && H(gx,gy,137)<(4-distance)/8) color=blend[nearest];
+        }
+        const pal = dirt ? color.dirt : color.floor;
         // Tono por ruido suave + tramado por píxel.
         const band = H(gx >> 3, gy >> 3, 11) * 0.7 + H(gx, gy, 12) * 0.5;
         let col = pal[Math.min(pal.length - 1, Math.floor(band * pal.length / 1.2))];
         const r = H(gx, gy, 13);
-        if (r < 0.035) col = C.speck;
-        else if (r > 0.985) col = C.light;
+        if (r < 0.035) col = color.speck;
+        else if (r > 0.985) col = color.light;
         // Borde de la tierra: labio oscuro arriba, hierba que la invade abajo.
         if (dirt && !dirtAt(lx, ly - 1)) col = C.speck;
         else if (!dirt && dirtAt(lx, ly - 1) && r < 0.5) col = C.light;
@@ -263,7 +289,7 @@ G.Tiles = (() => {
     // Detalles: matojo, piedrecita o flor.
     const d = H(tx, ty, 14);
     const dx = ox + 3 + Math.floor(H(tx, ty, 15) * 10), dy = oy + 4 + Math.floor(H(tx, ty, 16) * 9);
-    if (dirt) {
+    if (dirt || C.groundStyle === 'mineral') {
       if (d < 0.22) { P.set(dx, dy, C.light); P.set(dx + 1, dy, C.light); P.set(dx, dy + 1, C.speck); P.set(dx + 1, dy + 1, C.speck); }
       return;
     }
@@ -395,6 +421,7 @@ G.Tiles = (() => {
       const edge = pack('#14200f');
       if (B.prop === 'crystal') return PAINT.crystal(B);
       if (B.prop === 'dead') return PAINT.deadtree(B);
+      if (['pine','palm','cactus'].includes(B.prop)) return PAINT[B.prop](B);
       for (let y = 26; y < 38; y++) for (let x = 13; x < 18; x++) P.set(x, y, Tr[x === 13 || x === 17 ? 0 : 1]);
       P.set(12, 37, Tr[0]); P.set(18, 37, Tr[0]); P.set(11, 38, Tr[0]); P.set(19, 38, Tr[0]);
       const blobs = [[15, 20, 10], [9, 16, 7], [21, 16, 7], [15, 10, 8], [10, 23, 6], [20, 23, 6]];
@@ -410,6 +437,39 @@ G.Tiles = (() => {
       return P.canvas();
     },
 
+    pine(B) {
+      const P=Pix(32,44), L=B.leaf.map(h=>pack(h)), Tr=B.trunk.map(h=>pack(h));
+      for(let y=29;y<43;y++)for(let x=14;x<18;x++)P.set(x,y,Tr[x<16?0:1]);
+      for(const [top,base,half] of [[19,36,14],[10,27,11],[2,17,8]]) {
+        for(let y=top;y<=base;y++) {
+          const w=Math.round((y-top)/(base-top)*half);
+          for(let x=16-w;x<=16+w;x++)P.set(x,y,L[y<top+4?3:x<16?2:1]);
+        }
+      }
+      outline(P,pack('#314b40'));return P.canvas();
+    },
+    palm(B) {
+      const P=Pix(44,44), L=B.leaf.map(h=>pack(h)), Tr=B.trunk.map(h=>pack(h));
+      for(let y=14;y<43;y++)for(let x=0;x<4;x++)P.set(21+Math.round((y-14)/13)+x,y,Tr[(x+y%5)<3?0:1]);
+      for(const [dx,dy] of [[-20,-5],[-17,9],[-9,-13],[9,-13],[20,-4],[17,10]]) {
+        for(let t=0;t<=1;t+=.025) {
+          const x=Math.round(23+dx*t), y=Math.round(17+dy*t+5*t*t);
+          const w=t<.7?2:1;
+          for(let v=-w;v<=w;v++)P.set(x,y+v,L[v<0?3:v===0?2:1]);
+        }
+      }
+      outline(P,pack('#244a36'));return P.canvas();
+    },
+    cactus(B) {
+      const P=Pix(28,35), L=B.leaf.map(h=>pack(h));
+      for(let y=3;y<34;y++)for(let x=11;x<18;x++)P.set(x,y,L[x<14?2:1]);
+      for(const [left,top,base] of [[4,13,25],[21,7,20]]) {
+        for(let y=top;y<=base;y++)for(let x=left;x<left+4;x++)P.set(x,y,L[x%2?2:1]);
+        for(let x=Math.min(left,13);x<=Math.max(left+3,15);x++)for(let y=base-3;y<=base;y++)P.set(x,y,L[1]);
+      }
+      for(let y=6;y<31;y+=5){P.set(12,y,L[3]);P.set(16,y+2,L[3]);}
+      outline(P,pack('#40543a'));return P.canvas();
+    },
     crystal(B) {
       const P = Pix(26, 40);
       const L = B.leaf.map(h => pack(h)), D = B.trunk.map(h => pack(h));
@@ -626,7 +686,7 @@ G.Tiles = (() => {
 
   function clearProps() { propCache.clear(); }
 
-  return { T, BIOMES, NORMAL, ARENA, ARENA_THEMES, ARENA_TYPES, paintChunk, propSprite, clearProps,
+  return { T, BIOMES, NORMAL, ARENA, REGION_START, ARENA_THEMES, ARENA_TYPES, paintChunk, propSprite, clearProps,
            /** Índice de bioma de la arena de un tipo. */
            arenaBiome: type => ARENA + Math.max(0, ARENA_TYPES.indexOf(type)) };
 })();

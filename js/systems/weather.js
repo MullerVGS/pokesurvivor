@@ -98,7 +98,7 @@ G.Weather = (() => {
       if (checkT <= 0) {
         checkT = CHECK;
         if (Math.random() < CHANCE) {
-          const kind = pick(G.World.biome), dur = Math.round(G.U.rand(55, 75));
+          const kind = pick(Math.floor(time / 240)), dur = Math.round(G.U.rand(55, 75));
           start(kind, dur);
           if (G.Coop.isHost) G.Coop.broadcast(['wx', kind, dur]);
         }

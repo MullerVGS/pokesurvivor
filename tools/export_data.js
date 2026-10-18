@@ -22,7 +22,7 @@ for (const f of ['js/core/util.js', 'js/core/i18n.js']) load(f);
 const add = G.I18n.add;
 G.I18n.add = d => { Object.assign(EN, d); add(d); };
 for (const f of ['js/data/lang-en.js', 'js/core/settings.js', 'js/data/pokedex.js', 'js/data/sprites-meta.js', 'js/data/moves.js', 'js/data/types.js',
-                 'js/data/items.js', 'js/data/achievements.js', 'js/world/tiles.js', 'js/data/funding.js']) {
+                 'js/data/items.js', 'js/data/achievements.js', 'js/data/sound-cues.js', 'js/data/sound-pack.js', 'js/data/biomes.js', 'js/world/tiles.js', 'js/data/funding.js']) {
   try { load(f); } catch (e) { console.warn('aviso', f, e.message); }
 }
 const moves = Object.values(G.Moves.BY_ID).map(m => {

@@ -6,7 +6,11 @@
  * Cada línea en español y en inglés.
  */
 G.CHANGELOG = [
-  { d: '2026-10-18', title: ['Encuentros, objetos y movimientos', 'Encounters, items and moves'], new: [
+  { d: '2026-10-18', title: ['Biomas, encuentros y exploración', 'Biomes, encounters and exploration'], new: [
+    ['Un mundo con doce biomas conectados: praderas, bosque, selva, ríos y lagos, pantano, costa, mar e islas, montañas, caverna, desierto, volcán y nieve. Las regiones permanecen en su lugar durante la partida; los caminos unen el mapa y el inicio es seguro.',
+     'A world with twelve connected biomes: grasslands, forest, rainforest, rivers and lakes, wetlands, coast, sea and islands, mountains, cave, desert, volcano and snow. Regions stay in place during the run; paths connect the map and the starting area is safe.'],
+    ['El terreno, la vegetación, los líquidos, el minimapa y los encuentros dependen del lugar. La música acompaña tu región con las playlists existentes y una transición estable al cruzar fronteras. En cooperativo cada jugador conserva su entorno y su música local.',
+     'Terrain, vegetation, liquids, the minimap and encounters depend on location. Music follows your region using the existing playlists, with a stable transition at borders. In co-op each player keeps their local surroundings and music.'],
     ['Los jefes cercanos, incluidos Tauros alfa y Ditto, tienen una flecha dorada con su nombre y distancia cuando quedan fuera de pantalla, hasta 100 metros. Desaparece al verlos o derrotarlos.',
      'Nearby bosses, including Alpha Tauros and Ditto, have a golden arrow with their name and distance when off screen, up to 100 metres away. It disappears when they enter the screen or are defeated.'],
     ['Los objetos permanecen en el suelo, brillando. Al acercarte comparas el que llevas con el del suelo; F o el botón táctil lo recoge, incluso si no llevas ninguno. Al cambiar, tu objeto anterior queda disponible para tus compañeros. La comparación no pausa el combate.',
@@ -22,6 +26,8 @@ G.CHANGELOG = [
     ['Filtros avanzados en la Pokédex: despliega los 18 iconos y combina hasta dos tipos. Agua + Dragón muestra sólo Pokémon con ambos tipos. Las opciones sin resultados se desactivan y las selecciones se conservan al volver.',
      'Advanced Pokédex filters: expand the 18 icons and combine up to two types. Water + Dragon shows only Pokémon with both types. Options with no matches are disabled and selections persist when returning.']
   ], chg: [
+    ['Los biomas son tres veces más amplios. La música se mantiene al cruzar franjas pequeñas: espera 8 segundos dentro de la nueva región y al menos 45 segundos entre cambios. Los jefes y las grietas conservan su música inmediata.',
+     'Biomes are three times wider. Music stays steady across small strips: it waits for 8 seconds in the new region and at least 45 seconds between changes. Bosses and rifts still switch music immediately.'],
     ['El acceso con Google y correo, la recuperación y la activación de cuentas comparten las ventanas claras y la tipografía de FireRed/LeafGreen.',
      'Google and email sign-in, recovery and account activation share the light windows and typography of FireRed/LeafGreen.'],
     ['Los jefes del mapa, incluidos Tauros alfa y Ditto, aparecen a 100 metros y vagan sin atacar hasta que los desafías. Un jefe que está paseando no bloquea las grietas ni los demás eventos.',

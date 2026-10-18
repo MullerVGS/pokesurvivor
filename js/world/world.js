@@ -34,7 +34,10 @@ G.World = (() => {
   const FLOOR = 0, WALL = 1, LIQUID = 2;
   const KIND = ['floor', 'wall', 'liquid'];
 
-  let seed = 1, biome = 0;
+  let seed = 1, biome = G.Tiles.REGION_START, regional = true;
+  let regions = G.Regions.create(seed), revision = 0, focusCandidate = -1, focusTime = 0;
+  const MUSIC_SETTLE = 8, MUSIC_MIN_STAY = 45;
+  let musicBiome = biome, musicCandidate = -1, musicTime = 0, musicAge = 0;
   let arena = null;                        // { tx, ty, r } en tiles
   const data = new Map();                  // "cx,cy" -> datos del chunk
   let images = new Map();                  // "cx,cy" -> canvas horneado
@@ -83,6 +86,7 @@ G.World = (() => {
       if (th.pools && ad < arena.r - 1.5 && fbm(tx / 3.2, ty / 3.2, seed + 37 + arena.tx) < th.pools) return LIQUID;
       return FLOOR;
     }
+    if (regional) return regions.sample(tx,ty).terrain;
     const d = Math.hypot(tx, ty);
     if (d < 9) return FLOOR;                          // claro inicial
     const ramp = G.U.clamp((d - 9) / 8, 0, 1);       // aparición suave
@@ -146,6 +150,9 @@ G.World = (() => {
         continue;
       }
 
+      const region = regional ? regions.sample(tx,ty) : null;
+      if (region && region.clear) continue;
+      const ecology = region ? G.Biomes.all[region.biome].props : null;
       const h = H(tx, ty, seed + 404);
       const grove = fbm(tx / 10, ty / 10, seed + 505) > 0.6;
       let type = null, kind = 0;
@@ -156,10 +163,10 @@ G.World = (() => {
         kind = Math.floor(H(tx, ty, seed + 910) * (type === 'altar' ? 4 : 3));
       }
       if (type) { /* ya elegido */ }
-      else if (open && h < (grove ? 0.07 : 0.006)) type = 'tree';
-      else if (open && h > 0.992) type = 'rock';
       else if (open && h > 0.985 && h <= 0.992 && H(tx, ty, seed + 606) < 0.07) type = 'chest';
-      else if (fbm(tx / 5, ty / 5, seed + 707) > 0.66 && H(tx, ty, seed + 808) < 0.75) type = 'grass';
+      else if (open && h < (ecology ? ecology.tree * (grove ? 2 : .55) : grove ? .07 : .006)) type = 'tree';
+      else if (open && h > 1 - (ecology ? ecology.rock : .008)) type = 'rock';
+      else if (fbm(tx / 5, ty / 5, seed + 707) > (ecology ? .56 : .66) && H(tx, ty, seed + 808) < (ecology ? ecology.grass * 1.6 : .75)) type = 'grass';
       if (!type) continue;
 
       const p = makeProp(type, tx, ty, kind);
@@ -199,7 +206,46 @@ G.World = (() => {
   function kindAt(x, y) { return KIND[terrainAt(tileOf(x), tileOf(y))]; }
   function isWall(x, y) { return terrainAt(tileOf(x), tileOf(y)) === WALL; }
   function isLiquid(x, y) { return terrainAt(tileOf(x), tileOf(y)) === LIQUID; }
-  function liquidKind() { return G.Tiles.BIOMES[biome].liquid; }
+  function biomeAt(x,y) {
+    if (!regional) return biome;
+    const tx=tileOf(x), ty=tileOf(y);
+    if (arenaDist(tx,ty)<arena_outer()) return G.Tiles.arenaBiome(arena.type);
+    return G.Tiles.REGION_START + regions.sample(tx,ty).biome;
+  }
+  function regionAt(x,y) {
+    const index=biomeAt(x,y)-G.Tiles.REGION_START;
+    return G.Biomes.all[index] || null;
+  }
+  function liquidKind(x,y) { return G.Tiles.BIOMES[x == null ? biome : biomeAt(x,y)].liquid; }
+  function musicCue() {
+    const index = regional ? musicBiome : biome;
+    return G.Biomes.all[index-G.Tiles.REGION_START]?.musicCue || G.BIOME_MUSIC[index%3];
+  }
+  // Music can outlast a narrow river/coast crossing while the HUD names the actual region.
+  function focusMusic(next, dt, instant) {
+    musicAge += dt;
+    if (instant) {
+      musicBiome=next;musicCandidate=-1;musicTime=0;musicAge=0;
+      return;
+    }
+    if (next===musicBiome) { musicCandidate=-1;musicTime=0;return; }
+    if (next!==musicCandidate) { musicCandidate=next;musicTime=0; }
+    musicTime += dt;
+    if (musicTime>=MUSIC_SETTLE && musicAge>=MUSIC_MIN_STAY) {
+      musicBiome=next;musicCandidate=-1;musicTime=0;musicAge=0;
+    }
+  }
+  /** Presentation follows the local player only after a stable boundary crossing. */
+  function focus(x,y,dt=0,instant=false) {
+    const next=biomeAt(x,y);
+    dt=Math.max(0,dt);
+    focusMusic(next,dt,instant);
+    if(next===biome){focusCandidate=-1;focusTime=0;return false;}
+    if(next!==focusCandidate){focusCandidate=next;focusTime=0;}
+    focusTime+=dt;
+    if(!instant && focusTime<1.2)return false;
+    setBiome(next,true);focusCandidate=-1;focusTime=0;return true;
+  }
 
   /**
    * Efecto del charco actual sobre un Pokémon de estos tipos:
@@ -214,8 +260,8 @@ G.World = (() => {
     spark:  { dmg: 0.045, flat: 4, every: 0.7, color: '#ffe14d', immune: ['electric', 'ground'] },
     ice:    { slide: true, immune: ['ice'] }
   };
-  function liquidEffect(types) {
-    const e = LIQ[liquidKind()] || LIQ.water;
+  function liquidEffect(types,x,y) {
+    const e = LIQ[liquidKind(x,y)] || LIQ.water;
     if (e.immune && types && types.some(t => e.immune.includes(t))) return {};
     return e;
   }
@@ -230,7 +276,7 @@ G.World = (() => {
   function walkable(tx, ty) {
     const t = terrainAt(tx, ty);
     if (t === WALL) return false;
-    if (t === LIQUID && (LIQ[liquidKind()] || {}).dmg) return false;   // lava, veneno, descarga
+    if (t === LIQUID && (LIQ[liquidKind(tx*TS+TS/2,ty*TS+TS/2)] || {}).dmg) return false;   // lava, veneno, descarga
     const p = propAtTile(tx, ty);
     return !(p && p.solid);
   }
@@ -370,7 +416,7 @@ G.World = (() => {
       c.props.splice(c.props.indexOf(p), 1);
       c.propAt.delete(p.tx + ',' + p.ty);
     }
-    const B = G.Tiles.BIOMES[biome];
+    const B = G.Tiles.BIOMES[biomeAt(p.x,p.y)];
     G.Audio.sfx(p.type === 'grass' ? 'grass' : p.type === 'chest' ? 'chest' : 'break');
     if (p.type === 'grass') {
       G.FX.burst(p.x, p.y - 6, B.grass[1], 6, 70);
@@ -426,8 +472,9 @@ G.World = (() => {
     // Campo continuo de "tierra"; tiles.js lo muestrea en rejilla y lo
     // interpola por píxel para que las manchas tengan bordes orgánicos.
     const S = 6 * G.Tiles.T;
-    const dirtField = (gx, gy) => fbm(gx / S, gy / S, seed + 303);
-    img = G.Tiles.paintChunk(cx, cy, N, at, dirtField, bi, seed);
+    const dirtField = (gx, gy) => regional && arenaDist(Math.floor(gx/T),Math.floor(gy/T))>=arena_outer() && regions.roadDistance(gx/T,gy/T)<2.3 ? .9 : fbm(gx / S, gy / S, seed + 303);
+    const palette = regional ? (tx,ty)=>biomeAt(tx*TS,ty*TS) : bi;
+    img = G.Tiles.paintChunk(cx, cy, N, at, dirtField, palette, seed);
     if (cache.size > MAX_IMAGES) cache.delete(cache.keys().next().value);
     cache.set(k, img);
     return img;
@@ -460,15 +507,15 @@ G.World = (() => {
 
   /** Brillos animados sobre el agua / burbujas de la lava (y del veneno y la electricidad). */
   function drawLiquid(ctx, cam, t) {
-    const B = G.Tiles.BIOMES[biome];
-    const lava = B.liquid === 'lava' || B.liquid === 'poison' || B.liquid === 'spark';
-    ctx.fillStyle = B.foam;
     const P = G.Sprites.PX;
     for (const [cx, cy] of visibleChunks(cam)) {
       const c = chunkData(cx, cy);
       for (let i = 0; i < c.liquids.length; i += 2) {
         const tx = c.liquids[i], ty = c.liquids[i + 1];
         const x = tx * TS, y = ty * TS;
+        const B=G.Tiles.BIOMES[biomeAt(x,y)];
+        const lava=['lava','poison','spark'].includes(B.liquid);
+        ctx.fillStyle=B.foam;
         if (!cam.sees(x + TS / 2, y + TS / 2, TS)) continue;
         const ph = H(tx, ty, 77) * 6.28;
         const k = (Math.sin(t * (lava ? 2.2 : 1.6) + ph) + 1) / 2;
@@ -498,7 +545,7 @@ G.World = (() => {
                   : p.type === 'altar' ? p.kind * 2 + (p.used ? 1 : 0)
                   : p.type === 'spring' ? (p.charge < 0.15 ? 1 : 0)
                   : p.type === 'trap' ? p.kind : 0;
-    const img = G.Tiles.propSprite(biome, p.type, variant);
+    const img = G.Tiles.propSprite(biomeAt(p.x,p.y), p.type, variant);
     const w = img.width * P, h = img.height * P;
     if (p.flat) {
       // Planos (manantial, trampa): pegados al suelo, centrados en su casilla.
@@ -553,30 +600,34 @@ G.World = (() => {
 
   // ---------------- control ----------------
 
-  function reset(s) {
+  function reset(s, options = {}) {
     seed = (s | 0) || 1;
+    regional=options.regional!==false;regions=G.Regions.create(seed);
+    biome=regional?G.Tiles.REGION_START:0;revision++;nextPropId=1;
+    focusCandidate=-1;focusTime=0;
+    musicBiome=biome;musicCandidate=-1;musicTime=0;musicAge=0;
     data.clear(); images.clear(); broken.clear();
     fade = null; arena = null;
   }
 
   /**
-   * @param i        bioma (G.Tiles.ARENA y siguientes son las arenas de la grieta)
-   * @param instant  sin fundido (al empezar una run)
-   * Una run cambia de bioma cada 4 min y recorre toda la lista; al acabarse,
-   * vuelve a empezar. (Antes, pasado el último, hacia el minuto 84, se pedía
-   * un bioma que no existe: pantalla negra, el juego roto y niveles sin fin.)
+   * @param i        índice de paleta: presentación local, arena o fondo del menú
+   * @param instant  sin fundido en el fondo del menú
+   * En una partida, la geografía depende de la posición; cambiar el foco
+   * sólo cambia el nombre y la música, nunca el terreno ni sus imágenes.
    */
   function setBiome(i, instant = false) {
     const n = G.Tiles.BIOMES.length;
     const b = ((i % n) + n) % n;
     if (b === biome) return;
+    if (regional) { biome=b;fade=null;return; }
     // El terreno es el mismo: sólo cambia la paleta, fundiéndose poco a poco.
     fade = instant ? null : { from: biome, images, t: 0 };
     biome = b;
     images = new Map();
   }
 
-  function biomeName() { return G.Tiles.BIOMES[biome].name; }
+  function biomeName(x,y) { return G.Tiles.BIOMES[x == null ? biome : biomeAt(x,y)].name; }
 
   /** Viñeta en coordenadas de pantalla. */
   function drawVignette(ctx, w, h) {
@@ -588,21 +639,25 @@ G.World = (() => {
   }
 
   return {
-    TS, CW, reset, setBiome, biomeName, liquidKind, liquidEffect, walkable,
+    TS, CW, reset, setBiome, biomeName, biomeAt, regionAt, focus, musicCue, liquidKind, liquidEffect, walkable,
+    get generatorVersion() { return G.Regions.VERSION; }, get revision() { return revision; }, get seed() { return seed; },
     kindAt, isWall, isLiquid, isFree, collide, projectileBlock, propsInCircle, nearestBreakable,
     damageProp, breakAt, specialsNear, update,
     breakProp(p) { if (!broken.has(p.tx + ',' + p.ty)) destroyProp(p); },
     /** Arena de la grieta: { tx, ty, r } (en tiles) o null. */
     setArena(a) {
-      arena = a;
-      if (!a) return;
-      a.th = G.Tiles.ARENA_THEMES[a.type] || G.Tiles.ARENA_THEMES.normal;
-      // Olvida los chunks de esa zona (si se hubieran generado antes).
-      const R = a.r + 9;
-      for (const k of [...data.keys(), ...images.keys()]) {
-        const [cx, cy] = k.split(',').map(Number);
-        if (Math.abs(cx * N + N / 2 - a.tx) < R + N && Math.abs(cy * N + N / 2 - a.ty) < R + N) { data.delete(k); images.delete(k); }
+      const previous=arena;arena=a;revision++;
+      if(a)a.th=G.Tiles.ARENA_THEMES[a.type] || G.Tiles.ARENA_THEMES.normal;
+      // Remove both old and new masks, including when an arena closes.
+      for(const bounds of [previous,a]) {
+        if(!bounds)continue;
+        const R=bounds.r+9;
+        for(const k of new Set([...data.keys(),...images.keys()])) {
+          const [cx,cy]=k.split(',').map(Number);
+          if(Math.abs(cx*N+N/2-bounds.tx)<R+N && Math.abs(cy*N+N/2-bounds.ty)<R+N){data.delete(k);images.delete(k);}
+        }
       }
+      G.Path?.clear();
     },
     get arena() { return arena; }, drawGround, drawLiquid, visibleProps, drawProp, drawVignette,
     get biome() { return biome; }

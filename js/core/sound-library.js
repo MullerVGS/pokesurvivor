@@ -10,7 +10,7 @@ G.SoundLibrary = (() => {
   } catch (_) { /* Rotation also works without persistent storage. */ }
   const era = () => eras[Math.max(0, eraIndex)];
   function enter(name) {
-    if (!['village', 'forest', 'cave', 'volcano', 'city', 'gym', 'pokestop'].includes(name) || name === area) return;
+    if (G.SOUND_CUES[name]?.kind !== 'music' || ['boss','rift','judgment'].includes(name) || name === area) return;
     area = name; eraIndex = (eraIndex + 1) % eras.length;
     try { localStorage.setItem('ps.sound-era', eraIndex); } catch (_) { /* ephemeral rotation */ }
   }

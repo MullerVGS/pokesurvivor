@@ -72,7 +72,7 @@ G.Events = (() => {
       const type = G.U.pick(types);
       const defs = G.Enemies.hordeDefs(type, time);
       G.Sprites.preload(defs.map(d => d.dex));
-      cur = { id, t: 0, dur: DUR, type, defs };
+      cur = { id, t: 0, dur: DUR, type, defs, at:time, media:new Map() };
       G.Spawner.burst(Math.round(6 * G.Coop.scaleRate(players.length)));
     } else if (id === 'gold') {
       cur = { id, t: 0, dur: DUR };
@@ -102,7 +102,15 @@ G.Events = (() => {
   }
 
   /** Lo que sale durante una horda (lo usa G.Enemies.bagAt). */
-  function bag() { return cur && cur.id === 'horde' && cur.defs.length ? cur.defs : null; }
+  function bag(medium = 'land') {
+    if (!cur || cur.id !== 'horde' || !cur.defs?.length) return null;
+    if (medium === 'land') return cur.defs;
+    if (!cur.media.has(medium)) {
+      const compatible = cur.defs.filter(d => G.BiomeEncounters.compatible(G.DEX_BY[d.dex],medium));
+      cur.media.set(medium,compatible.length ? compatible : G.Enemies.hordeDefs(cur.type,cur.at,medium));
+    }
+    return cur.media.get(medium);
+  }
 
   // ---------------- duende del tesoro ----------------
 

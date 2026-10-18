@@ -6,7 +6,7 @@
  *   fondo     el mapa de Mundo Misterioso: paredes en azul claro sobre el
  *             panel, agua/lava con el color del bioma. Cada chunk se pinta una
  *             vez (8×8) y se juntan en un lienzo que sólo se rehace al cambiar
- *             de chunk, de bioma o de arena. En calidad baja, sólo los iconos.
+ *             de chunk o de arena. En calidad baja, sólo los iconos.
  *   iconos    (mapas de caracteres con contorno, como icons.js) tú en el
  *             centro, compañeros, jefes, la grieta, altares (grises si ya se
  *             usaron), manantiales, cofres con candado, el recuadro de la
@@ -32,9 +32,8 @@ G.Minimap = (() => {
   const SPAN = Math.ceil((MAX_RANGE + G.World.CW / 2) / G.World.CW);   // chunks a cada lado del tuyo
   const SIDE = (SPAN * 2 + 1) * CN;      // lado del fondo compuesto, en px
   const K = '#1b1528';                   // contorno (icons.js)
-  const WALL = [150, 158, 186], WALL_LIT = [222, 228, 244];         // paredes del mapa, sobre el panel azul
 
-  let lastPl = null, biome = -1, arena = null;
+  let lastPl = null, revision = -1;
   const ready = new Set();               // chunks que ya existen en world.js ("cx,cy")
   const tiles = new Map();               // "cx,cy" -> lienzo de CN×CN
   let bg = null, bgAt = '', dirty = true;
@@ -67,31 +66,31 @@ G.Minimap = (() => {
     }
   }
 
-  /** Olvida todo al empezar otra partida, al cambiar de bioma o al abrirse/cerrarse una arena. */
+  /** Olvida todo al empezar otra partida, al reiniciarse el mundo o al abrirse/cerrarse una arena. */
   function sync(pl) {
-    if (pl === lastPl && G.World.biome === biome && G.World.arena === arena) return;
-    if (pl !== lastPl || G.World.arena !== arena) ready.clear();
-    lastPl = pl; biome = G.World.biome; arena = G.World.arena;
+    if (pl === lastPl && G.World.revision === revision) return;
+    ready.clear();lastPl=pl;revision=G.World.revision;
     tiles.clear(); pois = []; poiAt = 0; bgAt = ''; dirty = true;
   }
 
   /**
    * Un chunk a 1 px por cada 2×2 tiles: pared si hay alguna, si no líquido si
-   * hay alguno (el suelo, transparente: se ve el panel). Las paredes que dan
+   * hay alguno; el suelo usa el color de su región sobre el panel. Las paredes que dan
    * al suelo, más claras (el borde del pasillo, como en Mundo Misterioso), y
    * el agua o la lava, con la espuma del bioma en la orilla.
    */
   function paintChunk(cx, cy) {
-    const Bm = G.Tiles.BIOMES[biome], liq = rgb(Bm.liq), foam = rgb(Bm.foam), TS = G.World.TS;
+    const TS = G.World.TS, palettes = new Map(), palette = new Array(CN*CN);
     const kind = new Array(CN * CN);
     for (let j = 0; j < CN; j++) for (let i = 0; i < CN; i++) {
-      let k = 'floor';
+      let k = 'floor', bi=G.World.biomeAt((cx*N+i*2)*TS,(cy*N+j*2)*TS);
       for (let v = 0; v < 2 && k !== 'wall'; v++) for (let u = 0; u < 2; u++) {
         const t = G.World.kindAt((cx * N + i * 2 + u) * TS + TS / 2, (cy * N + j * 2 + v) * TS + TS / 2);
-        if (t === 'wall') { k = 'wall'; break; }
-        if (t !== 'floor') k = 'liq';
+        if (t === 'wall') { k='wall';bi=G.World.biomeAt((cx*N+i*2+u)*TS,(cy*N+j*2+v)*TS);break; }
+        if (t !== 'floor') { k='liq';bi=G.World.biomeAt((cx*N+i*2+u)*TS,(cy*N+j*2+v)*TS); }
       }
-      kind[j * CN + i] = k;
+      kind[j*CN+i]=k;palette[j*CN+i]=bi;
+      if(!palettes.has(bi)){const b=G.Tiles.BIOMES[bi];palettes.set(bi,{floor:rgb(b.floor[0]),liq:rgb(b.liq),foam:rgb(b.foam),wall:rgb(b.wallTop[0]),light:rgb(b.wallLight)});}
     }
     const c = document.createElement('canvas');
     c.width = c.height = CN;
@@ -99,10 +98,10 @@ G.Minimap = (() => {
     const at = (i, j) => (i < 0 || j < 0 || i >= CN || j >= CN ? 'wall' : kind[j * CN + i]);
     for (let j = 0; j < CN; j++) for (let i = 0; i < CN; i++) {
       const k = kind[j * CN + i];
-      if (k === 'floor') continue;
+      const color=palettes.get(palette[j*CN+i]);
       const edge = [at(i - 1, j), at(i + 1, j), at(i, j - 1), at(i, j + 1)].includes('floor');
-      const col = k === 'liq' ? (edge ? foam : liq) : edge ? WALL_LIT : WALL, o = (j * CN + i) * 4;
-      img.data[o] = col[0]; img.data[o + 1] = col[1]; img.data[o + 2] = col[2]; img.data[o + 3] = k === 'liq' ? 235 : edge ? 255 : 150;
+      const col=k==='floor'?color.floor:k==='liq'?(edge?color.foam:color.liq):edge?color.light:color.wall, o=(j*CN+i)*4;
+      img.data[o] = col[0]; img.data[o + 1] = col[1]; img.data[o + 2] = col[2]; img.data[o + 3] = k === 'floor' ? 170 : k === 'liq' ? 235 : edge ? 255 : 180;
     }
     g.putImageData(img, 0, 0);
     if (tiles.size >= MAX_TILES) tiles.delete(tiles.keys().next().value);

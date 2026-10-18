@@ -215,6 +215,7 @@ G.Rift = (() => {
     const pl = G.Game.player;
     const a = arena;
     arena = null;
+    G.World.setArena(null);
     G.World.setBiome(a.biome, true);
     G.Weather.clear();
     // Invitado: no se borra nada. El anfitrión avisa de los de la arena que se
@@ -227,6 +228,7 @@ G.Rift = (() => {
     G.Hazards.clear();
     for (const p of G.Game.everyone()) { p.x = a.back.x; p.y = a.back.y; }
     pl.x = a.back.x; pl.y = a.back.y;
+    G.World.focus(pl.x,pl.y,0,true);
     if (pl.dead) pl.revive(0.3);
     G.Camera.x = pl.x; G.Camera.y = pl.y;
     G.Game.flash('#c9a6ff', 0.8);

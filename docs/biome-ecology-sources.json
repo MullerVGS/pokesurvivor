@@ -1,0 +1,31 @@
+{
+  "snapshot": "2026-10-18",
+  "source_repositories": {
+    "pokeapi": {
+      "repo": "PokeAPI/pokeapi",
+      "commit": "6fd69dfe90465ba96534f6816fc817737d1f97f6"
+    },
+    "firered": {
+      "repo": "pret/pokefirered",
+      "commit": "037335f4c725d7c9aecdac87066f2002b4bd7e14"
+    },
+    "emerald": {
+      "repo": "pret/pokeemerald",
+      "commit": "731ad5bfd6e6f265508d0efcca0ba42f9dcf5881"
+    }
+  },
+  "inputs": {
+    "biomes.proposed.json": "182dc0d576deaaa215d2ad0b389390cb7fddd6b62130abb03680012e3853f532",
+    "reference-encounters.csv": "7d009a2114271cf3c6b3fcfd52d8054f68746883dbea867bb8ab9c2088810838",
+    "pret-map-encounters.csv": "eb5a3bb8c24316e3bb636c8b8e80165f77fd1d489c88b97f7b474c68408d23b9",
+    "pokemon.csv": "594d5ae980c4cd3fb2bec6675e2fbda5938d4c2a30ad1fbda0e384d7e6df9a84"
+  },
+  "output": {
+    "path": "js/data/biome-ecology.js",
+    "sha256": "d2fcbb704e10bca87836e86d3723777e4244b7372cdb2a8a90d0843350262e58"
+  },
+  "notes": [
+    "Map contexts are curated; aquatic methods stay separate from land.",
+    "Habitat and type affinity are fallback hints, not encounter evidence."
+  ]
+}

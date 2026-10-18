@@ -20,7 +20,7 @@ G.Game = (() => {
   let time = 0, last = 0, pendingLevels = 0;
   let pl = null;
   let caught = [];          // shinies conseguidos en esta run
-  let biome = -1;
+
 
   const st = { get time() { return time; } };
 
@@ -108,8 +108,7 @@ G.Game = (() => {
     G.Path.clear();
     G.Hazards.clear();
     G.World.reset(coop ? coop.seed : Math.floor(Math.random() * 1e6));
-    G.World.setBiome(0, true);
-    biome = 0;
+    G.World.focus(0,0,0,true);
     time = 0; pendingLevels = 0; flashT = 0;
     runReal = performance.now(); tampered = false;
 
@@ -136,7 +135,7 @@ G.Game = (() => {
     G.Camera.x = pl.x; G.Camera.y = pl.y; G.Camera.shake = 0;
     // Hojas de sprites locales: el compañero y los primeros enemigos.
     G.Sprites.preload([mon.dex], 8000, pl.shiny);
-    G.Audio.music(G.BIOME_MUSIC[0]);
+    G.Audio.music(G.World.musicCue());
     // Para el ranking: el servidor apunta cuándo empieza la partida (anti-trampas).
     if (!coop || G.Coop.isHost) G.Ranking.runStarted(coop ? 'g' : 's');
     deathT = 0;
@@ -591,17 +590,12 @@ G.Game = (() => {
     }
     time += dt;
 
-    const b = Math.floor(time / 240);
-    if (b !== biome && !G.Rift.inArena && !G.Judgment.active) {
-      biome = b;
-      G.World.setBiome(b);
-      G.Audio.sfx('biome');
-      G.Spawner.say('— ' + G.World.biomeName() + ' —', 3);
-      G.FX.ring(pl.x, pl.y, 10, G.Camera.outerRadius(), '#ffffff', 0.7, 6);
-    }
-
     pl.frozen = coop && G.UI.isOpen('scr-pause');
     pl.update(dt);
+    if (!G.Rift.inArena && !G.Judgment.active && G.World.focus(pl.x,pl.y,dt)) {
+      G.Audio.sfx('biome');
+      G.Spawner.say('— ' + G.World.biomeName() + ' —',3,true);
+    }
     if (coop) {
       for (const p of G.Coop.puppets()) { p.netUpdate(dt); G.Combat.ghostOrbit(p, dt, time); }
       if (pl.dead) reviveTick(dt);
@@ -627,7 +621,7 @@ G.Game = (() => {
     G.Weather.update(dt, time, pl);
     G.FX.update(dt);
 
-    G.Audio.music(G.Judgment.active ? G.Judgment.music : G.Rift.inArena ? 'rift' : (G.EnemyMgr.bossFighting() || G.Challenges.fighting) ? 'boss' : G.BIOME_MUSIC[biome % G.BIOME_MUSIC.length]);
+    G.Audio.music(G.Judgment.active ? G.Judgment.music : G.Rift.inArena ? 'rift' : (G.EnemyMgr.bossFighting() || G.Challenges.fighting) ? 'boss' : G.World.musicCue());
     if (!coop || G.Coop.isHost) maybeLevelUp();
     if (pl.bonds > 0) offerBond(true);
     if (G.Coop.isHost) checkAllDown(dt);
@@ -740,7 +734,7 @@ G.Game = (() => {
     const CAST = [1, 4, 7, 25, 133, 52, 39, 35, 16, 43, 60, 69, 74, 92, 129, 147, 113, 143, 54, 79];
 
     function init() {
-      G.World.reset(4242);
+      G.World.reset(4242,{regional:false});
       G.World.setBiome(0, true);
       G.Camera.x = 0; G.Camera.y = 0;
       wanderers = CAST.map(dex => spawn(dex, true));
@@ -813,7 +807,7 @@ G.Game = (() => {
 
     /** Al volver de una run, recupera el mundo del menú. */
     function restore() {
-      G.World.reset(4242);
+      G.World.reset(4242,{regional:false});
       G.World.setBiome(bi, true);
       G.FX.clear(); G.Projectiles.clear(); G.Combat.clearFields(); G.EnemyMgr.clear(); G.Pickups.clear();
       wanderers = CAST.map(dex => spawn(dex, true));
@@ -858,7 +852,7 @@ G.Flow = {
     G.DB.ready({ restore: !G.LoginUI.pendingReset }).then(restored => {
       document.getElementById('boot').classList.add('hidden');
       // En otra tarea: crear el sonido para comprobarlo cuesta ~60 ms y no debe bloquear la carga.
-      setTimeout(() => this.tapToStart(() => { if (G.CollectionPreview.start()) return; if (restored) this.afterLogin(); else this.toLogin(); }), 0);
+      setTimeout(() => this.tapToStart(() => { if (G.CollectionPreview.start() || G.BiomePreview.start()) return; if (restored) this.afterLogin(); else this.toLogin(); }), 0);
     });
   },
   /**
@@ -906,6 +900,10 @@ G.Flow = {
   /** Empieza la partida en grupo (el anfitrión la manda a todos). */
   startCoop(cfg) {
     if (G.Game.state !== 'ui' || !G.Social.room) return;
+    if (cfg.generatorVersion !== G.Regions.VERSION) {
+      G.UI.toast('El mapa ha cambiado. Todos deben actualizar el juego desde el menú antes de jugar juntos.',6000);
+      return;
+    }
     G.LobbyUI.close();
     G.Game.startRun(cfg);
   }

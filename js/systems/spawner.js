@@ -49,12 +49,18 @@ G.Spawner = (() => {
   }
 
   /** Punto del anillo donde quepa: no dentro de paredes ni en el agua. */
-  function freePoint(pl, angle, flying) {
+  function freePoint(pl, angle, flying, def = null) {
     for (let i = 0; i < 8; i++) {
       const a = angle + (i === 0 ? 0 : G.U.rand(-0.9, 0.9));
       const [x, y] = ringPoint(pl, a);
       if (players.length > 1 && seenByAnyone(x, y)) continue;
-      if (flying || G.World.isFree(x, y, 14)) return [x, y];
+      const medium=G.World.isLiquid(x,y)?G.World.liquidKind(x,y):'land';
+      if(def) {
+        if(!G.BiomeEncounters.compatible(G.DEX_BY[def.dex],medium))continue;
+        const region=G.World.regionAt(x,y)?.id;
+        if(region&&!G.Enemies.bagAt(G.Game.st.time,region,medium).some(d=>d.dex===def.dex))continue;
+      }
+      if (flying || G.World.isFree(x, y, 14, !!def && medium!=='land')) return [x, y];
     }
     return null;
   }
@@ -76,9 +82,20 @@ G.Spawner = (() => {
   }
 
   function spawnOne(pl, t, angle) {
-    const def = G.U.pick(G.Enemies.bagAt(t));
-    const pt = freePoint(pl, angle == null ? Math.random() * 6.2832 : angle, isFlyer(def));
+    let def=null, pt=null;
+    const base=angle==null?Math.random()*6.2832:angle;
+    for(let i=0;i<12;i++) {
+      const point=ringPoint(pl,base+(i===0?0:G.U.rand(-1.2,1.2))), [x,y]=point;
+      if(players.length>1 && seenByAnyone(x,y))continue;
+      const medium=G.World.isLiquid(x,y)?G.World.liquidKind(x,y):'land';
+      const region=G.World.regionAt(x,y)?.id;
+      const bag=G.Enemies.bagAt(t,region,medium).filter(d=>G.BiomeEncounters.compatible(G.DEX_BY[d.dex],medium));
+      if(!bag.length)continue;
+      const candidate=G.U.pick(bag);
+      if(isFlyer(candidate)||G.World.isFree(x,y,14,medium!=='land')){def=candidate;pt=point;break;}
+    }
     if (!pt) return null;
+    G.Sprites.preload([def.dex]);
     const shiny = rollShiny(def.dex);
     const e = new G.Enemy(def, pt[0], pt[1], scaled(G.Enemies.scale(t), G.Coop.scaleHp(players.length) * hpK(t)));
     e.dmg *= DMG_K; e.xp = Math.round(e.xp * XP_K);
@@ -166,7 +183,7 @@ G.Spawner = (() => {
     if (!players.length) players = [pl];
     const sp = Math.hypot(pl._vx || 0, pl._vy || 0);
     const a0 = sp > 20 ? Math.atan2(pl._vy, pl._vx) : Math.random() * 6.2832;
-    const pt = freePoint(pl, a0 + G.U.rand(-0.9, 0.9), e.flying);
+    const pt = freePoint(pl, a0 + G.U.rand(-0.9, 0.9), e.flying, e);
     if (!pt) return false;
     e.x = pt[0]; e.y = pt[1]; e.kx = e.ky = 0;
     e.phase = 'walk'; e.pt = 0; e.jump = null; e.jumpLift = 0;

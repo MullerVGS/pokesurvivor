@@ -126,8 +126,7 @@ G.Enemies = (() => {
    * y, desde el segundo tramo, también uno de los que atacan con aviso.
    * En el primero no hay más personalidades (para ir aprendiendo).
    */
-  function castFor(tier) {
-    const all = candidates(tier);
+  function castFor(tier, all = candidates(tier)) {
     const kind = p => behaviorOf(p);
     // Primero el tipo de apoyo (a partes iguales) y luego el Pokémon.
     const kinds = SUPPORT.filter(k => all.some(p => kind(p) === k));
@@ -138,20 +137,23 @@ G.Enemies = (() => {
     return pick.concat(G.U.pickN(all.filter(p => !pick.includes(p)), tier.cast - pick.length));
   }
 
+  function addRunner(list) {
+    const runner = list.filter(d => ['chase', 'charger', 'tank'].includes(d.behavior)).sort((a,b) => b.spd-a.spd)[0];
+    if (runner) { runner.behavior='runner';runner.spd=Math.round(runner.spd*1.6);runner.hp=Math.round(runner.hp*.7); }
+  }
+
+  const regionalCast = new Map();
   let cast = null;      // [{ from, list: [def] }]
   let bosses = null;    // [def de jefe]
 
   /** Sortea el elenco de una run nueva. */
   function rollRun() {
+    regionalCast.clear();
     cast = TIERS.map((tier, ti) => ({
       from: tier.from,
       list: castFor(tier).map(p => defFor(p, tier, ti))
     }));
-    for (const tier of cast) {
-      const plain = tier.list.filter(d => d.behavior === 'chase' || d.behavior === 'charger' || d.behavior === 'tank');
-      const r = plain.sort((a, b) => b.spd - a.spd)[0];
-      if (r) { r.behavior = 'runner'; r.spd = Math.round(r.spd * 1.6); r.hp = Math.round(r.hp * 0.7); }
-    }
+    for (const tier of cast) addRunner(tier.list);
     const used = new Set();
     bosses = BOSS_SLOTS.map(slot => {
       const ok = p => !p.leg && G.SPRITE_META[p.dex] && !used.has(p.dex);
@@ -193,25 +195,46 @@ G.Enemies = (() => {
     return Object.keys(G.U.TYPE_COLOR).filter(ty => all.filter(p => p.types.includes(ty)).length >= 3);
   }
   /** Hasta 4 Pokémon de un tipo, con los stats del tramo actual. */
-  function hordeDefs(type, t) {
-    const ti = tierAt(t);
-    const pool = candidates(TIERS[ti]).filter(p => p.types.includes(type) && !NO_HORDE.has(behaviorOf(p)));
-    return G.U.pickN(pool, 4).map(p => defFor(p, TIERS[ti], ti));
+  function hordeDefs(type, t, medium = 'land') {
+    const ti = tierAt(t), tier = TIERS[ti];
+    const eligible = p => p.types.includes(type) && !NO_HORDE.has(behaviorOf(p)) && G.BiomeEncounters.compatible(p,medium);
+    let pool = candidates(tier).filter(eligible);
+    if (!pool.length && medium !== 'land') {
+      // Keep the event's type when its usual roster cannot enter the local liquid.
+      // Use the nearest eligible BST range, still with the current tier's combat stats.
+      pool = G.DEX.filter(p => p.rarity < 5 && G.SPRITE_META[p.dex] && eligible(p));
+      const distance = p => Math.max(tier.bst[0]-p.bst,0,p.bst-tier.bst[1]);
+      const nearest = Math.min(...pool.map(distance));
+      pool = pool.filter(p => distance(p) <= nearest+30);
+    }
+    return G.U.pickN(pool, 4).map(p => defFor(p, tier, ti));
   }
 
   /** Bolsa de enemigos disponibles en el segundo `t`. */
-  function bagAt(t) {
+  function bagAt(t, biome = null, medium = 'land') {
     // Durante una horda de un tipo sólo salen los de ese tipo (systems/events.js).
-    const horde = G.Events && G.Events.bag();
+    const horde = G.Events && G.Events.bag(medium);
     if (horde) return horde;
     if (!cast) rollRun();
     const bag = [];
-    for (const tier of cast) {
+    for (let ti=0;ti<cast.length;ti++) {
+      const tier=cast[ti];
       if (t < tier.from) continue;
-      const w = t - tier.from > 260 ? 3 : 10;       // los tramos viejos pierden peso
-      for (const e of tier.list) for (let i = 0; i < w; i++) bag.push(e);
+      let list=tier.list;
+      if(biome) {
+        const key=biome+':'+medium+':'+ti;
+        if(!regionalCast.has(key)) {
+          const rules=TIERS[ti], pool=G.BiomeEncounters.pool(candidates(rules),biome,medium,rules.cast,behaviorOf,rules.from>0);
+          const defs=castFor(rules,pool).map(p=>defFor(p,rules,ti));
+          addRunner(defs);
+          regionalCast.set(key,defs);
+        }
+        list=regionalCast.get(key);
+      }
+      const w = t - tier.from > 260 ? 3 : 10;
+      for (const e of list) for (let i = 0; i < w; i++) bag.push(e);
     }
-    return bag.length ? bag : cast[0].list;
+    return bag.length ? bag : biome ? [] : cast[0].list;
   }
 
   /** dex del elenco que aparecerán pronto (para precargar sprites). */

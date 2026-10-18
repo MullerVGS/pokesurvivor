@@ -4,6 +4,7 @@
  * son los oficiales en inglés.
  */
 G.I18n.add({
+  "El mapa ha cambiado. Todos deben actualizar el juego desde el menú antes de jugar juntos.": "The map has changed. Everyone must update the game from the menu before playing together.",
   "T · Explorar": "T · Explore",
   "Elige una recompensa ·": "Choose a reward ·",
   "Movimientos: pasa el ratón 1 segundo para consultar. T o mantener pulsado para explorar.": "Moves: hover for 1 second to inspect. T or press and hold to explore.",
