@@ -241,7 +241,7 @@ G.Minimap = (() => {
     }
 
     // Grieta y jefes: dentro, el icono parpadea; lejos, pegado al borde con flecha.
-    const marks = G.Challenges.markers().map(p => ({ ...p, name: 'rift', a: '#ff8ad8', b: '#ffffff' }));
+    const marks = G.Challenges.markers().map(p => ({ ...p, name: 'boss', a: p.id === 'ditto' ? '#da9ac8' : '#f2bd72', b: '#ffffff' }));
     const rift = G.Rift.rift;
     if (rift) marks.push({ x: rift.x, y: rift.y, name: 'rift', a: blink ? '#e2d0ff' : '#a06bff', b: blink ? '#a06bff' : '#e2d0ff' });
     for (const e of G.EnemyMgr.all()) if (e.boss && !e.dead) marks.push({ x: e.x, y: e.y, name: 'boss', a: '#ffcb3d', b: blink ? '#ff5f6d' : '#fff7d6' });

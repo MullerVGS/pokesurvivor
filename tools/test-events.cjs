@@ -28,7 +28,7 @@ const URL = process.env.EVENT_TEST_URL || 'http://127.0.0.1:3087/dev.html';
       window.beginEvent = (id, time = 240) => {
         const p = G.Game.player;
         if (!G.Challenges.offer(id, time, G.Game.everyone(), { x: p.x, y: p.y })) throw Error('offer failed: ' + id);
-        G.Challenges.request(p, G.Challenges.state.seq, G.Challenges.snapshot(p));
+        G.EnemyMgr.get(G.Challenges.state.units[0].id).hurt(1, '#fff', 0, 0, 0, null, p);
         return p;
       };
       window.stepEvent = dt => G.Challenges.update(dt, G.Game.everyone(), 240);
@@ -42,73 +42,90 @@ const URL = process.env.EVENT_TEST_URL || 'http://127.0.0.1:3087/dev.html';
     await page.evaluate(fn); console.log('PASS', name);
   }
   try {
-    await test('scheduler leaves room for the next boss and avoids rifts', () => {
-      fresh(); check(G.Challenges.available(240).length === 4, 'four eligible events');
-      check(!G.Challenges.available(300).includes('house'), 'house cannot overlap next boss');
+    await test('only two roaming bosses remain, and scheduled encounters keep their reservation', () => {
+      fresh(); check(G.Challenges.ids.join(',') === 'stampede,ditto', 'removed House/Rocket');
+      check(G.Challenges.available(240).length === 2, 'two eligible bosses');
       check(G.Challenges.available(1790).length === 0, 'judgment reserve');
-      beginEvent('ditto'); check(G.Challenges.available(240).length === 0, 'only one event');
-      check(G.Challenges.blocksEncounters && G.Challenges.spawnFactor === 0.5, 'pressure control');
+      check(!G.Challenges.offer('house', 240, G.Game.everyone()), 'removed House cannot be offered');
+      check(!G.Challenges.offer('rocket', 240, G.Game.everyone()), 'removed Rocket cannot be offered');
     });
-    await test('house waves, partial rewards, final reward and return to the world', () => {
-      const p = fresh(); const origin = [p.x, p.y]; beginEvent('house');
-      for (let i = 0; i < 3; i++) {
-        check(G.EnemyMgr.all().length === [6, 8, 10][i], 'wave size');
-        stepEvent(20.01);
-        check(p.coins === [150, 350, 600][i], 'cumulative reward');
-        if (i < 2) { const s = G.Challenges.state; p.x = s.x; p.y = s.y; G.Challenges.request(p, s.seq); }
+    await test('boss roams, marker follows, proximity never starts combat, first player hit does', () => {
+      const p = fresh(); G.Challenges.offer('stampede', 240, [p], {x:p.x, y:p.y});
+      const e = G.EnemyMgr.get(G.Challenges.state.units[0].id), hp = p.hp;
+      for(let i=0;i<100;i++) G.EnemyMgr.update(0.1,[p]);
+      check(Math.hypot(e.x-p.x,e.y-p.y)>1,'boss moved');
+      check(G.Challenges.markers()[0].x===e.x,'marker follows entity');
+      p.x=e.x;p.y=e.y; G.EnemyMgr.rebuildGrid(); G.Combat.resolve(0.1,p,1); stepEvent(25);
+      check(G.Challenges.state.phase==='roam' && p.hp===hp,'no proximity trigger or passive damage');
+      const before=e.hp; e.hurt(1,'#fff',0,0,0,null,p);
+      check(G.Challenges.state.phase==='fight' && e.hp===before-1,'real first attack starts fight');
+      check(e.scale>1.5 && G.Challenges.fighting,'large active boss');
+    });
+    await test('Tauros remains present, alternates all three attacks, and pays only once on defeat', () => {
+      fresh(); const p=beginEvent('stampede'), e=G.EnemyMgr.get(G.Challenges.state.units[0].id), seen=new Set();
+      p.maxHp=p.hp=100000;
+      for(let i=0;i<500;i++) { stepEvent(0.03); if(G.Challenges.state.attack) seen.add(G.Challenges.state.attack.id); }
+      check(['charge','stomp','stampede'].every(id=>seen.has(id)),'full moveset');
+      check(G.EnemyMgr.get(e.id)===e && !e.dead,'same boss throughout fight');
+      e.hurt(1e8,'#fff',0,0,0,null,p);stepEvent(0.1);stepEvent(0.1);takeReward();
+      check(p.coins===250&&p.item==='herdtrail'&&!G.Challenges.state,'single reward');
+    });
+    await test('Stampede spans the screen, leaves a safe corridor and hits at most once per pass', () => {
+      fresh(); const p=beginEvent('stampede'), s=G.Challenges.state;
+      s.moveIndex=2;s.castT=0;stepEvent(0.01);const a=s.attack,z=a.zones[0];
+      check(a.id==='stampede'&&z.len>G.Camera.w*1.5&&z.w>200,'large lanes');
+      check(!a.zones.some(z=>G.Hazards.inside(z,a.x,a.y,p.r)),'safe center corridor');
+      p.x=z.x+Math.cos(z.angle)*z.len*0.5;p.y=z.y+Math.sin(z.angle)*z.len*0.5;
+      p.maxHp=p.hp=1000;p.invuln=0;const hp=p.hp;
+      for(let i=0;i<130;i++){p.invuln=0;stepEvent(0.03);}
+      check(hp-p.hp>0&&hp-p.hp<=80,'one 8% hit');
+    });
+    await test('Ditto snapshots first hitter, transforms, copies natural colors and alternates faster', () => {
+      const p=fresh();p.addMove('ember'); beginEvent('ditto');
+      const s=G.Challenges.state, model=JSON.stringify(s.model.moves),e=G.EnemyMgr.get(s.units[0].id),hp=e.hp;
+      e.hurt(1e8,'#fff',0,0,0,null,p);check(e.hp===hp&&e.invulnerable,'transformation invulnerability');
+      p.moves[0].lvl=5;check(JSON.stringify(s.model.moves)===model,'immutable snapshot');
+      stepEvent(3.01);check(s.phase==='fight'&&!e.invulnerable&&e.scale===2,'large transformed copy');
+      stepEvent(0.51);const first=G.Challenges.warning;check(first&&first.duration<1,'short readable windup');
+      const x=e.x;p.x=e.x+400;G.Challenges.updateEnemy(e,0.1,p);check(e.x!==x,'moves during warning');
+      stepEvent(first.duration+0.01);
+      const shot=G.Projectiles.all().find(o=>!o.friendly);check(shot&&!shot.corrupt,'normal hostile projectile');
+      check(shot.color===G.U.TYPE_COLOR[shot.mtype],'natural move palette');
+      stepEvent(0.33);check(G.Challenges.warning.index!==first.index,'next copied move with short recovery');
+      e.hurt(1e8,'#fff',0,0,0,null,p);stepEvent(0.1);takeReward();
+      check(p.coins===400&&p.item==='dittoecho','Ditto reward');
+    });
+    await test('actual melee and projectile damage can engage a roaming boss', () => {
+      for(const id of ['tackle','ember']) {
+        const p=fresh();G.Challenges.offer('stampede',240,[p],{x:40,y:0});
+        const e=G.EnemyMgr.get(G.Challenges.state.units[0].id);G.EnemyMgr.rebuildGrid();
+        p.aim=0;p.aimed=true;p.aimAt={x:e.x,y:e.y};p.target=e;
+        G.Combat.replay(p,G.Moves.instance(id,1));
+        for(let i=0;i<15;i++){G.Projectiles.update(.02,p,G.EnemyMgr.all());G.Combat.resolve(.02,p,i*.02);}
+        check(G.Challenges.state.phase==='fight','real '+id+' engages');
       }
-      check(!G.Challenges.state && !G.World.arena, 'house exited');
-      check(p.x === origin[0] && p.y === origin[1], 'return position');
-      check(!p.item, 'item waits for confirmation'); takeReward();
-      check(p.t1 === 1 && p.item, 'ticket and confirmed item');
-      check(G.EnemyMgr.count === 0 && G.Pickups.count === 0, 'timed survivors have no loot');
     });
-    await test('house emergency exit preserves completed rewards', () => {
-      const p = fresh(); beginEvent('house'); stepEvent(20.01);
-      const s = G.Challenges.state; p.x = s.x; p.y = s.y + 195; stepEvent(0.1);
-      check(!G.Challenges.state && p.coins === 150 && !p.t1, 'leave with stage one');
+    await test('scheduled bosses wait during a fight, then resume after victory', () => {
+      fresh();const p=beginEvent('stampede'),e=G.EnemyMgr.get(G.Challenges.state.units[0].id),time=G.Enemies.BOSSES[0].at;
+      G.Spawner.update(.01,[p],time);check(!G.EnemyMgr.bossAlive(),'scheduled boss deferred');
+      e.hurt(1e8,'#fff',0,0,0,null,p);stepEvent(.01);
+      G.Spawner.update(.01,[p],time);check(G.EnemyMgr.bossAlive(),'scheduled boss resumes');
     });
-    await test('Rocket pays each generator once and expires without extra penalty', () => {
-      const p = fresh(); beginEvent('rocket');
-      G.EnemyMgr.all().find(e => e.eventRole === 'generator').hurt(1e8);
-      stepEvent(0.1); stepEvent(0.1); check(p.coins === 150, 'one generator, one payment');
-      stepEvent(60); check(!G.Challenges.state && p.coins === 150 && p.t1 === 0, 'partial reward survives timeout');
-    });
-    await test('Rocket completion offers two distinct existing items', () => {
-      const p = fresh(); beginEvent('rocket');
-      for (const e of G.EnemyMgr.all().slice()) if (e.eventRole === 'generator') e.hurt(1e8);
-      stepEvent(0.1); check(p.coins === 450 && p.t1 === 1, 'Rocket reward');
-      G.ItemUI.update();
-      const cards = [...document.querySelectorAll('#item-compare [data-item-option]')];
-      check(cards.length === 2 && cards[0].dataset.itemOption !== cards[1].dataset.itemOption, 'two choices');
-      cards[1].click(); check(!p.item, 'selection does not equip'); takeReward();
-      check(p.item === cards[1].dataset.itemOption && !G.GroundItems.all().length, 'one chosen reward equipped');
-    });
-    await test('Tauros hits at most once per pass and awards the trail item', () => {
-      const p = fresh(); beginEvent('stampede'); const s = G.Challenges.state;
-      const lane = [-72, 0, 72].find(y => y !== s.safeY);
-      p.x = s.x - 175; p.y = s.y + lane; p.invuln = 0;
-      const hp = p.hp; stepEvent(2.02); const after = p.hp;
-      check(after < hp && hp - after <= p.maxHp * 0.081, '8% hit');
-      p.invuln = 0; stepEvent(0.01); check(p.hp === after, 'no repeated hit');
-      p.x = s.x; p.y = s.y; stepEvent(3); stepEvent(5.01); stepEvent(5.01);
-      check(s.phase === 'alpha', 'three passes then alpha');
-      G.EnemyMgr.get(s.alpha).hurt(1e8); stepEvent(0.1);
-      takeReward(); check(p.coins === 250 && p.item === 'herdtrail', 'alpha reward');
-      check(Math.abs(p.spdMul - 1.1) < 0.001, 'speed bonus'); p.equip(null);
-      check(Math.abs(p.spdMul - 1) < 0.001, 'speed bonus removed');
-    });
-    await test('Ditto snapshots its initiator, transforms invulnerably and awards Echo', () => {
-      const p = fresh(); p.addMove('ember');
-      beginEvent('ditto'); const s = G.Challenges.state, snapshot = JSON.stringify(s.model.moves);
-      const e = G.EnemyMgr.get(s.units[0].id), hp = e.hp;
-      e.hurt(1e8); check(e.hp === hp && e.invulnerable, 'cannot damage transforming Ditto');
-      p.moves[0].lvl = 5; check(JSON.stringify(s.model.moves) === snapshot, 'immutable snapshot');
-      stepEvent(3.01); check(s.phase === 'fight' && !e.invulnerable, 'three second transformation');
-      stepEvent(0.8); check(G.Challenges.warning, 'telegraph before attack');
-      stepEvent(1.01); check(G.Projectiles.all().some(o => !o.friendly && o.corrupt), 'hostile copied projectile');
-      e.hurt(1e8); stepEvent(0.1);
-      takeReward(); check(p.coins === 400 && p.item === 'dittoecho', 'Ditto reward');
+    await test('Ditto expression preserves transparency and rear-facing frames, including shiny animation sheets', async () => {
+      for(const dex of [1,4,7,25,133,813]) for(const shiny of [false,true]) for(const anim of ['Idle','Walk','Attack']) {
+        const sheet=G.Sprites.sheet(dex,anim,shiny),meta=G.Sprites.animMeta(dex,anim,shiny);
+        for(let i=0;i<200&&!sheet.ready;i++) await new Promise(r=>setTimeout(r,10));
+        check(sheet.ready,'sprite loaded');
+        const filtered=G.DittoFace.sheet(sheet.img,meta,dex),c=document.createElement('canvas');c.width=sheet.img.width;c.height=sheet.img.height;
+        const ctx=c.getContext('2d',{willReadFrequently:true});ctx.drawImage(sheet.img,0,0);const before=ctx.getImageData(0,0,c.width,c.height).data;
+        ctx.clearRect(0,0,c.width,c.height);ctx.drawImage(filtered,0,0);const after=ctx.getImageData(0,0,c.width,c.height).data;
+        let changed=0;
+        for(let i=0;i<before.length;i+=4){check(before[i+3]===after[i+3],'silhouette unchanged');
+          const row=Math.floor(Math.floor(i/4/c.width)/meta.h),same=before[i]===after[i]&&before[i+1]===after[i+1]&&before[i+2]===after[i+2];
+          if(row>=3&&row<=5)check(same,'no face on back');if(!same)changed++;
+        }
+        check(changed>0,'front expression applied');check(filtered===G.DittoFace.sheet(sheet.img,meta,dex),'sheet cached');
+      }
     });
     await test('Echo counts casts, deals 60%, and never recursively creates echoes', () => {
       const p = fresh(); p.equip('dittoecho'); G.EventItems.tick(0, p); p.aimed = true;
@@ -159,7 +176,7 @@ const URL = process.env.EVENT_TEST_URL || 'http://127.0.0.1:3087/dev.html';
       const kinds = new Set();
       for (const def of Object.values(G.Moves.BY_ID)) {
         if (kinds.has(def.kind)) continue; kinds.add(def.kind);
-        const m = G.Moves.instance(def.id, 1); m.corrupt = true;
+        const m = G.Moves.instance(def.id, 1);
         G.Combat.replay(fake, m); G.Combat.updateFields(0.6); G.Projectiles.update(0.1, p, G.EnemyMgr.all()); G.Combat.resolve(0.1, p, 1);
         G.Combat.clearFields(); G.Projectiles.clear();
       }
@@ -179,7 +196,7 @@ const URL = process.env.EVENT_TEST_URL || 'http://127.0.0.1:3087/dev.html';
     await exchange();
     await host.evaluate(() => { const p = G.Coop.mate('guest').pl; G.Challenges.offer('ditto', 240, G.Game.everyone(), { x: p.x, y: p.y }); });
     await exchange();
-    await guest.evaluate(() => { G.Game.player.shiny = true; G.Game.player.addMove('tackle'); stepEvent(1.3); });
+    await guest.evaluate(() => { G.Game.player.shiny = true; G.Game.player.addMove('tackle'); const e=G.EnemyMgr.get(G.Challenges.state.units[0].id); e.hurt(1, '#fff', 0, 0, 0, null, G.Game.player); });
     await exchange();
     const model = await host.evaluate(() => G.Challenges.state.model);
     assert.equal(model.dex, 4); assert.equal(model.uid, 'guest'); assert.equal(model.moves.length, 2); assert.equal(model.shiny, true);
@@ -202,16 +219,14 @@ const URL = process.env.EVENT_TEST_URL || 'http://127.0.0.1:3087/dev.html';
     console.log('PASS co-op guest initiator snapshot and synchronized rewards through the real co-op protocol');
     for (const [uid, p] of Object.entries(pages)) await p.evaluate(({ cfg, uid }) => { G.DB.save.partner = uid === 'host' ? 25 : 4; G.Game.startRun(cfg); }, { cfg, uid });
     await exchange();
-    await host.evaluate(() => beginEvent('house'));
-    await exchange();
-    assert.equal(await guest.evaluate(() => G.Challenges.inHouse), true);
-    assert.equal(await guest.evaluate(() => G.EnemyMgr.count), 8);
-    await host.evaluate(() => { stepEvent(20.01); const s = G.Challenges.state; const p = G.Game.player; p.x = s.x; p.y = s.y + 195; stepEvent(0.1); });
-    await exchange();
-    for (const p of [host, guest]) {
-      assert.deepEqual(await p.evaluate(() => ({ house: G.Challenges.inHouse, coins: G.Game.player.coins, arena: G.World.arena })), { house: false, coins: 150, arena: null });
-    }
-    console.log('PASS co-op house travel, scaled wave, partial rewards and exit');
+    await host.evaluate(()=>G.Challenges.offer('stampede',240,G.Game.everyone(),{x:200,y:0}));await exchange();
+    await guest.evaluate(()=>{const e=G.EnemyMgr.get(G.Challenges.state.units[0].id);e.hurt(1,'#fff',0,0,0,null,G.Game.player);});await exchange();
+    for(const p of [host,guest]) assert.equal(await p.evaluate(()=>G.Challenges.state.phase),'fight');
+    await host.evaluate(()=>{const s=G.Challenges.state;s.moveIndex=2;s.castT=0;stepEvent(0.01);});await exchange();
+    assert.deepEqual(await guest.evaluate(()=>G.Challenges.state.attack),await host.evaluate(()=>G.Challenges.state.attack));
+    await host.evaluate(()=>{const e=G.EnemyMgr.get(G.Challenges.state.units[0].id);e.hurt(1e8,'#fff',0,0,0,null,G.Game.player);stepEvent(0.1);});await exchange();
+    for(const p of [host,guest]) {await p.evaluate(()=>takeReward());assert.equal(await p.evaluate(()=>G.Game.player.coins),250);}
+    console.log('PASS co-op first-hit engagement, shared stampede geometry and rewards');
     assert.deepEqual(errors, []);
     console.log('All event integration checks passed.');
   } finally { await browser.close(); }

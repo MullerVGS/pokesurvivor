@@ -258,7 +258,7 @@ G.Coop = (() => {
           const e = G.EnemyMgr.get(ev[1]);
           if (!e || e.dead || e.remote) break;
           hitFrom = from;
-          e.hurt(ev[2], ev[3], ev[4], ev[5], ev[6]);
+          e.hurt(ev[2], ev[3], ev[4], ev[5], ev[6], null, m.pl, ev[7]);
           hitFrom = null;
           break;
         }
@@ -283,7 +283,6 @@ G.Coop = (() => {
         case 'hs': holdOn(from); break;
         case 'he': holdOff(from); break;
         case 're': G.Rift.enterRequest(); break;
-        case 'challenge': G.Challenges.request(m.pl, ev[1], ev[2]); break;
         case 'event-item': G.EventItems.onNet(ev, m.pl); emit(['event-item', from, ev[1]], from); break;
         case 'bye': mateGone(from); break;
       }
@@ -399,7 +398,10 @@ G.Coop = (() => {
   }
 
   // invitado
-  function hit(e, d, color, dx, dy, knock) { outEv.push(['h', e.id, d, color, r1(dx), r1(dy), knock || 0]); }
+  function hit(e, d, color, dx, dy, knock, attacker) {
+    outEv.push(['h', e.id, d, color, r1(dx), r1(dy), knock || 0,
+      attacker && G.Challenges.roaming(e) ? G.Challenges.snapshot(attacker) : null]);
+  }
   function status(e, kind, val) { outEv.push(['s', e.id, kind, val]); }
 
   // anfitrión

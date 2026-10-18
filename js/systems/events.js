@@ -63,6 +63,7 @@ G.Events = (() => {
   }
 
   function start(id, time, players) {
+    if (!['horde', 'gold', 'lost', ...G.Challenges.ids].includes(id)) return;
     last = id;
     if (G.Challenges.ids.includes(id)) { if (!G.Challenges.offer(id, time, players)) start('gold', time, players); return; }
     if (id === 'horde') {

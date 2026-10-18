@@ -741,5 +741,10 @@ G.I18n.add({
   'Mientras estás dentro te quita vida, y a los enemigos que caminan, también: por eso lo rodean.': 'While you are in it, it drains your health, and walking enemies’ too: that is why they go around it.',
   'Resbala: cuesta arrancar, frenar y girar. A los enemigos no les afecta.': 'It is slippery: starting, stopping and turning are harder. It does not affect enemies.',
   'Los enemigos que flotan y los jefes pasan por encima.': 'Floating enemies and bosses go over it.',
-  'A los de tipo {x} no les afecta.': 'It does not affect {x} types.', 'Tampoco a ti.': 'Nor you.'
+  'A los de tipo {x} no les afecta.': 'It does not affect {x} types.', 'Tampoco a ti.': 'Nor you.',
+  'Tauros alfa': 'Alpha Tauros',
+  'Ataca para desafiarlo': 'Attack to challenge',
+  'Tauros alfa ronda la zona. Búscalo en el minimapa y atácalo para luchar.': 'Alpha Tauros is roaming nearby. Find it on the minimap and attack to fight.',
+  'Ditto impostor ronda la zona. Búscalo en el minimapa y atácalo para luchar.': 'Ditto Impostor is roaming nearby. Find it on the minimap and attack to fight.'
+
 });

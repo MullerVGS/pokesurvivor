@@ -44,7 +44,7 @@ G.EventItems = (() => {
         if (t.owner !== pl) continue;
         for (const e of G.EnemyMgr.queryCircle(t.x, t.y, 24)) {
           if (hits.has(e.id)) continue;
-          hits.add(e.id); e.hurt(t.damage * 0.25, '#e6bd8c');
+          hits.add(e.id); e.hurt(t.damage * 0.25, '#e6bd8c', 0, 0, 0, null, pl);
         }
       }
     }

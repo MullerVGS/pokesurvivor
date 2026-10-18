@@ -249,7 +249,7 @@ G.Sprites = (() => {
       const prev = ctx.globalAlpha;
       if (alpha < 1) ctx.globalAlpha = prev * alpha;
       // Destello: blanco entero (enemigos) o medio blanco encima (tu Pokémon).
-      if (!opts.flash || opts.softFlash) ctx.drawImage(opts.corrupt ? G.ChallengeArt.negative(s.img) : s.img, sx, sy, m.w, m.h, dx, dy, m.w * k, m.h * k);
+      if (!opts.flash || opts.softFlash) ctx.drawImage(opts.ditto ? G.DittoFace.sheet(s.img, m, this.dex) : s.img, sx, sy, m.w, m.h, dx, dy, m.w * k, m.h * k);
       if (opts.flash) {
         if (opts.softFlash) ctx.globalAlpha = prev * alpha * 0.55;
         ctx.drawImage(white(s.img), sx, sy, m.w, m.h, dx, dy, m.w * k, m.h * k);

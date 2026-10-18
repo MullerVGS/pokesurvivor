@@ -97,13 +97,14 @@
     }
 
     /** @param eff  'super' | 'weak' | null (tabla de tipos, sólo para enseñarlo) */
-    hurt(amount, color = '#fff', dirX = 0, dirY = 0, knock = 0, eff = null) {
+    hurt(amount, color = '#fff', dirX = 0, dirY = 0, knock = 0, eff = null, attacker = null, attackSnapshot = null) {
       if (this.dead || this.invulnerable) return;
+      if (attacker && !this.remote && G.Challenges.onHit(this, attacker, attackSnapshot)) return;
       const d = Math.max(1, Math.round(amount));
       // Copia de un enemigo del anfitrión: el golpe se le manda a él, que es
       // quien decide si cae. Aquí sólo se ve (número, destello y animación).
       if (this.remote) {
-        G.Coop.hit(this, d, color, dirX, dirY, knock);
+        G.Coop.hit(this, d, color, dirX, dirY, knock, attacker);
         this.hp = Math.max(1, this.hp - d);
         this.showHurt(d, color, dirX, dirY, eff);
         return;

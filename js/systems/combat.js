@@ -73,7 +73,7 @@ G.Combat = (function create(G) {
     return p && !p.dead && G.U.dist2(x, y, p.x, p.y) <= (r + p.r) ** 2 ? [p] : [];
   }
   function props(pl, x, y, r) { return pl.hostile ? [] : G.World.propsInCircle(x, y, r); }
-  function color(m) { return m.corrupt ? G.ChallengeArt.color(m.type) : G.U.TYPE_COLOR[m.type]; }
+  function color(m) { return G.U.TYPE_COLOR[m.type]; }
   function replay(pl, m, visual = false) {
     ghost = visual;
     try { if (m.kind === 'orbit') orbit(pl, m, 0, 0, visual); else run(pl, m); }
@@ -554,7 +554,7 @@ G.Combat = (function create(G) {
     const k = typeK(m.type, e);
     const crit = isCrit(pl);
     dmg *= k * (crit ? CRIT_MUL : 1);
-    e.hurt(dmg, col, dx, dy, knock, crit ? 'crit' : G.Types.label(G.Types.mult(m.type, e.types)));
+    e.hurt(dmg, col, dx, dy, knock, crit ? 'crit' : G.Types.label(G.Types.mult(m.type, e.types)), pl);
     if (!ghost) pl.onDealt(dmg);
     pl.dmgDealt += dmg;
     if (m.burn) e.applyBurn(m.burn);
@@ -587,7 +587,7 @@ G.Combat = (function create(G) {
           continue;
         }
         if (segDist2(p.px == null ? p.x : p.px, p.py == null ? p.y : p.py, p.x, p.y, pl.x, pl.y) < (p.r + pl.r) ** 2) {
-          if (p.corrupt && p.orb) {
+          if (p.owner && p.owner.hostile && p.orb) {
             if (now - (p.lastPlayerHit == null ? -99 : p.lastPlayerHit) < Math.max(0.8, p.rehit)) continue;
             p.lastPlayerHit = now;
           }
@@ -666,7 +666,7 @@ G.Combat = (function create(G) {
         const crit = isCrit(pl);
         const k = (p.mtype ? typeK(p.mtype, e) : 1) * (crit ? CRIT_MUL : 1);
         e.hurt(p.dmg * k, p.color, p.vx || (e.x - pl.x), p.vy || (e.y - pl.y), p.knock,
-               crit ? 'crit' : p.mtype ? G.Types.label(G.Types.mult(p.mtype, e.types)) : null);
+               crit ? 'crit' : p.mtype ? G.Types.label(G.Types.mult(p.mtype, e.types)) : null, p.owner || pl);
         if (Math.random() < 0.5) G.FX.sp('impact', p.vis ? p.vis.pal : 'normal', e.x, e.y - e.bodyH * 0.5, { life: 0.12, scale: 1 });
         pl.dmgDealt += p.dmg * k;
         pl.onDealt(p.dmg * k);
@@ -693,7 +693,7 @@ G.Combat = (function create(G) {
       e.touchCd = 0.55;
       e.strike(pl);
       pl.hurt(e.dmg, e.atkType);
-      if (pl.hasItem('rockyhelmet')) e.hurt(15 + pl.level * 4, '#9aa6b5', e.x - pl.x, e.y - pl.y, 80);
+      if (pl.hasItem('rockyhelmet')) e.hurt(15 + pl.level * 4, '#9aa6b5', e.x - pl.x, e.y - pl.y, 80, null, pl);
       const [nx, ny] = G.U.norm(e.x - pl.x, e.y - pl.y);
       e.kx += nx * 150; e.ky += ny * 150;
     }
