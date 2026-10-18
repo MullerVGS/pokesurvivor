@@ -31,6 +31,8 @@ G.CHANGELOG = [
     ['En el gacha, los Pokémon nuevos destacan con una Poké Ball y un destello propio. Los repetidos conservan su rareza y muestran las monedas que dan; el resumen cuenta los nuevos.',
      'New gacha Pokémon stand out with a Poké Ball and their own sparkle. Duplicates retain their rarity and show their coin refund; the summary counts new discoveries.']
   ], fix: [
+    ['El destello al volver de una grieta ya no deja la pantalla rosa al elegir un vínculo o esperar a un compañero. También desaparece si la partida está en pausa.',
+     'The flash when returning from a rift no longer leaves the screen pink while choosing a bond or waiting for a teammate. It also fades while the run is paused.'],
     ['Las demostraciones encuadran la acción del nivel seleccionado más de cerca y centrada. Las evoluciones sin descubrir muestran ???, sin revelar su nombre ni su animación hasta conseguirlas.',
      'Move demonstrations frame the selected level’s action more closely and centrally. Undiscovered evolutions show ???, keeping their name and animation hidden until you obtain them.'],
     ['La ventana de subida de nivel se ajusta a las cartas y las centra, sin dejar un gran espacio vacío a la derecha.',
