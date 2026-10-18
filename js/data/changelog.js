@@ -7,6 +7,8 @@
  */
 G.CHANGELOG = [
   { d: '2026-10-18', title: ['Encuentros, objetos y movimientos', 'Encounters, items and moves'], new: [
+    ['Los jefes cercanos, incluidos Tauros alfa y Ditto, tienen una flecha dorada con su nombre y distancia cuando quedan fuera de pantalla, hasta 30 metros. Desaparece al verlos o derrotarlos.',
+     'Nearby bosses, including Alpha Tauros and Ditto, have a golden arrow with their name and distance when off screen, up to 30 metres away. It disappears when they enter the screen or are defeated.'],
     ['Los objetos permanecen en el suelo, brillando. Al acercarte comparas el que llevas con el del suelo; F o el botón táctil lo recoge, incluso si no llevas ninguno. Al cambiar, tu objeto anterior queda disponible para tus compañeros. La comparación no pausa el combate.',
      'Items stay on the ground, glowing. Approach to compare your held item with the ground item; press F or the touch button to pick it up, even with an empty slot. Swapping drops your previous item for your teammates. Comparing items does not pause combat.'],
     ['Los recuadros de los movimientos muestran una demostración animada. Fija el recuadro con T: las líneas de los próximos niveles y la evolución abren otro recuadro con su animación, manteniendo las mejoras a la vista. La demostración usa los mismos ataques y efectos que la partida.',

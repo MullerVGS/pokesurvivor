@@ -25,6 +25,52 @@ G.HUD = (() => {
     }
   }
 
+  // Como los compañeros: sólo fuera de pantalla y hasta 30 metros.
+  // Los encuentros usan también su estado sincronizado: el invitado puede no
+  // tener la entidad todavía, porque los enemigos le llegan por proximidad.
+  function drawBossIndicators(ctx, w, h, pl) {
+    const cam = G.Camera, range = 30 * 32;
+    const bosses = G.EnemyMgr.all().filter(e => e.boss && !e.dead);
+    const encounter = G.Challenges.state;
+    if (encounter && !G.Rift.inArena && !G.Judgment.active) {
+      const e = G.EnemyMgr.get(encounter.units[0].id), marker = G.Challenges.markers()[0];
+      if (!e || !e.dead) bosses.push({
+        x: marker.x, y: marker.y,
+        bodyH: e ? e.bodyH : 0, name: G.Challenges.names[encounter.id]
+      });
+    }
+    for (const e of bosses) {
+      const distance = G.U.dist(pl.x, pl.y, e.x, e.y);
+      if (distance > range) continue;
+      const sx = (e.x - cam.left()) * cam.scale, sy = (e.y - e.bodyH * 0.5 - cam.top()) * cam.scale;
+      if (sx >= 0 && sx <= w && sy >= 0 && sy <= h) continue;
+      const M = 42;
+      const ex = G.U.clamp(sx, M, w - M), ey = G.U.clamp(sy, M + 70, h - M - 80);
+      const a = Math.atan2(sy - ey, sx - ex), ca = Math.cos(a), sa = Math.sin(a);
+      ctx.save();
+      ctx.translate(ex, ey);
+      ctx.fillStyle = 'rgba(0,0,0,.55)';
+      ctx.beginPath(); ctx.arc(0, 0, 17, 0, 6.2832); ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(ca * 28, sa * 28);
+      ctx.lineTo(Math.cos(a + 2.4) * 14, Math.sin(a + 2.4) * 14);
+      ctx.lineTo(Math.cos(a - 2.4) * 14, Math.sin(a - 2.4) * 14);
+      ctx.closePath();
+      ctx.lineWidth = 3; ctx.strokeStyle = '#20160a'; ctx.stroke();
+      ctx.fillStyle = '#ffcb3d'; ctx.fill();
+      G.Icons.draw(ctx, 'crown', -9, -9, 18);
+      const label = e.name + ' · ' + Math.round(distance / 32) + ' m';
+      ctx.font = F(800, 12); ctx.textAlign = 'center';
+      const half = ctx.measureText(label).width / 2;
+      const lx = Math.abs(ca) > 0.3 ? ex - Math.sign(ca) * (30 + half) : ex;
+      const x = G.U.clamp(lx, half + 8, w - half - 8) - ex, y = -sa * 26 + 4;
+      ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(0,0,0,.8)';
+      ctx.strokeText(label, x, y);
+      ctx.fillStyle = '#ffcb3d'; ctx.fillText(label, x, y);
+      ctx.restore();
+    }
+  }
+
   function draw(ctx, w, h, pl, st) {
     ctx.save();
     ctx.textBaseline = 'alphabetic';
@@ -137,6 +183,8 @@ G.HUD = (() => {
       G.Icons.draw(ctx, 'shiny', -12, -12, 24);
       ctx.restore();
     }
+
+    drawBossIndicators(ctx, w, h, pl);
 
     // Poder de altar activo.
     if (pl.power) {
