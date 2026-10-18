@@ -6,7 +6,7 @@
  * construyen con bloques y con los sprites de G.VFX, para que los efectos
  * casen con los sprites de Mundo Misterioso.
  */
-G.FX = (() => {
+G.FX = (function create(G) {
   const PX = G.Sprites.PX;
   // Topes según la calidad (Ajustes → Gráficos): bajo, medio, alto.
   const CAP_PARTS = [350, 800, 1400], CAP_SPRITES = [110, 210, 320], CAP_TEXTS = [25, 45, 70], DENS = [0.35, 0.65, 1];
@@ -265,6 +265,6 @@ G.FX = (() => {
     }
   }
 
-  return { clear, px, burst, spark, sp, twinkle, trail, dmgText, ring, slash, beam, update, draw,
+  return { create, clear, px, burst, spark, sp, twinkle, trail, dmgText, ring, slash, beam, update, draw,
            get count() { return parts.length + sprites.length + texts.length; } };
-})();
+})(G);

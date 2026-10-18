@@ -6,7 +6,11 @@
  * Cada línea en español y en inglés.
  */
 G.CHANGELOG = [
-  { d: '2026-10-18', title: ['Encuentros y copias oscuras', 'Encounters and dark copies'], new: [
+  { d: '2026-10-18', title: ['Encuentros, objetos y movimientos', 'Encounters, items and moves'], new: [
+    ['Los objetos permanecen en el suelo, brillando. Al acercarte comparas el que llevas con el del suelo; F o el botón táctil lo recoge, incluso si no llevas ninguno. Al cambiar, tu objeto anterior queda disponible para tus compañeros. La comparación no pausa el combate.',
+     'Items stay on the ground, glowing. Approach to compare your held item with the ground item; press F or the touch button to pick it up, even with an empty slot. Swapping drops your previous item for your teammates. Comparing items does not pause combat.'],
+    ['Los recuadros de los movimientos muestran una demostración animada. Fija el recuadro con T: las líneas de los próximos niveles y la evolución abren otro recuadro con su animación, manteniendo las mejoras a la vista. La demostración usa los mismos ataques y efectos que la partida.',
+     'Move tooltips now show an animated demonstration. Pin with T: upcoming level and evolution entries open a second tooltip with their animation, keeping the upgrade list visible. Demonstrations use the same attacks and effects as the run.'],
     ['Cuatro eventos opcionales entre las hordas: Casa Monstruo (tres cofres, 150/200/250 monedas), Operación Rocket (150 por generador), Estampida de Tauros (250 por el alfa) y Ditto impostor (400). Acércate y permanece en el círculo para empezar. No coinciden con jefes ni grietas; puedes retirarte con las recompensas de las etapas terminadas.',
      'Four optional horde encounters: Monster House (three chests, 150/200/250 coins), Operation Rocket (150 per generator), Tauros Stampede (250 for the alpha), and Ditto Impostor (400). Approach and stay in the circle to begin. They do not overlap bosses or rifts; you can leave with rewards from completed stages.'],
     ['Ditto copia al jugador que inicia el evento, también en cooperativo: parpadea durante tres segundos como una evolución y revela una copia oscura con colores negativos. Sus ataques conservan su tipo, con una paleta corrompida y avisos antes de atacar.',
@@ -15,10 +19,20 @@ G.CHANGELOG = [
      'Two encounter items: Ditto Echo repeats every third cast at 60% damage; Herd Trail gives +10% speed and leaves a damaging trail. They use the existing item slot and last for the run.']
   ], chg: [
     ['Las actualizaciones se instalan cuando tú elijas: si hay una versión nueva, aparece «Actualizar juego» en el menú principal. Se eliminan las recargas automáticas y las actualizaciones forzadas; antes de recargar se intenta sincronizar tu progreso.',
-     'Updates install when you choose: when a new version is available, an “Update game” button appears in the main menu. Automatic reloads and forced updates are removed; the game tries to sync your progress before reloading.']
+     'Updates install when you choose: when a new version is available, an “Update game” button appears in the main menu. Automatic reloads and forced updates are removed; the game tries to sync your progress before reloading.'],
+    ['La rueda del ratón cambia el movimiento activo. Todos tus movimientos se recargan también mientras están guardados; cambiar ya no acorta su recarga. La barra destaca mejor el hueco activo.',
+     'The mouse wheel switches the active move. All moves also recharge while in inactive slots; switching no longer shortens their cooldown. The move bar makes the active slot clearer.'],
+    ['Se retira la información al pasar el ratón por el escenario. La ayuda del minimapa y los recuadros del HUD y los menús siguen disponibles.',
+     'Hover information on the world has been removed. Minimap help and HUD and menu tooltips remain available.'],
+    ['En el gacha, los Pokémon nuevos destacan con una Poké Ball y un destello propio. Los repetidos conservan su rareza y muestran las monedas que dan; el resumen cuenta los nuevos.',
+     'New gacha Pokémon stand out with a Poké Ball and their own sparkle. Duplicates retain their rarity and show their coin refund; the summary counts new discoveries.']
   ], fix: [
+    ['Las demostraciones encuadran la acción del nivel seleccionado más de cerca y centrada. Las evoluciones sin descubrir muestran ???, sin revelar su nombre ni su animación hasta conseguirlas.',
+     'Move demonstrations frame the selected level’s action more closely and centrally. Undiscovered evolutions show ???, keeping their name and animation hidden until you obtain them.'],
     ['La ventana de subida de nivel se ajusta a las cartas y las centra, sin dejar un gran espacio vacío a la derecha.',
-     'The level-up window fits and centers its cards, without leaving a large empty space on the right.']
+     'The level-up window fits and centers its cards, without leaving a large empty space on the right.'],
+    ['Los controles para cerrar, volver o continuar permanecen visibles mientras desplazas el contenido de las ventanas, también en el móvil horizontal y en los resultados del gacha.',
+     'Close, back and continue controls stay visible while scrolling window content, including landscape mobile and gacha results.']
   ] },
   { d: '2026-10-17', title: ['Trae tu partida, minimapa, información al pasar el ratón, apuntar con clic y campo de visión', 'Bring your save, minimap, info on hover, click to aim and field of view'], new: [
     ['Trae tu partida de pokesurvivor.com: en la pantalla de entrada, el botón verde «Trazer meu save» te explica cómo (un favorito que se arrastra a la barra, o copiar y pegar). Tus Pokémon, shinies, monedas, tickets, mejoras y logros entran en la cuenta que crees aquí, con tu mismo apodo, que ya sale escrito. Si ya tenías cuenta aquí, se junta con lo que tenías y no se pierde nada.',

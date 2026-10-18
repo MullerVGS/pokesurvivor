@@ -43,14 +43,14 @@ G.LayoutUI = (() => {
       <div class="lay-thing lay-bar" data-k="bar"><div class="lay-slot item"></div>${slots}<span class="lay-tag">Ataques</span></div>
       <div class="lay-thing lay-pause" data-k="pause"><b></b><b></b></div>
       <div class="lay-thing lay-stick" data-k="stick"><div class="knob"></div><span class="lay-tag">Joystick</span></div>
-      <div class="box lay-panel">
+      <div class="box lay-panel dialog-frame"><div class="dialog-body">
         <h3>Arrastra los botones a donde quieras</h3>
         <p class="lay-turn">Gira el móvil: se juega en horizontal.</p>
         <div class="chips set-chips" id="lay-mode"><b>Joystick</b>
           <button class="chip" data-m="float">Flotante</button><button class="chip" data-m="fixed">Fijo</button>
         </div>
         <small class="lay-help">Flotante: aparece donde pones el dedo. Fijo: siempre en el mismo sitio.</small>
-        <div class="row wrap lay-btns">
+        </div><div class="row wrap lay-btns dialog-foot">
           <button class="btn small ghost" id="lay-cancel">Cancelar</button>
           <button class="btn small" id="lay-reset">Restablecer</button>
           <button class="btn small gold" id="lay-save">Guardar</button>

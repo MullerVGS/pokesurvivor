@@ -12,7 +12,7 @@
  * Lo que se queda en el mapa un rato (minas, meteoros que caen, torretas,
  * charcos del rastro) vive en `fields` y se actualiza/dibuja aquí.
  */
-G.Combat = (() => {
+G.Combat = (function create(G) {
   let ghost = false;
   let fields = [];
 
@@ -21,6 +21,7 @@ G.Combat = (() => {
   function tick(dt, pl, now) {
     G.EventItems.tick(dt, pl);
     if (pl.dead) return;
+    for (const m of pl.moves) if (m.kind !== 'orbit') m.t = Math.max(0, m.t - dt);
     // Vínculos: todos los movimientos del hueco activo, cada uno con su recarga.
     for (const m of pl.activeGroup()) tickMove(dt, pl, m, now);
   }
@@ -28,7 +29,6 @@ G.Combat = (() => {
   function tickMove(dt, pl, m, now) {
     if (m.kind === 'orbit') { orbit(pl, m, dt, now); return; }
 
-    m.t -= dt;
     if (m.t > 0) return;
     // Los ataques que necesitan blanco esperan a tenerlo (no gastes animación al aire).
     // Con la mira en el cursor (aim.js) salen igual, para romper cosas y abrirse paso.
@@ -699,6 +699,6 @@ G.Combat = (() => {
     }
   }
 
-  return { tick, resolve, replay, ghostCast, ghostOrbit, updateFields, drawGroundFields, drawAirFields, clearFields, reach,
+  return { create, tick, resolve, replay, ghostCast, ghostOrbit, updateFields, drawGroundFields, drawAirFields, clearFields, reach,
            get fieldCount() { return fields.length; } };
-})();
+})(G);

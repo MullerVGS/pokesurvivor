@@ -9,6 +9,19 @@ G.Input = (() => {
     left: ['keya', 'arrowleft'], right: ['keyd', 'arrowright']
   };
 
+  let wheel = 0, wheelDir = 0, wheelAt = 0, wheelSum = 0;
+  addEventListener('wheel', e => {
+    if (e.target.id !== 'game' || e.ctrlKey || e.metaKey || !G.Game || G.Game.state !== 'playing' ||
+        G.SettingsUI.isOpen || G.UI.isOpen('scr-pause') || G.Judgment.cinematic || G.Tooltip.holds()) return;
+    if (!e.deltaY) return;
+    e.preventDefault();
+    const now = performance.now(), dir = Math.sign(e.deltaY);
+    if (now - wheelAt > 180 || dir !== wheelDir) wheelSum = 0;
+    wheelAt = now; wheelDir = dir;
+    wheelSum += Math.abs(e.deltaY) * (e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? innerHeight : 1);
+    if (wheelSum >= 40) { wheel = dir; wheelSum = 0; }
+  }, { passive: false });
+
   function code(e) { return (e.code || e.key).toLowerCase(); }
 
   addEventListener('keydown', e => {
@@ -40,6 +53,7 @@ G.Input = (() => {
     /** true sólo en el frame en que se pulsó. */
     tap(c) { return pressed.has(c); },
     mouse() { return { x: mx, y: my, down: mdown }; },
-    endFrame() { pressed.clear(); }
+    wheel() { return wheel; },
+    endFrame() { pressed.clear(); wheel = 0; }
   };
 })();

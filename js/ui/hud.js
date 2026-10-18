@@ -282,6 +282,11 @@ G.HUD = (() => {
       roundRect(ctx, x, y, S, S, 12);
       ctx.fillStyle = on ? 'rgba(20,30,50,.95)' : 'rgba(10,16,28,.8)';
       ctx.fill();
+      if (on) {
+        ctx.strokeStyle = '#f4f8ff'; ctx.lineWidth = 2;
+        ctx.strokeRect(x - 4, y - 4, S + 8, S + 8);
+      }
+      roundRect(ctx, x, y, S, S, 12);
       ctx.lineWidth = on ? 2.5 : fused || (m && m.evolved) ? 2 : 1.2;
       // Vínculo: borde rosa. Evolucionado: dorado.
       ctx.strokeStyle = fused ? BOND : m && m.evolved ? '#ffd23f' : on ? col : 'rgba(140,170,210,.22)';
@@ -393,7 +398,7 @@ G.HUD = (() => {
       ctx.textAlign = 'center';
       ctx.fillStyle = 'rgba(180,200,230,.55)';
       ctx.fillText(touch ? 'Arrastra el dedo para moverte  ·  toca un ataque para cambiarlo'
-                         : 'WASD moverse  ·  1-4 / Q / E o clic en un ataque para cambiarlo  ·  Esc pausa', w / 2, h - 4);
+                         : 'WASD moverse  ·  rueda / 1-4 / Q / E cambiar ataque  ·  F recoger objeto  ·  Esc pausa', w / 2, h - 4);
     }
 
     ctx.restore();

@@ -97,6 +97,7 @@ G.Pickups = (() => {
 
   /** Suelta un objeto suelto: 'heal' | 'magnet' | 'bomb' | 'coin'. */
   function drop(kind, x, y, value = 0) {
+    if (kind === 'item') return G.GroundItems.drop(value, x, y);
     push(orb(kind, x, y, value));
   }
 

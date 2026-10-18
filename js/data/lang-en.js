@@ -4,8 +4,23 @@
  * son los oficiales en inglés.
  */
 G.I18n.add({
+  'Para evolucionar: nivel máximo y {x} en la run.': 'To evolve: maximum level and {x} collected during the run.',
+  'Evoluciona este movimiento para descubrirlo.': 'Evolve this move to discover it.',
   'Actualizar juego': 'Update game', 'Nueva versión disponible': 'New version available',
   'Actualizando…': 'Updating…',
+  'Cada tercer ataque se repite con un 60% de daño.': 'Every third attack repeats at 60% damage.',
+  '+10% velocidad. Rastro: 20% del golpe activo más fuerte/s, durante 2 s. No se acumula.': '+10% speed. Trail: 20% of your strongest active hit/s, for 2 s. Does not stack.',
+  'Objeto en el suelo': 'Ground item', 'En el suelo': 'On the ground',
+  'Sin objeto': 'No held item', 'Puedes llevar un objeto.': 'You can hold one item.',
+  'Tu objeto quedará en el suelo.': 'Your held item will drop here.',
+  'Sólo se recoge al confirmar.': 'Confirm to pick it up.',
+  'Recogiendo…': 'Picking up…', 'Recoger objeto': 'Pick up', 'Cambiar objeto': 'Swap',
+  'Elige un objeto': 'Choose an item', 'Nuevos en tu colección: {x}': 'New to your collection: {x}',
+  'Demostración del movimiento': 'Move demonstration',
+  'Movimiento de la demostración': 'Preview move', 'Movimiento inicial': 'Base move',
+  'WASD moverse · rueda / 1-4 / Q / E cambiar ataque · F recoger objeto · Esc pausa':
+    'WASD move  ·  wheel / 1-4 / Q / E switch move  ·  F pick up item  ·  Esc pause',
+  'o rueda ciclar': 'or wheel to cycle', 'recoger objeto': 'pick up item',
   'Casa Monstruo': 'Monster House', 'Operación Rocket': 'Operation Rocket',
   'Estampida de Tauros': 'Tauros Stampede', 'Ditto impostor': 'Ditto Impostor',
   'acércate y quédate en el círculo para empezar': 'approach and stay in the circle to begin',

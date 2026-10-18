@@ -9,7 +9,7 @@ G.UI = (() => {
   const $ = id => document.getElementById(id);
   const SCREENS = ['scr-login', 'scr-test', 'scr-result', 'scr-starters', 'scr-menu',
                    'scr-dex', 'scr-upgrades', 'scr-gacha', 'scr-levelup', 'scr-pause', 'scr-over',
-                   'scr-nick', 'scr-friends', 'scr-lobby', 'scr-rank', 'scr-item', 'scr-goals', 'scr-bond', 'scr-mod'];
+                   'scr-nick', 'scr-friends', 'scr-lobby', 'scr-rank', 'scr-goals', 'scr-bond', 'scr-mod'];
 
   function show(id, keepMenu = false) {
     for (const s of SCREENS) if (s !== id && !(keepMenu && s === 'scr-menu')) $(s).classList.add('hidden');
@@ -129,11 +129,11 @@ G.UI = (() => {
       const el = document.createElement('section');
       el.className = 'scr dim';
       el.style.zIndex = 70;
-      el.innerHTML = `<div class="box center" style="max-width:380px">
+      el.innerHTML = `<div class="box center dialog-frame" style="max-width:380px"><div class="dialog-body">
         <h3>Borrar cuenta</h3>
         <p class="sub">Se borrarán tu cuenta y toda tu partida, para siempre. Para confirmarlo, escribe tu contraseña.</p>
         <input class="field" type="password" maxlength="64" autocomplete="current-password" style="width:100%">
-        <div style="display:flex;gap:8px;margin-top:12px;justify-content:center;flex-wrap:wrap">
+        </div><div class="dialog-foot" style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
           <button class="btn ghost" data-a="no">Cancelar</button>
           <button class="btn danger" data-a="yes">Borrar para siempre</button>
         </div></div>`;

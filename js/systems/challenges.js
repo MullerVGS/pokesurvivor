@@ -144,7 +144,7 @@ G.Challenges = (() => {
     const pl = G.Game.player;
     if (!pl) return;
     if (o.heal && !pl.dead) pl.heal(pl.maxHp * o.heal);
-    if (o.items) G.Game.offerItem(o.items);
+    if (o.items && authority()) G.GroundItems.reward(o.items);
   }
   function enterHouse() {
     if (back) return;

@@ -557,6 +557,11 @@
     return true;
   }
 
-  G.Moves = { ALL: RAW, BY_ID, POOL, poolFor, instance, levelUp, nextUpText, startFor,
+  const CAST_ANIM = { melee: 'Attack', beam: 'Shoot', projectile: 'Shoot', nova: 'Attack',
+    aura: 'Charge', buff: 'Charge', orbit: 'Charge', boomerang: 'Shoot', chain: 'Shoot',
+    mine: 'Charge', meteor: 'Charge', turret: 'Charge', dash: 'Attack', trail: 'Walk', cone: 'Shoot' };
+  const castAnimation = kind => CAST_ANIM[kind] || 'Attack';
+
+  G.Moves = { castAnimation, ALL: RAW, BY_ID, POOL, poolFor, instance, levelUp, nextUpText, startFor,
               EVO, NEED_NAME, evoInfo, evolve };
 })();

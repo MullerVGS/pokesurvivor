@@ -32,6 +32,7 @@ const URL = process.env.EVENT_TEST_URL || 'http://127.0.0.1:3087/dev.html';
         return p;
       };
       window.stepEvent = dt => G.Challenges.update(dt, G.Game.everyone(), 240);
+      window.takeReward = () => { G.GroundItems.update(); G.ItemUI.update(); G.ItemUI.take(); };
       window.check = (condition, message) => { if (!condition) throw Error(message); };
     });
     return page;
@@ -58,7 +59,8 @@ const URL = process.env.EVENT_TEST_URL || 'http://127.0.0.1:3087/dev.html';
       }
       check(!G.Challenges.state && !G.World.arena, 'house exited');
       check(p.x === origin[0] && p.y === origin[1], 'return position');
-      check(p.t1 === 1 && p.item, 'ticket and item');
+      check(!p.item, 'item waits for confirmation'); takeReward();
+      check(p.t1 === 1 && p.item, 'ticket and confirmed item');
       check(G.EnemyMgr.count === 0 && G.Pickups.count === 0, 'timed survivors have no loot');
     });
     await test('house emergency exit preserves completed rewards', () => {
@@ -76,9 +78,11 @@ const URL = process.env.EVENT_TEST_URL || 'http://127.0.0.1:3087/dev.html';
       const p = fresh(); beginEvent('rocket');
       for (const e of G.EnemyMgr.all().slice()) if (e.eventRole === 'generator') e.hurt(1e8);
       stepEvent(0.1); check(p.coins === 450 && p.t1 === 1, 'Rocket reward');
-      const cards = [...document.querySelectorAll('#item-cards .card')];
-      check(cards.length === 2 && cards[0].dataset.tip !== cards[1].dataset.tip, 'two choices');
-      cards[0].click(); check(!!p.item, 'item equipped');
+      G.ItemUI.update();
+      const cards = [...document.querySelectorAll('#item-compare [data-item-option]')];
+      check(cards.length === 2 && cards[0].dataset.itemOption !== cards[1].dataset.itemOption, 'two choices');
+      cards[1].click(); check(!p.item, 'selection does not equip'); takeReward();
+      check(p.item === cards[1].dataset.itemOption && !G.GroundItems.all().length, 'one chosen reward equipped');
     });
     await test('Tauros hits at most once per pass and awards the trail item', () => {
       const p = fresh(); beginEvent('stampede'); const s = G.Challenges.state;
@@ -90,7 +94,7 @@ const URL = process.env.EVENT_TEST_URL || 'http://127.0.0.1:3087/dev.html';
       p.x = s.x; p.y = s.y; stepEvent(3); stepEvent(5.01); stepEvent(5.01);
       check(s.phase === 'alpha', 'three passes then alpha');
       G.EnemyMgr.get(s.alpha).hurt(1e8); stepEvent(0.1);
-      check(p.coins === 250 && p.item === 'herdtrail', 'alpha reward');
+      takeReward(); check(p.coins === 250 && p.item === 'herdtrail', 'alpha reward');
       check(Math.abs(p.spdMul - 1.1) < 0.001, 'speed bonus'); p.equip(null);
       check(Math.abs(p.spdMul - 1) < 0.001, 'speed bonus removed');
     });
@@ -104,7 +108,7 @@ const URL = process.env.EVENT_TEST_URL || 'http://127.0.0.1:3087/dev.html';
       stepEvent(0.8); check(G.Challenges.warning, 'telegraph before attack');
       stepEvent(1.01); check(G.Projectiles.all().some(o => !o.friendly && o.corrupt), 'hostile copied projectile');
       e.hurt(1e8); stepEvent(0.1);
-      check(p.coins === 400 && p.item === 'dittoecho', 'Ditto reward');
+      takeReward(); check(p.coins === 400 && p.item === 'dittoecho', 'Ditto reward');
     });
     await test('Echo counts casts, deals 60%, and never recursively creates echoes', () => {
       const p = fresh(); p.equip('dittoecho'); G.EventItems.tick(0, p); p.aimed = true;
@@ -188,6 +192,8 @@ const URL = process.env.EVENT_TEST_URL || 'http://127.0.0.1:3087/dev.html';
       assert.equal(await p.evaluate(() => G.EnemyMgr.get(G.Challenges.state.units[0].id).dmg), 5);
     }
     await host.evaluate(() => { const s = G.Challenges.state; G.EnemyMgr.get(s.units[0].id).hurt(1e8); stepEvent(0.1); });
+    await exchange();
+    for (const p of [host, guest]) await p.evaluate(() => takeReward());
     await exchange();
     for (const p of [host, guest]) {
       const reward = await p.evaluate(() => ({ coins: G.Game.player.coins, item: G.Game.player.item, state: G.Challenges.state }));

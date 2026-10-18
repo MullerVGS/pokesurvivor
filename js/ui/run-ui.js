@@ -141,25 +141,6 @@ G.RunUI = (() => {
     G.UI.show('scr-over');
   }
 
-  /** Has encontrado un objeto llevando ya otro: ¿con cuál te quedas? */
-  function showItemChoice(cur, next, cb) {
-    const box = $('item-cards');
-    box.innerHTML = '';
-    const choices = Array.isArray(next) ? (cur ? [[cur, 'Quedarme con']] : []).concat(next.filter(id => id !== cur).map(id => [id, 'Cambiar a'])) : [[cur, 'Quedarme con'], [next, 'Cambiar a']];
-    choices.forEach(([id, verb], i) => {
-      const it = G.Items.BY[id];
-      const el = document.createElement('div');
-      el.className = 'card' + (i === 1 ? ' evo' : '');
-      el.innerHTML = `<div class="ico">${G.Icons.html(id, 36)}</div>
-        <div class="txt"><div class="nm">${verb} ${it.name}</div><div class="ds">${it.desc}</div></div>
-        <div class="key">${i + 1}</div>`;
-      el.dataset.tip = 'item:' + id;
-      el.onclick = () => { G.UI.hide('scr-item'); cb(id); };
-      box.appendChild(el);
-    });
-    G.UI.show('scr-item');
-  }
-
   // ---------------- vínculo: qué movimientos se fusionan ----------------
 
   let bond = null;          // { opt, cb, first, list }
@@ -237,5 +218,5 @@ G.RunUI = (() => {
     $('btn-quit').onclick = onQuit;
   }
 
-  return { showLevelUp, reroll, showItemChoice, showBond, pickBond, bondBack, pick, setWaiting, closeLevelUp, showOver, wirePause, showPause };
+  return { showLevelUp, reroll, showBond, pickBond, bondBack, pick, setWaiting, closeLevelUp, showOver, wirePause, showPause };
 })();

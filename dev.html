@@ -507,7 +507,7 @@
 <div id="pull-fx" class="hidden">
   <canvas id="slot" width="176" height="170" title="Clic para acelerar"></canvas>
   <div class="pull-results" id="pull-results"></div>
-  <button id="pull-close" class="btn gold hidden">Continuar</button>
+  <div class="pull-footer"><span id="pull-summary" role="status"></span><button id="pull-close" class="btn gold hidden">Continuar</button></div>
 </div>
 
 <!-- ====== Durante la run ====== -->
@@ -531,18 +531,10 @@
   </div>
 </section>
 
-<section id="scr-item" class="scr dim hidden">
-  <div class="box center">
-    <h2>¡Un objeto!</h2>
-    <p class="sub">Sólo puedes llevar uno · <kbd>1</kbd> <kbd>2</kbd></p>
-    <div id="item-cards" class="cards"></div>
-  </div>
-</section>
-
 <section id="scr-pause" class="scr dim hidden">
   <div class="box center" style="width:min(460px,100%)">
     <h2>Pausa</h2>
-    <p class="sub kbd-hint"><kbd>WASD</kbd> moverse · <kbd>1</kbd>–<kbd>4</kbd> movimiento · <kbd>Q</kbd>/<kbd>E</kbd> ciclar · <kbd>Esc</kbd> pausa</p>
+    <p class="sub kbd-hint"><kbd>WASD</kbd> moverse · <kbd>1</kbd>–<kbd>4</kbd> movimiento · <kbd>Q</kbd>/<kbd>E</kbd> o rueda ciclar · <kbd>F</kbd> recoger objeto · <kbd>Esc</kbd> pausa</p>
     <p class="sub touch-hint">Arrastra el dedo para moverte · toca un ataque para cambiarlo</p>
     <p id="pause-coop" class="note hidden">Partida en grupo: el juego sigue mientras estás aquí.</p>
     <div id="pause-sound" class="sound-inline"></div>
@@ -605,6 +597,7 @@
 <!-- sistemas -->
 <script defer src="js/systems/combat.js"></script>
 <script defer src="js/systems/event-items.js"></script>
+<script defer src="js/systems/ground-items.js"></script>
 <script defer src="js/systems/challenges.js"></script>
 <script defer src="js/ui/challenge-art.js"></script>
 <script defer src="js/systems/spawner.js"></script>
@@ -627,17 +620,19 @@
 <!-- interfaz -->
 <script defer src="js/ui/icons.js"></script>
 <script defer src="js/ui/ui.js"></script>
+<script defer src="js/ui/dialogs.js"></script>
 <script defer src="js/ui/hud.js"></script>
 <script defer src="js/ui/minimap.js"></script>
+<script defer src="js/ui/move-preview.js"></script>
 <script defer src="js/ui/tooltip.js"></script>
 <script defer src="js/ui/tooltip-sources.js"></script>
-<script defer src="js/ui/tooltip-world.js"></script>
 <script defer src="js/ui/login.js"></script>
 <script defer src="js/ui/test.js"></script>
 <script defer src="js/ui/menu.js"></script>
 <script defer src="js/ui/slots.js"></script>
 <script defer src="js/ui/gacha-ui.js"></script>
 <script defer src="js/ui/run-ui.js"></script>
+<script defer src="js/ui/item-ui.js"></script>
 <script defer src="js/ui/social-ui.js"></script>
 <script defer src="js/ui/ranking-ui.js"></script>
 <script defer src="js/ui/mod-ui.js"></script>

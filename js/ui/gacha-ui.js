@@ -91,6 +91,7 @@ G.GachaUI = (() => {
     const best = Math.max(...res.map(r => r.rarity));
     const fx = $('pull-fx'), slot = $('slot'), out = $('pull-results');
     out.innerHTML = '';
+    $('pull-summary').textContent = '';
     $('pull-close').classList.add('hidden');
     slot.style.display = '';
     fx.classList.remove('hidden');
@@ -103,19 +104,21 @@ G.GachaUI = (() => {
     for (const r of res) {
       const mon = G.DEX_BY[r.dex];
       const c = document.createElement('div');
-      c.className = 'pcard r' + r.rarity + (r.shiny ? ' shiny' : '');
+      c.className = 'pcard r' + r.rarity + (r.shiny ? ' shiny' : '') + (r.isNew ? ' discovery' : ' duplicate');
       c.dataset.tip = 'mon:' + r.dex;
       c.style.setProperty('--rc', r.shiny ? '#9ae6ff' : G.Gacha.RARITY_COLOR[r.rarity]);
       c.innerHTML = `<div class="stars">${G.UI.stars(r.rarity, 24)}</div>`;
       c.appendChild(G.UI.spriteCanvas(r.dex, 132, 120, { lively: r.rarity >= 4 || r.shiny, scale: 2, shiny: r.shiny }));
       const tag = r.isNew
-        ? `<span class="new">${r.shiny ? '¡SHINY NUEVO!' : '¡NUEVO!'}</span>`
+        ? `<span class="new">${G.Icons.html('ball', 12)} ${r.shiny ? '¡SHINY NUEVO!' : '¡NUEVO!'}</span>`
         : `Repetido · <span class="coin"></span> +${r.refund}`;
       c.insertAdjacentHTML('beforeend', `<b>${r.shiny ? G.Icons.html('shiny', 12) + ' ' : ''}${mon.name}</b><div class="tag">${tag}</div>`);
       out.appendChild(c);
       G.Audio.sfx('reveal', { rarity: r.rarity });
       await wait(n === 10 ? 150 : 0);
     }
+    const count = res.filter(r => r.isNew).length;
+    $('pull-summary').textContent = G.I18n.f('Nuevos en tu colección: {x}', count);
     $('pull-close').classList.remove('hidden');
     busy = false;
   }

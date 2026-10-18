@@ -33,6 +33,11 @@
   const run = () => G.Game.state !== 'ui' ? G.Game.player : null;
   const typeChip = t => ({ text: T(G.U.TYPE_NAME[t]), color: G.U.TYPE_COLOR[t], tip: 'type:' + t });
 
+  G.Glossary.add(
+    { id: 'minimap', title: 'Minimapa', icon: 'ball', color: '#9fb1c9',
+      desc: 'Lo que hay a tu alrededor, unas tres pantallas: tú en el centro, tus compañeros, los jefes y la grieta (con una flecha en el borde si están lejos), los altares (en gris si ya los has usado), los manantiales, los cofres con candado y los enemigos cercanos. El recuadro es lo que ves. Se quita con la tecla M o en Ajustes.' }
+  );
+
   // ---------------- movimientos ----------------
 
   // Qué cuenta `count` y qué es `radius` en cada forma de ataque (moves.js).
@@ -88,22 +93,45 @@
     if (m.lvl) c.chips.push({ text: F('Nv. {x} / {x}', m.lvl, d.maxLvl), color: '#eaf2ff' });
     if (m.evolved) c.chips.push({ text: T('Evolucionado'), color: '#ffd23f', tip: 'term:evo' });
     if (d.kind === 'buff') c.chips.push({ text: T('Potenciador'), color: '#5fe08a', tip: 'term:buff' });
+    c.preview = { id: d.id, level: m.lvl || 1, evolved: !!m.evolved, dex: pl ? pl.dex : (G.DB.save?.partner || 25), atk: pl ? pl.atk : 1, cdMul: pl ? pl.cdMul : 1 };
     c.stats = o.stats || moveStats(m, pl);
     c.text = [T(d.desc)];
     if (m.evolved && m.baseName) c.text.push(F('Evolución de {x}.', T(m.baseName)));
     const e = G.Moves.EVO[d.id];
     const ev = e && !m.evolved && !o.short && G.Moves.evoInfo(Object.assign({}, d, { def: d, lvl: d.maxLvl }), null);
-    if (ev) {
+    const known = G.Progress.knowsEvolution(d.id);
+    if (ev && known) {
       c.text.push(F('Evoluciona en {x} al nivel máximo si has cogido {x} en la run: {x}.', T(ev.name), T(ev.needName), T(ev.text)));
       if (pl && pl.statsTaken[ev.needs]) c.text.push(T('Ya has cogido la mejora que pide.'));
     }
+    if (ev && !known) c.text.push(F('Para evolucionar: nivel máximo y {x} en la run.', T(ev.needName)));
     const next = m.lvl && G.Moves.nextUpText(m);
     if (next) c.foot = F('Siguiente nivel: {x}', T(next));
-    else if (!m.lvl) c.list = d.ups.map((u, i) => F('Nv. {x}: {x}', i + 2, T(u.t)));   // catálogo: toda la escalera
+    if (!m.evolved) {
+      c.list = d.ups.map((u, i) => i + 2 > (m.lvl || 1) ? {
+        text: F('Nv. {x}: {x}', i + 2, T(u.t)), tip: 'movelevel:' + d.id + ':' + (i + 2)
+      } : null).filter(Boolean);
+      if (ev) c.list.push({ text: T('Evolución') + ': ' + (known ? T(ev.name) : '???'), tip: known ? 'movelevel:' + d.id + ':evo' : null });
+    }
     return c;
   }
 
+  const unknownEvolution = id => ({ title: T('Evolución') + ': ???', icon: 'move:' + id, color: '#ffd23f',
+    text: [T('Evoluciona este movimiento para descubrirlo.')] });
+
   S('move', id => G.Moves.BY_ID[id] ? move(G.Moves.BY_ID[id]) : null);
+
+  // Cada nivel abre otra tooltip: nunca modifica el movimiento de la partida.
+  S('movelevel', arg => {
+    const [id, value] = arg.split(':'), def = G.Moves.BY_ID[id];
+    if (!def) return null;
+    if (value === 'evo' && !G.Progress.knowsEvolution(id)) return unknownEvolution(id);
+    const level = value === 'evo' ? def.maxLvl : +value;
+    if (!Number.isInteger(level) || level < 1 || level > def.maxLvl) return null;
+    const m = G.Moves.instance(id, level);
+    if (value === 'evo' && !G.Moves.evolve(m)) return null;
+    return move(m, { pl: run() });
+  });
 
   S('inst', id => {
     const pl = run(), m = pl && pl.moves.find(x => x.id === id);
@@ -116,6 +144,7 @@
     if (g.length === 1) return move(g[0], { pl });
     return { title: T('Vínculo'), icon: 'bond', color: '#ff8ad8',
              text: [F('{x} movimientos en un solo hueco: se lanzan a la vez, cada uno con su recarga.', g.length)],
+             preview: { ...move(g[0], { pl }).preview, choices: g.map(m => move(m, { pl }).preview) },
              parts: g.map(m => move(m, { pl, short: true })) };
   });
 
@@ -132,11 +161,13 @@
     }
     const m = pl.moves.find(x => x.id === id);
     if (!m) return null;
+    if (type === 'evo' && !G.Progress.knowsEvolution(id)) return unknownEvolution(id);
     let b;
     if (type === 'up') b = G.Moves.instance(id, m.lvl + 1);
     else if (type === 'evo') { b = Object.assign({}, m); G.Moves.evolve(b); }
     else return null;
     const c = move(m, { pl, stats: compare(moveStats(m, pl), moveStats(b, pl)) });
+    c.preview.level = b.lvl; c.preview.evolved = !!b.evolved;
     c.chips.push({ text: type === 'evo' ? '→ ' + T(b.name) : F('Nv. {x} → {x}', m.lvl, m.lvl + 1), color: '#5fe08a' });
     return c;
   });

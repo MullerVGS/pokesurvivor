@@ -26,7 +26,7 @@
  *     chips: [{ text, color, tip }],          etiquetas (tip: fuente al pasar por ella)
  *     stats: [[etiqueta, valor, tip, vtip]],  valor: texto o { h: html }; tip/vtip: fuente de cada uno
  *     text:  ['párrafo', { p, plain }],       los términos del glosario se subrayan solos
- *     list:  ['línea', ...],
+ *     list:  ['línea' | { text, tip }, ...],
  *     parts: [contenido, ...],                bloques con su propio título (un vínculo)
  *     foot:  'nota al pie' }
  * Términos: data/glossary.js (G.Glossary.add para añadir más).
@@ -84,7 +84,7 @@ G.Tooltip = (() => {
         `<span>${term(k, tip)}</span><b>${v && v.h != null ? v.h : term(v, vtip)}</b>`).join('') + '</div>';
     }
     for (const p of c.text || []) h += typeof p === 'string' ? `<p>${link(p, self)}</p>` : `<p>${p.plain ? esc(p.p) : link(p.p, self)}</p>`;
-    if (c.list && c.list.length) h += '<ul>' + c.list.map(l => `<li>${link(l, self)}</li>`).join('') + '</ul>';
+    if (c.list && c.list.length) h += '<ul>' + c.list.map(l => `<li>${typeof l === 'string' ? link(l, self) : term(l.text, l.tip)}</li>`).join('') + '</ul>';
     for (const part of c.parts || []) h += `<div class="tip-part">${head(part)}${body(part, self)}</div>`;
     if (c.foot) h += `<p class="tip-foot">${link(c.foot, self)}</p>`;
     return h;
@@ -93,9 +93,13 @@ G.Tooltip = (() => {
   const head = c => `<div class="tip-hd">${c.icon ? G.Icons.html(c.icon, 28) : ''}<b style="color:${c.color || '#eaf2ff'}">${esc(c.title || '')}</b></div>`;
 
   function paint(p, c) {
-    const h = head(c) + body(c, p.src) +
-      (p.touch ? `<button class="tip-x" type="button" aria-label="${esc(G.T('Cerrar'))}">×</button>` : '<span class="tip-key">T</span>');
-    if (h !== p.html) { p.html = h; p.el.innerHTML = h; }
+    const h = '<div class="tip-toolbar">' + head(c) +
+      (p.touch ? `<button class="tip-x" type="button" aria-label="${esc(G.T('Cerrar'))}">×</button>` : '<span class="tip-key">T</span>') +
+      '</div><div class="tip-content">' + (c.preview ? G.MovePreview.markup(c.preview) : '') + body(c, p.src) + '</div>';
+    if (h !== p.html) {
+      p.html = h; p.el.innerHTML = h;
+      if (c.preview) G.MovePreview.attach(p.el, c.preview); else G.MovePreview.release(p.el);
+    }
     p.el.classList.toggle('pinned', p.pinned);
   }
 
@@ -160,7 +164,7 @@ G.Tooltip = (() => {
   function close(level = 0) {
     if (wait && wait.level >= level) cancelWait();
     if (leaveT && leaveT.level >= level) { clearTimeout(leaveT.t); leaveT = null; }
-    while (stack.length > level) stack.pop().el.remove();
+    while (stack.length > level) { const p = stack.pop(); G.MovePreview.release(p.el); p.el.remove(); }
     if (!stack.length && tick) { clearInterval(tick); tick = null; }
   }
 

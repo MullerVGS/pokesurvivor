@@ -7,7 +7,6 @@
  *   calm        true/false                        menos sacudidas y destellos
  *   fps         true/false                        contador de FPS
  *   minimap     true/false                        minimapa en la partida (también con la tecla M)
- *   mapTips     true/false                        recuadro de información al pasar el ratón por el mapa
  *   view        640 .. 1100 (768)                 ancho de mundo que se ve (view.js); en móvil, hasta 960
  *   aimMode     'auto' | 'click' | 'manual'       apuntar con el ratón (aim.js); el táctil, siempre automático
  *   stick       0.8 | 1 | 1.25                    tamaño del joystick táctil
@@ -20,9 +19,10 @@
  */
 G.Settings = (() => {
   const KEY = 'ps.settings';
-  const DEF = { quality: 'auto', dmgNumbers: true, calm: false, fps: false, minimap: true, mapTips: false, view: 768, aimMode: 'click', stick: 1, stickMode: 'float', pad: null };
+  const DEF = { quality: 'auto', dmgNumbers: true, calm: false, fps: false, minimap: true, view: 768, aimMode: 'click', stick: 1, stickMode: 'float', pad: null };
   let s = Object.assign({}, DEF);
   try { Object.assign(s, JSON.parse(localStorage.getItem(KEY) || '{}')); } catch (e) { /* nada */ }
+  delete s.mapTips; // preferencia retirada: ya no se inspecciona el escenario
   const fns = new Set();
 
   // Calidad automática: empieza alta (media en móvil) y baja si va a tirones.

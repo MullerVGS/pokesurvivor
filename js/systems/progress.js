@@ -232,5 +232,7 @@ G.Progress = (() => {
     }, 2800);
   }
 
-  return { ensure, event, kill, claim, reroll, checkAch, titles, pending, text, done, rewardText, grant };
+  const knowsEvolution = id => !!G.DB.save?.evoMoves?.[id];
+
+  return { knowsEvolution, ensure, event, kill, claim, reroll, checkAch, titles, pending, text, done, rewardText, grant };
 })();

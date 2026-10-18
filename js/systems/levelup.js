@@ -59,7 +59,8 @@ G.LevelUp = (() => {
       out.push({
         w: 40, type: 'evo', key: 'evo:' + m.id,
         icon: 'move:' + m.id, color: '#ffd23f', tag: 'EVOLUCIÓN',
-        title: m.name + ' → ' + ev.name, desc: ev.text,
+        title: m.name + ' → ' + (G.Progress.knowsEvolution(m.id) ? ev.name : '???'),
+        desc: G.Progress.knowsEvolution(m.id) ? ev.text : 'Evoluciona este movimiento para descubrirlo.',
         apply: p => {
           G.Moves.evolve(m);
           G.FX.ring(p.x, p.y, 8, 120, '#ffd23f', 0.8, 6);

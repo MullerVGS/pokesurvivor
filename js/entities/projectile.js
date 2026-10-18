@@ -8,7 +8,7 @@
  * elevados G.LIFT unidades con su sombra debajo. Las paredes y los objetos
  * sólidos los paran (ver combat.js).
  */
-G.Projectiles = (() => {
+G.Projectiles = (function create(G) {
   let list = [];
   let nextId = 1;
 
@@ -137,6 +137,6 @@ G.Projectiles = (() => {
     }
   }
 
-  return { clear, all, spawn, spawnOrb, clearOrbs, update, remove, draw, nearest,
+  return { create, clear, all, spawn, spawnOrb, clearOrbs, update, remove, draw, nearest,
            get count() { return list.length; } };
-})();
+})(G);

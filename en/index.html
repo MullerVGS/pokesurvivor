@@ -73,7 +73,7 @@
   ]
 }
 </script>
-<link rel="stylesheet" href="css/style.css?v=f435065d41">
+<link rel="stylesheet" href="css/style.css?v=a10b43c745">
 </head>
 <body>
 
@@ -501,7 +501,7 @@
 <div id="pull-fx" class="hidden">
   <canvas id="slot" width="176" height="170" title="Clic para acelerar"></canvas>
   <div class="pull-results" id="pull-results"></div>
-  <button id="pull-close" class="btn gold hidden">Continuar</button>
+  <div class="pull-footer"><span id="pull-summary" role="status"></span><button id="pull-close" class="btn gold hidden">Continuar</button></div>
 </div>
 
 <!-- ====== Durante la run ====== -->
@@ -525,18 +525,10 @@
   </div>
 </section>
 
-<section id="scr-item" class="scr dim hidden">
-  <div class="box center">
-    <h2>¡Un objeto!</h2>
-    <p class="sub">Sólo puedes llevar uno · <kbd>1</kbd> <kbd>2</kbd></p>
-    <div id="item-cards" class="cards"></div>
-  </div>
-</section>
-
 <section id="scr-pause" class="scr dim hidden">
   <div class="box center" style="width:min(460px,100%)">
     <h2>Pausa</h2>
-    <p class="sub kbd-hint"><kbd>WASD</kbd> moverse · <kbd>1</kbd>–<kbd>4</kbd> movimiento · <kbd>Q</kbd>/<kbd>E</kbd> ciclar · <kbd>Esc</kbd> pausa</p>
+    <p class="sub kbd-hint"><kbd>WASD</kbd> moverse · <kbd>1</kbd>–<kbd>4</kbd> movimiento · <kbd>Q</kbd>/<kbd>E</kbd> o rueda ciclar · <kbd>F</kbd> recoger objeto · <kbd>Esc</kbd> pausa</p>
     <p class="sub touch-hint">Arrastra el dedo para moverte · toca un ataque para cambiarlo</p>
     <p id="pause-coop" class="note hidden">Partida en grupo: el juego sigue mientras estás aquí.</p>
     <div id="pause-sound" class="sound-inline"></div>
@@ -557,6 +549,6 @@
 </section>
 
 <!-- datos generados -->
-<script defer src="js/app.min.js?v=316307a6aa"></script>
+<script defer src="js/app.min.js?v=3a563a54d4"></script>
 </body>
 </html>

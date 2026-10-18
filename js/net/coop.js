@@ -184,6 +184,7 @@ G.Coop = (() => {
     const ja = G.Judgment.netState();       // Arceus en la Sentencia
     if (ja) f.ja = ja;
     // Siempre: quién está eligiendo y, si hay cartas de nivel, cuáles (ver arriba).
+    f.ground = G.GroundItems.snapshot();
     f.ho = holdNames();
     if (waiting.size) f.lu = [levelSeq, levelNow];
     return f;
@@ -277,6 +278,7 @@ G.Coop = (() => {
           G.World.breakAt(ev[1], ev[2]);
           emit(['pb', ev[1], ev[2]], from);
           break;
+        case 'ground-take': G.GroundItems.take(m.pl, ev[1], ev[2]); break;
         case 'lp': picked(from); break;
         case 'hs': holdOn(from); break;
         case 'he': holdOff(from); break;
@@ -313,6 +315,7 @@ G.Coop = (() => {
     lastHostAt = performance.now();
     if (stalled) { stalled = false; updateAway(); }
     for (const ev of msg.ev || []) applyHostEvent(ev);
+    if (msg.ground) G.GroundItems.receive(msg.ground);
     if (msg.ja) G.Judgment.netApply(msg.ja);
     // Quién elige y las cartas de nivel, aunque se haya perdido algún aviso.
     if (msg.ho) {
