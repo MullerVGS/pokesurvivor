@@ -20,6 +20,8 @@ G.CHANGELOG = [
     ['Dos objetos de evento: Eco de Ditto repite cada tercer ataque con un 60% de daño; Rastro de la Manada da +10% velocidad y deja una estela que daña a los enemigos. Usan el mismo hueco de objeto que los demás y duran la partida.',
      'Two encounter items: Ditto Echo repeats every third cast at 60% damage; Herd Trail gives +10% speed and leaves a damaging trail. They use the existing item slot and last for the run.']
   ], chg: [
+    ['Las cuentas de la beta pueden recuperar su partida con un enlace personal y Google, sin perder amigos ni marcas del ranking.',
+     'Beta accounts can recover their save with a personal link and Google, keeping friends and leaderboard records.'],
     ['El acceso reúne Google y correo en una pantalla más clara, con recuperación e importación como acciones secundarias. Google reconoce las cuentas migradas al confirmar el correo, sin perder la partida.',
      'Sign-in brings Google and email into a clearer screen, with recovery and import as secondary actions. Google recognizes migrated accounts after verifying the email, preserving the save.'],
     ['Nuevo acceso con correo verificado y contraseña. Puedes recuperar el acceso por correo; las cuentas de la beta conservarán su progreso y deberán elegir una contraseña nueva.',

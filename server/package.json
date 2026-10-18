@@ -1,7 +1,7 @@
 {
   "name": "pokesurvivor-server",
   "private": true,
-  "description": "Servidor propio de Pok\u00e9Survivor: cuentas, partidas, ranking, amigos y salas (sustituye a Firebase)",
+  "description": "Servidor propio de PokéSurvivor: cuentas, partidas, ranking, amigos y salas (sustituye a Firebase)",
   "main": "index.js",
   "engines": {
     "node": ">=22.13"
@@ -15,6 +15,7 @@
   "dependencies": {
     "better-auth": "1.7.10",
     "nodemailer": "10.1.2",
-    "ws": "8.18.3"
+    "ws": "8.18.3",
+    "zod": "4.6.7"
   }
 }

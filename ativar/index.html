@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <meta name="robots" content="noindex,nofollow">
+  <title>PokéSurvivor · Ativar conta</title>
+  <style>
+    @font-face { font-family: Pixelify; src: url('/assets/fonts/PixelifyPS-700.ttf'); font-weight: 700; font-display: swap; }
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 28px 20px; min-height: 100svh; display: grid; place-items: center; background: #0b1430; color: #f4f8ff; font: 16px/1.5 system-ui,sans-serif; }
+    main { width: min(100%,420px); padding: 28px; border: 2px solid #90ace8; border-radius: 18px; background: linear-gradient(#2c519f,#1a3170); box-shadow: 0 14px 40px #0005; }
+    .brand { margin: 0 0 24px; color: #c6d7fa; font: 700 24px Pixelify,system-ui; letter-spacing: 1px; }
+    h1 { margin: 0; font: 700 28px/1.2 Pixelify,system-ui; }
+    p { margin: 16px 0; }
+    #identity { padding: 12px; border-radius: 8px; background: #0b183855; overflow-wrap: anywhere; }
+    #status { color: #d7e4ff; }
+    #status.error { color: #ffe2a8; }
+    button,.back { width: 100%; display: block; padding: 12px 16px; min-height: 48px; margin-top: 12px; border: 2px solid transparent; border-radius: 9px; font: 600 16px/1.3 system-ui,sans-serif; text-align: center; cursor: pointer; }
+    #activate { color: #231b08; background: #ffd65b; }
+    #google { color: #172443; background: #f4f8ff; }
+    .back { color: #c6d7fa; background: none; text-decoration: underline; }
+    button:focus-visible,a:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+    button:disabled { opacity: .6; cursor: wait; }
+    [hidden] { display: none !important; }
+    footer { margin-top: 24px; font-size: 13px; color: #b9cbf0; }
+  </style>
+  <script defer src="activation.js"></script>
+</head>
+<body>
+  <main aria-labelledby="title">
+    <p class="brand">PokéSurvivor</p>
+    <h1 id="title">Ativar conta da beta</h1>
+    <p id="description">Recupere sua conta e continue de onde parou.</p>
+    <p id="identity" hidden></p>
+    <p id="status" role="status" aria-live="polite">Conferindo seu link…</p>
+    <button id="activate" hidden>Ativar conta</button>
+    <button id="google" hidden>Continuar com Google</button>
+    <a class="back" href="/" id="back">Voltar ao jogo</a>
+    <footer id="footer">Este link é pessoal e só pode ser usado uma vez.</footer>
+  </main>
+</body>
+</html>

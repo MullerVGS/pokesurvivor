@@ -107,6 +107,40 @@ os processos parados e volte à imagem anterior. Preserve o banco novo para
 investigação. O rollback do banco perde gravações posteriores à migração: use
 uma janela curta de validação sem jogadores.
 
+## Ativação dos testers sem e-mail conhecido
+
+O operador pode emitir um link privado para uma conta de `pending_accounts`.
+O link vale por sete dias, pode ser usado uma única vez e é substituído se for
+emitido novamente para o mesmo apelido. A emissão faz backup antes de gravar:
+
+```sh
+umask 077
+docker compose exec -T app node issue-activation-links.mjs Rajin Meems > /caminho/privado/ativacoes.json
+```
+
+O JSON contém o backup e os links: mantenha-o privado e envie cada link somente
+ao dono da conta correspondente. Não publique tokens no Git, logs ou tracker.
+Copie o backup para fora do volume, como na migração. Emissão não altera saves,
+perfis, amigos, rankings ou as contas já ativas.
+
+O destinatário abre `/ativar/#<segredo>`, escolhe sua conta Google e confirma o
+apelido/e-mail mostrado. Abrir o link não o consome. O segredo é removido da URL
+e não entra em URLs de requisição; o banco guarda apenas seu hash SHA-256. O
+fluxo intermediário usa outro segredo em cookie HttpOnly/Secure/Lax, expira em
+15 minutos e exige login recente (5 minutos). Reabrir o link reinicia essa etapa.
+
+A confirmação exige Google verificado e uma identidade sem outro progresso ou
+credenciais. Se o Google já estiver associado a outra partida, o usuário deve
+escolher outra conta ou solicitar reconciliação ao operador; nada é sobrescrito.
+A tela isolada não cria save para a identidade temporária. Na confirmação,
+uma transação move a identidade Google e a sessão atual para o UID original,
+mantém o apelido e todos os documentos, invalida outras sessões temporárias,
+remove a pendência e consome o link. Confirmações simultâneas têm um só vencedor.
+
+Os endpoints são um plugin do Better Auth, com proteção de origem e rate limit.
+Referências da integração: [plugins](https://better-auth.com/docs/concepts/plugins)
+e [cookies](https://better-auth.com/docs/concepts/cookies).
+
 ## Sessão e comportamento offline
 
 - Cookie HttpOnly, SameSite=Lax, host-only e Secure em HTTPS. Nenhum token é

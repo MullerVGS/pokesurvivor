@@ -6,6 +6,7 @@ import { randomBytes, randomUUID } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import nodemailer from 'nodemailer';
+import { activationPlugin, ensureActivationSchema } from './activation.mjs';
 
 /** Better Auth owns credentials, sessions, verification and recovery. */
 export async function createAuth({ file, env = process.env, afterDelete = () => {}, allowLegacy = false }) {
@@ -51,6 +52,7 @@ export async function createAuth({ file, env = process.env, afterDelete = () => 
   const options = {
     appName: 'PokéSurvivor', baseURL: origin, secret, database,
     trustedOrigins: [origin],
+    plugins: [activationPlugin(database, origin, google)],
     emailAndPassword: {
       enabled: true, disableSignUp: !emailReady, requireEmailVerification: true,
       minPasswordLength: 15, maxPasswordLength: 128, resetPasswordTokenExpiresIn: 1800,
@@ -100,6 +102,8 @@ export async function createAuth({ file, env = process.env, afterDelete = () => 
     rateLimit: {
       enabled: true, storage: 'database', window: 60, max: 100,
       customRules: {
+        '/beta-activation/begin': { window: 60, max: 10 },
+        '/beta-activation/complete': { window: 60, max: 5 },
         '/sign-in/email': { window: 60, max: 10 },
         '/sign-up/email': { window: 60, max: 5 },
         '/request-password-reset': { window: 60, max: 3 },
@@ -113,6 +117,7 @@ export async function createAuth({ file, env = process.env, afterDelete = () => 
   database.exec(`CREATE TABLE IF NOT EXISTS auth_migration_claims (
     userId TEXT PRIMARY KEY REFERENCES user(id) ON DELETE CASCADE, email TEXT NOT NULL
   )`);
+  ensureActivationSchema(database);
   const auth = betterAuth(options);
   const context = await auth.$context;
   await context.checkSchema?.();
