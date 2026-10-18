@@ -127,6 +127,25 @@ const URL = process.env.EVENT_TEST_URL || 'http://127.0.0.1:3087/dev.html';
       p.walking = false; G.EventItems.tick(2.1, p); const expired = e.hp; G.EventItems.tick(1, p);
       check(e.hp === expired, 'trails expire');
     });
+    await test('Echo preserves normal turrets, patches and accumulated buffs', () => {
+      const p = fresh(); p.equip('dittoecho'); G.EventItems.tick(0, p);
+      const turret = G.Moves.instance('will-o-wisp', 1);
+      for (let i = 0; i < 3; i++) { G.Combat.replay(p, turret); G.EventItems.onCast(p, turret); }
+      G.Combat.updateFields(0); check(G.Combat.fieldCount === 1, 'normal turret limit');
+      G.EventItems.tick(0.3, p); G.Combat.updateFields(0);
+      check(G.Combat.fieldCount === 2, 'echo keeps the original turret');
+      G.Combat.replay(p, turret); G.Combat.updateFields(0);
+      check(G.Combat.fieldCount === 2, 'new normal turret keeps the echo');
+      G.Combat.clearFields();
+      const patch = G.Moves.instance(Object.values(G.Moves.BY_ID).find(m => m.kind === 'trail').id, 1);
+      for (let i = 0; i < 3; i++) { G.Combat.replay(p, patch); G.EventItems.onCast(p, patch); }
+      check(G.Combat.fieldCount === 1, 'normal patch overlap limit');
+      G.EventItems.tick(0.3, p); check(G.Combat.fieldCount === 2, 'echo patch is not suppressed');
+      const buff = G.Moves.instance('swords-dance', 1);
+      for (let i = 0; i < 3; i++) { G.Combat.replay(p, buff); G.EventItems.onCast(p, buff); }
+      const atk = p.atk; G.EventItems.tick(0.3, p);
+      check(p.atk >= atk && p.buffs.atk.amount === buff.amount, 'echo never weakens stacked buffs');
+    });
     await test('every copied move family executes without damaging allied enemies', () => {
       const p = fresh(); p.maxHp = p.hp = 100000;
       const fake = new G.Player(G.DEX_BY[25]); fake.hostile = true; fake.x = p.x - 60; fake.y = p.y;
@@ -145,7 +164,7 @@ const URL = process.env.EVENT_TEST_URL || 'http://127.0.0.1:3087/dev.html';
 
     const host = await pageFor('host'), guest = await pageFor('guest');
     const pages = { host, guest };
-    const cfg = { seed: 42, host: 'host', members: [{ uid: 'host', name: 'Host', dex: 25 }, { uid: 'guest', name: 'Guest', dex: 4 }] };
+    const cfg = { seed: 42, host: 'host', members: [{ uid: 'host', name: 'Host', dex: 25 }, { uid: 'guest', name: 'Guest', dex: 4, shiny: true }] };
     async function exchange() {
       for (let turn = 0; turn < 3; turn++) for (const [uid, p] of Object.entries(pages)) {
         const packets = await p.evaluate(() => { G.Coop.tick(0.1); return packets.splice(0); });
@@ -156,18 +175,37 @@ const URL = process.env.EVENT_TEST_URL || 'http://127.0.0.1:3087/dev.html';
     await exchange();
     await host.evaluate(() => { const p = G.Coop.mate('guest').pl; G.Challenges.offer('ditto', 240, G.Game.everyone(), { x: p.x, y: p.y }); });
     await exchange();
-    await guest.evaluate(() => { G.Game.player.addMove('tackle'); stepEvent(1.3); });
+    await guest.evaluate(() => { G.Game.player.shiny = true; G.Game.player.addMove('tackle'); stepEvent(1.3); });
     await exchange();
     const model = await host.evaluate(() => G.Challenges.state.model);
-    assert.equal(model.dex, 4); assert.equal(model.uid, 'guest'); assert.equal(model.moves.length, 2);
+    assert.equal(model.dex, 4); assert.equal(model.uid, 'guest'); assert.equal(model.moves.length, 2); assert.equal(model.shiny, true);
     assert.deepEqual(await guest.evaluate(() => G.Challenges.state.model), model);
-    await host.evaluate(() => { stepEvent(3.01); const s = G.Challenges.state; G.EnemyMgr.get(s.units[0].id).hurt(1e8); stepEvent(0.1); });
+    for (const p of [host, guest]) {
+      assert.deepEqual(await p.evaluate(() => { const e = G.EnemyMgr.get(G.Challenges.state.units[0].id); return { shiny: e.anim.shiny, damage: e.dmg }; }), { shiny: true, damage: 0 });
+    }
+    await host.evaluate(() => stepEvent(3.01)); await exchange();
+    for (const p of [host, guest]) {
+      assert.equal(await p.evaluate(() => G.EnemyMgr.get(G.Challenges.state.units[0].id).dmg), 5);
+    }
+    await host.evaluate(() => { const s = G.Challenges.state; G.EnemyMgr.get(s.units[0].id).hurt(1e8); stepEvent(0.1); });
     await exchange();
     for (const p of [host, guest]) {
       const reward = await p.evaluate(() => ({ coins: G.Game.player.coins, item: G.Game.player.item, state: G.Challenges.state }));
       assert.deepEqual(reward, { coins: 400, item: 'dittoecho', state: null });
     }
     console.log('PASS co-op guest initiator snapshot and synchronized rewards through the real co-op protocol');
+    for (const [uid, p] of Object.entries(pages)) await p.evaluate(({ cfg, uid }) => { G.DB.save.partner = uid === 'host' ? 25 : 4; G.Game.startRun(cfg); }, { cfg, uid });
+    await exchange();
+    await host.evaluate(() => beginEvent('house'));
+    await exchange();
+    assert.equal(await guest.evaluate(() => G.Challenges.inHouse), true);
+    assert.equal(await guest.evaluate(() => G.EnemyMgr.count), 8);
+    await host.evaluate(() => { stepEvent(20.01); const s = G.Challenges.state; const p = G.Game.player; p.x = s.x; p.y = s.y + 195; stepEvent(0.1); });
+    await exchange();
+    for (const p of [host, guest]) {
+      assert.deepEqual(await p.evaluate(() => ({ house: G.Challenges.inHouse, coins: G.Game.player.coins, arena: G.World.arena })), { house: false, coins: 150, arena: null });
+    }
+    console.log('PASS co-op house travel, scaled wave, partial rewards and exit');
     assert.deepEqual(errors, []);
     console.log('All event integration checks passed.');
   } finally { await browser.close(); }

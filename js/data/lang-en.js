@@ -13,7 +13,7 @@ G.I18n.add({
   '¡Ditto se está transformando!': 'Ditto is transforming!',
   'Eco de Ditto': 'Ditto Echo', 'Rastro de la Manada': 'Herd Trail',
   'Cada 3 ataques repite el último con un 60% de daño. Los ecos no generan ecos.': 'Every 3 casts, repeats the last move at 60% damage. Echoes cannot trigger echoes.',
-  '+10% velocidad. Al caminar dejas un rastro durante 2 s que hace un 20% de tu ataque por segundo. Los rastros no acumulan daño.': '+10% speed. Walking leaves a trail for 2 s, dealing 20% of your attack per second. Overlapping trails do not stack.',
+  '+10% velocidad. Al caminar dejas un rastro durante 2 s que hace un 20% del daño de tu golpe más fuerte del hueco activo por segundo. Los rastros no acumulan daño.': '+10% speed. Walking leaves a trail for 2 s, dealing 20% of your strongest active move’s damage per second. Overlapping trails do not stack.',
 
   // ---------------- tipos y regiones ----------------
   'Acero': 'Steel', 'Agua': 'Water', 'Bicho': 'Bug', 'Dragón': 'Dragon', 'Eléctrico': 'Electric', 'Fantasma': 'Ghost',

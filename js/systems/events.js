@@ -64,7 +64,7 @@ G.Events = (() => {
 
   function start(id, time, players) {
     last = id;
-    if (G.Challenges.ids.includes(id)) { G.Challenges.offer(id, time, players); return; }
+    if (G.Challenges.ids.includes(id)) { if (!G.Challenges.offer(id, time, players)) start('gold', time, players); return; }
     if (id === 'horde') {
       const types = G.Enemies.hordeTypes(time);
       if (!types.length) return start('gold', time, players);

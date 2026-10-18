@@ -67,7 +67,7 @@ G.Challenges = (() => {
       }
       if (!state.model.moves.length) state.model.moves.push({ id: G.startMoveOf(pl.dex), lvl: 1 });
     }
-    state.phase = 'fight'; state.t = 0;
+    state.phase = 'fight'; state.t = 0; G.Spawner.say('', 0);
     if (state.id === 'house') {
       state.house = { tx: 10000 + serial * 30, ty: 10000, r: 8, type: 'normal', clear: true };
       enterHouse(); sync(); beginWave();
@@ -97,9 +97,19 @@ G.Challenges = (() => {
       xp: role === 'generator' ? 0 : b.xp, behavior: 'chase' }, x, y, { hp: 1, spd: 1, dmg: 1 });
     e.eventId = state.seq; e.eventRole = role; e.eventIndex = index;
     if (role === 'generator') { e.types = []; e.r = 20; e.bodyH = 44; }
+    if (role === 'ditto') configureDitto(e);
     const record = { id: e.id, role, index, dex, x, y, hp: e.hp, maxHp: e.maxHp };
     state.units.push(record); units.set(e.id, e); G.EnemyMgr.add(e);
     return e;
+  }
+  function configureDitto(e) {
+    e.invulnerable = state.phase === 'transform';
+    e.dmg = e.invulnerable ? 0 : baseStats(state.time).dmg * 0.5;
+    const shiny = !!state.model.shiny;
+    if (e.eventShiny !== shiny) {
+      e.eventShiny = shiny; e.anim = new G.Sprites.Animator(e.dex, e.scale, shiny);
+      G.Sprites.preload([e.dex], 8000, shiny);
+    }
   }
   function bindUnits() {
     if (!state) return;
@@ -108,7 +118,7 @@ G.Challenges = (() => {
       if (!e) continue;
       e.eventId = state.seq; e.eventRole = r.role; e.eventIndex = r.index;
       if (r.role === 'generator') { e.types = []; e.r = 20; e.bodyH = 44; }
-      if (r.role === 'ditto') { e.invulnerable = state.phase === 'transform'; if (e.invulnerable) e.dmg = 0; }
+      if (r.role === 'ditto') configureDitto(e);
       units.set(e.id, e);
     }
   }
@@ -243,7 +253,7 @@ G.Challenges = (() => {
   }
   function actorFor(e) {
     if (!actor) {
-      actor = new G.Player(G.DEX_BY[state.model.dex]); actor.hostile = true;
+      actor = new G.Player(G.DEX_BY[state.model.dex], {}, state.model.shiny); actor.hostile = true;
       actor.moves = state.model.moves.map(o => { const m = G.Moves.instance(o.id, o.lvl); if (o.evolved) G.Moves.evolve(m); return m; });
       actor.slots = actor.moves.map(m => [m]);
     }

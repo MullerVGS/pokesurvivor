@@ -10,7 +10,7 @@ G.EventItems = (() => {
   function onCast(pl, m) {
     if (m.echo || !pl.hasItem('dittoecho') || pl.hostile || pl.remote) return;
     if (++casts % 3) return;
-    const copy = { ...m, dmg: (m.dmg || 0) * 0.6, amount: (m.amount || 0) * 0.6, echo: true };
+    const copy = { ...m, dmg: (m.dmg || 0) * 0.6, echo: true };
     if (copy.kind === 'orbit') copy.id += ':echo';
     echoes.push({ t: 0.25, pl, move: copy });
   }

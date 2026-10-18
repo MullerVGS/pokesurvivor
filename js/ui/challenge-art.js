@@ -131,10 +131,10 @@ G.ChallengeArt = (() => {
       const detail = s.phase === 'between' ? 'Salir en ' + Math.max(0, Math.ceil(6 - s.t)) + ' s' : 'Quédate 1,2 s para empezar · ' + Math.max(0, Math.ceil(20 - s.t)) + ' s';
       label(ctx, detail, s.x, s.y + 57, '#e6d3ea', 10);
       if (hold > 0) { ctx.save(); ctx.strokeStyle = '#f5c9ff'; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(s.x, s.y, 40, -Math.PI / 2, -Math.PI / 2 + TAU * Math.min(1, hold / 1.2)); ctx.stroke(); ctx.restore(); }
-    } else if (s.id !== 'ditto') {
-      const limit = s.id === 'house' ? 20 : s.id === 'rocket' ? 60 : s.phase === 'alpha' ? 8 : 15;
+    } else if (s.phase !== 'transform') {
+      const limit = s.id === 'house' ? 20 : s.id === 'rocket' ? 60 : s.id === 'ditto' ? 45 : s.phase === 'alpha' ? 8 : 15;
       const title = s.id === 'house' ? 'Oleada ' + s.stage + '/3' : G.Challenges.names[s.id];
-      label(ctx, title + ' · ' + Math.max(0, Math.ceil(limit - s.t)) + ' s', s.x, s.y - (s.house ? 215 : 140));
+      label(ctx, title + ' · ' + Math.max(0, Math.ceil(limit - s.t)) + ' s', G.Camera.x, G.Camera.top() + 64);
     }
   }
   return { color, negative, enemy, ground, event };

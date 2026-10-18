@@ -279,7 +279,7 @@ G.Combat = (() => {
                     t: 0, arm: 0.35, life: m.dur || 7, r: m.radius, dmg: m.dmg * pl.atk });
     }
     // Como mucho unas pocas por jugador: las más viejas se van.
-    const mine = fields.filter(f => f.kind === 'mine' && f.owner === pl);
+    const mine = fields.filter(f => f.kind === 'mine' && f.owner === pl && !!f.m.echo === !!m.echo && !f.gone);
     for (const f of mine.slice(0, Math.max(0, mine.length - (4 + n * 2)))) f.gone = true;
   }
 
@@ -305,7 +305,7 @@ G.Combat = (() => {
     const a = pl.aim + Math.PI + G.U.rand(-0.6, 0.6);
     fields.push({ kind: 'turret', owner: pl, ghost, m, col, vis, x: pl.x + Math.cos(a) * 26, y: pl.y + Math.sin(a) * 20,
                   t: 0, life: m.dur || 6, shotT: 0.3, dmg: m.dmg * pl.atk });
-    const mine = fields.filter(f => f.kind === 'turret' && f.owner === pl && !f.gone);
+    const mine = fields.filter(f => f.kind === 'turret' && f.owner === pl && !!f.m.echo === !!m.echo && !f.gone);
     for (const f of mine.slice(0, Math.max(0, mine.length - Math.max(1, m.count | 0)))) f.gone = true;
     G.FX.ring(pl.x, pl.y, 4, 30, col, 0.3, 2);
   }
@@ -342,13 +342,14 @@ G.Combat = (() => {
   function trailPatch(pl, m) {
     const col = color(m), vis = G.VFX.forMove(m);
     // Parado no deja uno nuevo encima del anterior (sólo de vez en cuando).
-    const last = pl.lastPatch;
+    const key = m.echo ? 'lastEchoPatch' : 'lastPatch';
+    const last = pl[key];
     if (last && G.U.dist2(last.x, last.y, pl.x, pl.y) < (m.radius * 0.9) ** 2 && last.t < 1) return;
     const f = { kind: 'patch', owner: pl, ghost, m, col, vis, x: pl.x, y: pl.y, t: 0, life: m.dur || 3, r: m.radius,
                 tick: 0, dmg: m.dmg * pl.atk };
     fields.push(f);
-    pl.lastPatch = f;
-    const mine = fields.filter(o => o.kind === 'patch' && o.owner === pl && !o.gone);
+    pl[key] = f;
+    const mine = fields.filter(o => o.kind === 'patch' && o.owner === pl && !!o.m.echo === !!m.echo && !o.gone);
     for (const o of mine.slice(0, Math.max(0, mine.length - 18))) o.gone = true;
   }
 
