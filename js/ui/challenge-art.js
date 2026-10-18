@@ -99,7 +99,8 @@ G.ChallengeArt = (() => {
         ctx.globalAlpha = 0.16; ctx.fillRect(0, -width / 2, len, width); ctx.globalAlpha = 0.8; ctx.strokeRect(0, -width / 2, len, width);
       }
       ctx.restore();
-      label(ctx, m.name || G.Moves.BY_ID[m.id].name, x, y - 70, '#ffcc93', 11);
+      const e = G.EnemyMgr.get(warning.enemy);
+      label(ctx, m.name || G.Moves.BY_ID[m.id].name, x, y - (e ? e.bodyH : 50) - 42, '#ffcc93', 11);
     }
     if (s.id === 'stampede' && s.phase === 'fight') {
       for (const lane of [-72, 0, 72]) {
