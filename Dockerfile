@@ -13,7 +13,7 @@ ENV NODE_ENV=production PORT=3000 DATA_DIR=/data STATIC_DIR=/app/site
 WORKDIR /app/server
 COPY server/package.json server/package-lock.json ./
 RUN npm ci --omit=dev --no-audit --no-fund
-COPY server/*.js ./
+COPY server/*.js server/*.mjs ./
 COPY --from=juego /src /app/site
 RUN mkdir -p /data && chown node:node /data
 USER node

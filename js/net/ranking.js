@@ -378,20 +378,14 @@ G.Ranking = (() => {
    * 1.000 entradas, en vez de leerlas todas). Sólo se usa si no estás en el top 50.
    */
   async function countAbove(b, t) {
-    const fb = fbx();
-    const cfg = G.FIREBASE_CONFIG;
-    const base = fb.emulator ? 'http://127.0.0.1:8080/v1' : 'https://firestore.googleapis.com/v1';
-    const url = `${base}/projects/${cfg.projectId}/databases/(default)/documents/lb/${encodeURIComponent(b)}:runAggregationQuery`;
-    const token = await fb.auth.currentUser.getIdToken();
-    const body = { structuredAggregationQuery: {
-      structuredQuery: { from: [{ collectionId: 'e' }],
-        where: { fieldFilter: { field: { fieldPath: 't' }, op: 'GREATER_THAN', value: { integerValue: String(t) } } } },
-      aggregations: [{ alias: 'n', count: {} }] } };
     try {
-      const r = await fetch(url, { method: 'POST', headers: { Authorization: 'Bearer ' + token, 'content-type': 'application/json' }, body: JSON.stringify(body) });
-      const j = await r.json();
-      const n = j && j[0] && j[0].result && j[0].result.aggregateFields && j[0].result.aggregateFields.n;
-      return n ? +n.integerValue : 0;
+      const r = await fetch('/api/fs/count', {
+        method: 'POST', credentials: 'same-origin', cache: 'no-store',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ path: `lb/${b}/e`, field: 't', op: '>', value: t })
+      });
+      if (!r.ok) throw new Error('Count unavailable');
+      return (await r.json()).n;
     } catch (e) {
       console.warn('[Ranking] puesto:', e.message);
       return 0;

@@ -10,6 +10,7 @@ services:
     image: pokesurvivor:latest
     container_name: pokesurvivor
     restart: unless-stopped
+    env_file: .env
     environment:
       ADMINS: ${ADMINS:-}
     volumes:

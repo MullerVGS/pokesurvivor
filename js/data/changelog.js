@@ -18,6 +18,10 @@ G.CHANGELOG = [
     ['Dos objetos de evento: Eco de Ditto repite cada tercer ataque con un 60% de daño; Rastro de la Manada da +10% velocidad y deja una estela que daña a los enemigos. Usan el mismo hueco de objeto que los demás y duran la partida.',
      'Two encounter items: Ditto Echo repeats every third cast at 60% damage; Herd Trail gives +10% speed and leaves a damaging trail. They use the existing item slot and last for the run.']
   ], chg: [
+    ['El acceso reúne Google y correo en una pantalla más clara, con recuperación e importación como acciones secundarias. Google reconoce las cuentas migradas al confirmar el correo, sin perder la partida.',
+     'Sign-in brings Google and email into a clearer screen, with recovery and import as secondary actions. Google recognizes migrated accounts after verifying the email, preserving the save.'],
+    ['Nuevo acceso con correo verificado y contraseña. Puedes recuperar el acceso por correo; las cuentas de la beta conservarán su progreso y deberán elegir una contraseña nueva.',
+     'New sign-in with verified email and password. You can recover access by email; beta accounts will keep their progress and need to choose a new password.'],
     ['El pasillo seguro de la estampida de Tauros es un 15% más ancho y ya no muestra texto en el suelo.',
      'The safe corridor in Tauros’s stampede is 15% wider and no longer shows text on the ground.'],
     ['Se retiran Casa Monstruo y Operación Rocket. Los encuentros con Tauros y Ditto ya no se activan esperando en un círculo.',

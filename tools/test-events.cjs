@@ -20,7 +20,7 @@ const URL = process.env.EVENT_TEST_URL || 'http://127.0.0.1:3087/dev.html';
         close() {}, peers() { return []; }, mode() { return 'direct'; } };
     ` }));
     await page.goto(URL);
-    await page.waitForFunction(() => G.Game && document.getElementById('boot').classList.contains('hidden'));
+    await page.waitForFunction(() => G.Game && document.getElementById('boot').classList.contains('hidden'), null, { polling: 50 });
     await page.evaluate(() => {
       document.getElementById('tap-start').classList.add('hidden');
       G.DB.playAsGuest(); G.DB.save.partner = 25; G.Game.startRun();

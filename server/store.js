@@ -4,7 +4,6 @@
  * Las marcas de hora del servidor se guardan como { __ts: ms }.
  */
 const { DatabaseSync } = require('node:sqlite');
-const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 
@@ -19,11 +18,6 @@ function open(file) {
       data TEXT NOT NULL, v INTEGER NOT NULL, updated INTEGER NOT NULL);
     CREATE INDEX IF NOT EXISTS docs_parent ON docs(parent);
     CREATE INDEX IF NOT EXISTS docs_cid ON docs(cid);
-    CREATE TABLE IF NOT EXISTS users (
-      uid TEXT PRIMARY KEY, email TEXT UNIQUE NOT NULL, hash TEXT NOT NULL, created INTEGER NOT NULL);
-    CREATE TABLE IF NOT EXISTS sessions (
-      token TEXT PRIMARY KEY, uid TEXT NOT NULL, created INTEGER NOT NULL, last INTEGER NOT NULL);
-    CREATE INDEX IF NOT EXISTS sessions_uid ON sessions(uid);
   `);
 
   const q = {
@@ -32,16 +26,7 @@ function open(file) {
     byCid: db.prepare('SELECT path, id, data, v FROM docs WHERE cid = ?'),
     put: db.prepare(`INSERT INTO docs (path, parent, cid, id, data, v, updated) VALUES (?, ?, ?, ?, ?, 1, ?)
                      ON CONFLICT(path) DO UPDATE SET data = excluded.data, v = docs.v + 1, updated = excluded.updated`),
-    del: db.prepare('DELETE FROM docs WHERE path = ?'),
-    userByEmail: db.prepare('SELECT uid, email, hash FROM users WHERE email = ?'),
-    userByUid: db.prepare('SELECT uid, email, hash FROM users WHERE uid = ?'),
-    addUser: db.prepare('INSERT INTO users (uid, email, hash, created) VALUES (?, ?, ?, ?)'),
-    delUser: db.prepare('DELETE FROM users WHERE uid = ?'),
-    addSession: db.prepare('INSERT INTO sessions (token, uid, created, last) VALUES (?, ?, ?, ?)'),
-    session: db.prepare('SELECT uid, last FROM sessions WHERE token = ?'),
-    touchSession: db.prepare('UPDATE sessions SET last = ? WHERE token = ?'),
-    delSession: db.prepare('DELETE FROM sessions WHERE token = ?'),
-    delSessions: db.prepare('DELETE FROM sessions WHERE uid = ?')
+    del: db.prepare('DELETE FROM docs WHERE path = ?')
   };
 
   // ---------------- documentos ----------------
@@ -79,72 +64,31 @@ function open(file) {
     catch (e) { db.exec('ROLLBACK'); throw e; }
   }
 
-  // ---------------- contas ----------------
-
-  function hashPass(pass) {
-    const salt = crypto.randomBytes(16);
-    const key = crypto.scryptSync(pass, salt, 32);
-    return 'scrypt$' + salt.toString('hex') + '$' + key.toString('hex');
-  }
-  function checkPass(pass, stored) {
-    const [, salt, key] = String(stored).split('$');
-    if (!salt || !key) return false;
-    const got = crypto.scryptSync(pass, Buffer.from(salt, 'hex'), 32);
-    return crypto.timingSafeEqual(got, Buffer.from(key, 'hex'));
-  }
-  const tokenHash = t => crypto.createHash('sha256').update(t).digest('hex');
-
-  function newUid() {
-    // Mismo aspecto que los uid de Firebase: 28 caracteres alfanuméricos.
-    const A = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    return [...crypto.randomBytes(28)].map(b => A[b % A.length]).join('');
-  }
-
-  function createUser(email, pass) {
-    if (q.userByEmail.get(email)) return null;
-    const uid = newUid();
-    q.addUser.run(uid, email, hashPass(pass), Date.now());
-    return { uid, email };
+  /** Remove all game data belonging to a deleted account, including shared summaries. */
+  function deletePlayer(uid) {
+    atomic(() => {
+      for (const row of db.prepare('SELECT path, data FROM docs').all()) {
+        const [collection, id] = row.path.split('/');
+        const data = JSON.parse(row.data);
+        if ((['saves', 'runs', 'profiles', 'pres'].includes(collection) && id === uid)
+            || (collection === 'names' && data.uid === uid)
+            || (collection === 'friendships' && (data.users || []).includes(uid))
+            || (collection === 'inv' && (data.from === uid || data.to === uid))
+            || (collection === 'lb' && (data.uids || []).includes(uid))
+            || (collection === 'reports' && data.by === uid)) {
+          delDoc(row.path);
+        } else if (collection === 'lbs' && data.top) {
+          let changed = false;
+          for (const [key, entry] of Object.entries(data.top)) {
+            if ((entry.uids || []).includes(uid)) { delete data.top[key]; changed = true; }
+          }
+          if (changed) putDoc(row.path, data, Date.now());
+        }
+      }
+    });
   }
 
-  function verifyUser(email, pass) {
-    const u = q.userByEmail.get(email);
-    return u && checkPass(pass, u.hash) ? { uid: u.uid, email: u.email } : null;
-  }
-
-  function verifyUid(uid, pass) {
-    const u = q.userByUid.get(uid);
-    return !!(u && checkPass(pass, u.hash));
-  }
-
-  function userOf(uid) {
-    const u = q.userByUid.get(uid);
-    return u ? { uid: u.uid, email: u.email } : null;
-  }
-
-  function deleteUser(uid) { q.delSessions.run(uid); q.delUser.run(uid); }
-
-  function newSession(uid) {
-    const token = crypto.randomBytes(32).toString('base64url');
-    const now = Date.now();
-    q.addSession.run(tokenHash(token), uid, now, now);
-    return token;
-  }
-
-  function sessionUid(token) {
-    if (!token) return null;
-    const h = tokenHash(token);
-    const s = q.session.get(h);
-    if (!s) return null;
-    // Se apunta el último uso como mucho una vez por hora.
-    if (Date.now() - s.last > 3600e3) q.touchSession.run(Date.now(), h);
-    return s.uid;
-  }
-
-  function endSession(token) { if (token) q.delSession.run(tokenHash(token)); }
-
-  return { getDoc, putDoc, delDoc, list, atomic, split,
-           createUser, verifyUser, verifyUid, userOf, deleteUser, newSession, sessionUid, endSession };
+  return { getDoc, putDoc, delDoc, list, atomic, split, deletePlayer, close: () => db.close() };
 }
 
 module.exports = { open };

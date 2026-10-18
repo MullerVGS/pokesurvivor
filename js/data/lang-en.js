@@ -748,3 +748,54 @@ G.I18n.add({
   'Ditto impostor ronda la zona. Búscalo en el minimapa y atácalo para luchar.': 'Ditto Impostor is roaming nearby. Find it on the minimap and attack to fight.'
 
 });
+
+G.I18n.add({
+  "Acceso": "Sign in",
+  "Correo electrónico": "Email address",
+  "Recuperar acceso": "Recover access",
+  "Reenviar verificación": "Resend verification",
+  "Continuar sin conexión": "Continue offline",
+  "Enviar enlace": "Send link",
+  "Guardar contraseña": "Save password",
+  "Usa al menos 15 caracteres. Puedes usar una frase y tu gestor de contraseñas.": "Use at least 15 characters. You can use a passphrase and your password manager.",
+  "Revisa tu correo y verifica tu dirección para entrar.": "Check your email and verify your address to sign in.",
+  "Si existe una cuenta con ese correo, recibirás un enlace para elegir una contraseña nueva.": "If an account exists with that email, you will receive a link to choose a new password.",
+  "Contraseña guardada. Ya puedes entrar.": "Password saved. You can now sign in.",
+  "Si hace falta verificar esa cuenta, recibirás un correo.": "If that account needs verification, you will receive an email.",
+  "Correo verificado. Ya puedes entrar.": "Email verified. You can now sign in.",
+  "El enlace ha caducado o no se pudo completar el acceso. Inténtalo de nuevo.": "The link expired or sign-in could not be completed. Please try again.",
+  "Sin conexión. Puedes jugar como invitado o continuar con una copia local.": "Offline. You can play as a guest or continue with a local copy.",
+  "Entra para guardar tu progreso y jugar con amigos. Como invitado no se guarda.": "Sign in to save your progress and play with friends. Guest progress is not saved.",
+  "Hay una partida importada. Se añadirá a la cuenta con la que entres.": "An imported save is ready. It will be added to the account you sign in to.",
+  "Correo o contraseña incorrectos.": "Incorrect email or password.",
+  "Verifica tu correo antes de entrar. Revisa tu bandeja de entrada.": "Verify your email before signing in. Check your inbox.",
+  "No se pudo crear la cuenta. Prueba a entrar o recuperar el acceso.": "Could not create the account. Try signing in or recovering access.",
+  "Usa una contraseña de al menos 15 caracteres.": "Use a password of at least 15 characters.",
+  "La contraseña puede tener hasta 128 caracteres.": "Your password can have up to 128 characters.",
+  "El enlace ha caducado o ya se ha usado. Solicita otro.": "The link expired or has already been used. Request another one.",
+  "Demasiados intentos. Espera un minuto e inténtalo de nuevo.": "Too many attempts. Wait a minute and try again.",
+  "Sin conexión con el servidor.": "No connection to the server.",
+  "Vuelve a iniciar sesión para continuar.": "Sign in again to continue.",
+  "El registro aún no está disponible.": "Registration is not available yet.",
+  "No se pudo completar la operación. Inténtalo de nuevo.": "Could not complete the operation. Please try again.",
+  "Te enviaremos un correo para confirmar que quieres borrar tu cuenta y toda tu partida.": "We will send you an email to confirm that you want to delete your account and all your progress.",
+  "Revisa tu correo para confirmar la eliminación.": "Check your email to confirm deletion.",
+  "Copia local sin conexión": "Offline local copy",
+  "Correo verificado": "Verified email",
+  "Vincular Google": "Link Google",
+  "Si creas una cuenta, guardamos tu correo, tu apodo y tu partida en este servidor para que puedas seguir en otro dispositivo. Tu correo no se muestra a otros jugadores. Puedes solicitar la eliminación de tu cuenta desde Ajustes.": "If you create an account, we store your email, nickname and save on this server so you can continue on another device. Your email is not shown to other players. You can request account deletion from Settings."
+});
+
+G.I18n.add({
+  "Tu aventura continúa aquí.": "Your adventure continues here.",
+  "Continuar con Google": "Continue with Google",
+  "o con tu correo": "or with your email",
+  "¿La olvidaste?": "Forgot password?",
+  "Importar partida de pokesurvivor.com": "Import save from pokesurvivor.com",
+  "Verifica tu correo o recupera el acceso antes de vincular Google.": "Verify your email or recover access before linking Google.",
+  "Google no ha confirmado ese correo. Usa una cuenta verificada.": "Google has not verified that email. Use a verified account.",
+  "Se canceló el acceso con Google. Puedes volver a intentarlo.": "Google sign-in was cancelled. You can try again.",
+  "La sesión de acceso ha caducado. Pulsa Google para empezar de nuevo.": "Your sign-in session expired. Select Google to start again.",
+  "No se pudo validar el acceso con Google. Inténtalo de nuevo.": "Google sign-in could not be verified. Please try again.",
+  "Elige la cuenta de Google con el mismo correo que tu cuenta del juego.": "Choose the Google account with the same email as your game account."
+});

@@ -124,27 +124,7 @@ G.UI = (() => {
    * Devuelve { pass } o null si se cancela.
    */
   function confirmDelete() {
-    if (!G.DB.nameAccount) return Promise.resolve(confirm(G.T('Se borrarán tu cuenta y toda tu partida, para siempre. ¿Seguro?')) ? { pass: '' } : null);
-    return new Promise(done => {
-      const el = document.createElement('section');
-      el.className = 'scr dim';
-      el.style.zIndex = 70;
-      el.innerHTML = `<div class="box center dialog-frame" style="max-width:380px"><div class="dialog-body">
-        <h3>Borrar cuenta</h3>
-        <p class="sub">Se borrarán tu cuenta y toda tu partida, para siempre. Para confirmarlo, escribe tu contraseña.</p>
-        <input class="field" type="password" maxlength="64" autocomplete="current-password" style="width:100%">
-        </div><div class="dialog-foot" style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
-          <button class="btn ghost" data-a="no">Cancelar</button>
-          <button class="btn danger" data-a="yes">Borrar para siempre</button>
-        </div></div>`;
-      document.body.appendChild(el);
-      const inp = el.querySelector('input');
-      const end = v => { el.remove(); done(v); };
-      el.querySelector('[data-a=no]').onclick = () => end(null);
-      el.querySelector('[data-a=yes]').onclick = () => { if (inp.value) end({ pass: inp.value }); else inp.focus(); };
-      inp.onkeydown = e => { if (e.key === 'Enter' && inp.value) end({ pass: inp.value }); if (e.key === 'Escape') end(null); };
-      setTimeout(() => inp.focus(), 50);
-    });
+    return Promise.resolve(confirm(G.T('Te enviaremos un correo para confirmar que quieres borrar tu cuenta y toda tu partida.')) ? {} : null);
   }
 
   function closeLegal() { $('scr-legal').classList.add('hidden'); }
@@ -160,6 +140,7 @@ G.UI = (() => {
       $('legal-delete').disabled = true;
       const r = await G.DB.deleteAccount(ok.pass);
       if (!r.ok) { $('legal-del-msg').textContent = r.error; $('legal-delete').disabled = false; return; }
+      if (r.pending) { $('legal-del-msg').textContent = G.T('Revisa tu correo para confirmar la eliminación.'); $('legal-delete').disabled = false; return; }
       closeLegal();
       toast('Cuenta borrada');
       G.Audio.music(null);

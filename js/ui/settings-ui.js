@@ -139,7 +139,7 @@ G.SettingsUI = (() => {
       return;
     }
     const nick = G.Social.me ? G.Social.me.name : (G.DB.user || '');
-    const kind = G.DB.mode === 'local' ? 'Cuenta de este navegador' : G.DB.nameAccount ? 'Nombre y contraseña' : 'Google';
+    const kind = G.DB.mode === 'local' ? 'Copia local sin conexión' : 'Correo verificado';
     box.innerHTML = section('Cuenta')
       + `<div class="set-row"><div class="grow"><b>Apodo</b><small>Es único y no se puede cambiar.</small></div><span class="gold" translate="no">${esc(nick)}</span></div>`
       + `<div class="set-row"><div class="grow"><b>Tipo de cuenta</b></div><span>${esc(kind)}</span></div>`
@@ -147,6 +147,7 @@ G.SettingsUI = (() => {
       + `<div class="row wrap" style="gap:8px;margin-top:12px">
            <button class="btn" id="set-logout">Cerrar sesión</button>
            <button class="btn danger" id="set-delete">Borrar cuenta</button>
+           ${G.Auth.capabilities.google ? '<button class="btn" id="set-google">Vincular Google</button>' : ''}
          </div><p class="note" id="set-msg"></p>`;
   }
 
@@ -161,6 +162,8 @@ G.SettingsUI = (() => {
     box.querySelectorAll('[data-lang]').forEach(b => { b.onclick = () => { if (b.dataset.lang !== G.I18n.lang) G.I18n.set(b.dataset.lang); }; });
     const lo = $('set-login'); if (lo) lo.onclick = () => { close(); leave(); };
     const out = $('set-logout'); if (out) out.onclick = () => { close(); leave(); };
+    const link = $('set-google');
+    if (link) link.onclick = () => G.Auth.google(true).catch(error => { $('set-msg').textContent = G.T(G.Auth.errorMessage(error)); });
     const del = $('set-delete');
     if (del) del.onclick = async () => {
       const ok = await G.UI.confirmDelete();
@@ -168,6 +171,7 @@ G.SettingsUI = (() => {
       del.disabled = true;
       const r = await G.DB.deleteAccount(ok.pass);
       if (!r.ok) { $('set-msg').textContent = r.error; del.disabled = false; return; }
+      if (r.pending) { $('set-msg').textContent = G.T('Revisa tu correo para confirmar la eliminación.'); del.disabled = false; return; }
       close();
       G.UI.toast('Cuenta borrada');
       G.Audio.music(null);
@@ -180,7 +184,7 @@ G.SettingsUI = (() => {
     if (G.DB.guest && !confirm('Eres invitado: se perderá todo el progreso. ¿Salir?')) return;
     if (G.Game.state !== 'ui') G.Game.quit && G.Game.quit();
     G.Audio.music(null);
-    G.DB.logout().then(() => G.Flow.toLogin());
+    G.DB.logout().then(r => { if (r.ok) G.Flow.toLogin(); else G.UI.toast(r.error); });
   }
 
   return { init, open, close, get isOpen() { return isOpen(); } };

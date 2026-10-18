@@ -1,114 +1,114 @@
-/* ============ login.js — inicio: entrar, crear cuenta o invitado ============ */
+/* Login, verified email and recovery through Better Auth. */
 G.LoginUI = (() => {
-  const $ = G.UI.$;
-  let mode = 'login';
-
-  function init() {
-    document.querySelectorAll('#scr-login .tab').forEach(t => {
-      t.onclick = () => setMode(t.dataset.tab);
+  const $ = id => document.getElementById(id);
+  let mode = 'login', busy = false, resetToken = null, needsVerification = false;
+  const note = text => { $('login-note').textContent = G.T(text); };
+  const error = text => { $('login-err').textContent = G.T(text); };
+  function options() {
+    const showGoogle = G.Auth.capabilities.google && ['login', 'register'].includes(mode);
+    $('btn-google').classList.toggle('hidden', !showGoogle);
+    $('auth-divider').classList.toggle('hidden', !showGoogle);
+    $('btn-verify').classList.toggle('hidden', !G.Auth.capabilities.email || !needsVerification);
+    $('f-forgot').classList.toggle('hidden', !G.Auth.capabilities.email || mode !== 'login');
+    document.querySelector('#scr-login [data-tab=register]').classList.toggle('hidden', !G.Auth.capabilities.email);
+  }
+  function setMode(next) {
+    mode = next;
+    document.querySelectorAll('#scr-login [data-tab]').forEach(button => {
+      button.classList.toggle('on', button.dataset.tab === mode);
+      button.setAttribute('aria-pressed', String(button.dataset.tab === mode));
     });
-    $('login-form').onsubmit = async e => {
-      e.preventDefault();
-      $('login-err').textContent = '';
-      $('btn-auth').disabled = true;
-      const fn = mode === 'login' ? G.DB.login : G.DB.register;
-      const r = await fn($('f-user').value, $('f-pass').value);
-      $('btn-auth').disabled = false;
-      if (!r.ok) { $('login-err').textContent = r.error; return; }
-      $('f-pass').value = '';
-      G.Flow.afterLogin();
-    };
-    $('btn-guest').onclick = () => { G.DB.playAsGuest(); G.Flow.afterLogin(); };
-    $('btn-import').onclick = () => { location.href = 'importar/'; };
-    $('f-forgot').onclick = e => {
-      e.preventDefault();
-      $('login-err').textContent = '';
-      $('forgot-note').classList.toggle('hidden');
-    };
-    // Vincular Gmail para poder recuperar la cuenta (ver offerRecovery).
-    $('rec-link').onclick = async () => {
-      $('rec-err').textContent = '';
-      $('rec-link').disabled = true;
-      const r = await G.DB.linkGoogle();
-      $('rec-link').disabled = false;
-      if (!r.ok) { $('rec-err').textContent = r.error; return; }
-      $('scr-recover').classList.add('hidden');
-      G.UI.toast('¡Gmail vinculado! Si olvidas la contraseña, entra con Google.', 4500);
-    };
-    $('rec-later').onclick = () => $('scr-recover').classList.add('hidden');
-    $('rec-never').onclick = () => {
-      try { localStorage.setItem('ps.recover.no.' + G.DB.fb.uid, '1'); } catch (e) { /* nada */ }
-      $('scr-recover').classList.add('hidden');
-    };
-    $('btn-google').onclick = async () => {
-      $('login-err').textContent = '';
-      $('btn-google').disabled = true;
-      const r = await G.DB.loginWithGoogle();
-      $('btn-google').disabled = false;
-      if (!r.ok) { $('login-err').textContent = r.error; return; }
-      G.Flow.afterLogin();
-    };
+    $('auth-name').classList.toggle('hidden', mode !== 'register');
+    $('auth-email').classList.toggle('hidden', mode === 'reset');
+    $('auth-password').classList.toggle('hidden', mode === 'recover');
+    $('f-user').disabled = mode !== 'register';
+    $('f-email').disabled = mode === 'reset';
+    $('f-pass').disabled = mode === 'recover';
+    $('f-user').required = mode === 'register';
+    $('f-email').required = mode !== 'reset';
+    $('f-pass').required = mode !== 'recover';
+    $('f-pass').autocomplete = mode === 'login' ? 'current-password' : 'new-password';
+    $('f-pass').minLength = mode === 'login' ? 1 : 15;
+    $('btn-auth').textContent = G.T({ login: 'Entrar', register: 'Crear cuenta', recover: 'Enviar enlace', reset: 'Guardar contraseña' }[mode]);
+    $('auth-password-help').classList.toggle('hidden', !['register', 'reset'].includes(mode));
+    $('f-pass').value = ''; needsVerification = false; options(); error(''); note('');
   }
-
-  /**
-   * Al entrar (o recién creada la cuenta) con nombre y contraseña, si aún no
-   * hay Gmail vinculado: "¿te da miedo perder tu cuenta?". Una vez por sesión,
-   * hasta que lo vincule o diga que no le vuelvan a preguntar.
-   */
-  let offered = false;
-  // Servidor propio sin Google (G.FIREBASE_CONFIG.google === false): ni botón ni aviso de vincular Gmail.
-  const noGoogle = () => !!G.FIREBASE_CONFIG && G.FIREBASE_CONFIG.google === false;
-  function offerRecovery() {
-    if (offered || G.DB.mode !== 'cloud' || !G.DB.fb || !G.DB.nameAccount || G.DB.hasGoogle || noGoogle()) return;
-    try { if (localStorage.getItem('ps.recover.no.' + G.DB.fb.uid)) return; } catch (e) { /* nada */ }
-    offered = true;
-    $('rec-err').textContent = '';
-    $('scr-recover').classList.remove('hidden');
+  async function perform(action) {
+    if (busy) return;
+    busy = true; $('login-form').setAttribute('aria-busy', 'true');
+    document.querySelectorAll('#scr-login button').forEach(button => { button.disabled = true; });
+    error(''); note('');
+    try { await action(); }
+    catch (e) {
+      if (e.code === 'EMAIL_NOT_VERIFIED') { needsVerification = true; options(); }
+      error(G.Auth.errorMessage(e));
+    }
+    finally {
+      busy = false; $('login-form').removeAttribute('aria-busy');
+      document.querySelectorAll('#scr-login button').forEach(button => { button.disabled = false; });
+    }
   }
-
-  /** Explica dónde se guarda la partida según el modo de la base de datos. */
-  function modeNote() {
-    if (G.DB.mode === 'cloud') return 'Tu partida se guarda en la nube: entra desde cualquier ordenador. Como invitado no se guarda.';
-    const why = G.DB.localReason === 'file'
-      ? 'Abierto desde un archivo: la partida sólo se guarda en este navegador. Para guardar en la nube, juega en la versión publicada.'
-      : G.DB.localReason === 'host'
-        ? 'Esta no es la web oficial: la partida sólo se guarda en este navegador. El juego oficial y gratis está en pokesurvivor.com.'
-      : G.DB.localReason === 'config'
-        ? 'Nube sin configurar: la partida sólo se guarda en este navegador.'
-        : 'No se pudo conectar con la nube: la partida sólo se guarda en este navegador.';
-    return why;
+  function init() {
+    const params = new URLSearchParams(location.search);
+    if (params.get('auth') === 'reset' && params.get('token')) resetToken = params.get('token');
+    const result = params.get('auth'), failed = params.get('error');
+    if (result || failed) {
+      params.delete('auth'); params.delete('token'); params.delete('error'); params.delete('error_description');
+      history.replaceState(null, '', location.pathname + (params.size ? '?' + params : '') + location.hash);
+    }
+    document.querySelectorAll('#scr-login [data-tab]').forEach(button => { button.onclick = () => { if (!busy) setMode(button.dataset.tab); }; });
+    $('login-form').onsubmit = event => {
+      event.preventDefault();
+      perform(async () => {
+        const email = $('f-email').value, password = $('f-pass').value;
+        if (mode === 'register') {
+          await G.Auth.signUp($('f-user').value, email, password);
+          setMode('login'); needsVerification = true; options(); note('Revisa tu correo y verifica tu dirección para entrar.');
+        } else if (mode === 'recover') {
+          await G.Auth.recover(email);
+          note('Si existe una cuenta con ese correo, recibirás un enlace para elegir una contraseña nueva.');
+        } else if (mode === 'reset') {
+          await G.Auth.reset(resetToken, password);
+          resetToken = null; setMode('login'); note('Contraseña guardada. Ya puedes entrar.');
+        } else {
+          const user = await G.Auth.signIn(email, password);
+          await G.DB.openAccount(user);
+          $('f-pass').value = ''; G.Flow.afterLogin();
+        }
+      });
+    };
+    $('f-forgot').onclick = () => setMode('recover');
+    $('btn-verify').onclick = () => {
+      if (!$('f-email').reportValidity() || !$('f-email').value) return;
+      perform(async () => { await G.Auth.verify($('f-email').value); note('Si hace falta verificar esa cuenta, recibirás un correo.'); });
+    };
+    $('btn-google').onclick = () => perform(() => G.Auth.google());
+    $('btn-guest').onclick = () => { if (!busy) { G.DB.playAsGuest(); G.Flow.afterLogin(); } };
+    $('btn-offline').onclick = () => { if (!busy && G.DB.playOffline()) G.Flow.afterLogin(); };
+    $('btn-import').onclick = () => { location.href = '/importar/'; };
+    setMode(resetToken ? 'reset' : 'login');
+    if (failed || result === 'error') error(G.Auth.errorMessage({ code: failed }));
+    else if (result === 'verified') note('Correo verificado. Ya puedes entrar.');
+    else if (result === 'deleted') note('Cuenta borrada.');
   }
-
-  /** Save de pokesurvivor.com esperando (importar/): crear cuenta con su apodo ya escrito. */
-  function importReady() {
-    let imp = null;
-    try { imp = JSON.parse(localStorage.getItem('ps.import') || 'null'); } catch (e) { /* nada */ }
-    const nick = imp && imp.save && typeof imp.save.name === 'string' ? imp.save.name.trim().slice(0, 16) : '';
-    if (!nick) return;
-    setMode('register');
-    $('f-user').value = nick;
-    $('btn-import').textContent = 'Save de ' + nick + ' pronto ✓';
-    $('login-mode').textContent = 'Crie a conta com o nick ' + nick + ' e uma senha nova: o save do pokesurvivor.com entra nela. ' +
-      'Se você já tem conta aqui, entre nela e o save se junta ao que já tem.';
-  }
-
-  function setMode(m) {
-    mode = m;
-    document.querySelectorAll('#scr-login .tab').forEach(t => t.classList.toggle('on', t.dataset.tab === m));
-    $('btn-auth').textContent = m === 'login' ? 'Entrar' : 'Crear cuenta';
-    $('f-pass').autocomplete = m === 'login' ? 'current-password' : 'new-password';
-    $('login-err').textContent = '';
-  }
-
   function open() {
-    G.UI.chrome(false);
-    G.UI.show('scr-login');
-    if (!G.DB.storageOk) $('login-err').textContent = 'Este navegador no deja guardar datos: juega como invitado.';
-    $('btn-google').classList.toggle('hidden', G.DB.mode !== 'cloud' || noGoogle());
-    $('login-mode').textContent = modeNote();
-    importReady();
-    setTimeout(() => $('f-user').focus(), 50);
+    G.UI.chrome(false); G.UI.show('scr-login');
+    options();
+    const cached = G.Auth.cached();
+    let hasCopy = false;
+    try { hasCopy = !!(cached && localStorage.getItem('ps.cloud.' + cached.id)); } catch { /* storage unavailable */ }
+    $('btn-offline').classList.toggle('hidden', !hasCopy);
+    $('login-mode').textContent = G.T(G.Auth.state === 'offline'
+      ? 'Sin conexión. Puedes jugar como invitado o continuar con una copia local.'
+      : 'Entra para guardar tu progreso y jugar con amigos. Como invitado no se guarda.');
+    try {
+      const imported = JSON.parse(localStorage.getItem('ps.import') || 'null');
+      if (imported?.save?.name) {
+        $('f-user').value = imported.save.name.slice(0, 16);
+        note('Hay una partida importada. Se añadirá a la cuenta con la que entres.');
+      }
+    } catch { /* no import */ }
+    setTimeout(() => (mode === 'reset' ? $('f-pass') : $('f-email')).focus(), 50);
   }
-
-  return { init, open, offerRecovery };
+  return { init, open, get pendingReset() { return !!resetToken; } };
 })();

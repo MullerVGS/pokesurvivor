@@ -1,27 +1,29 @@
 # Servidor próprio (no lugar do Firebase)
 
 Este fork não usa Firebase. O jogo continua chamando a API compat do Firebase
-(`firebase.auth()`, `firebase.firestore()`, `firebase.database()`), mas quem
+(`firebase.firestore()`, `firebase.database()`), mas quem
 responde é `js/fb/firebase-app-compat.js`, que fala com o servidor de `server/`
 no mesmo domínio. Por isso o resto do código do jogo quase não muda, e os
 merges com o upstream continuam simples.
 
 | Firebase | Aqui |
 | --- | --- |
-| Authentication (nome + senha) | `POST /api/auth/*`, senha com scrypt, sessão por token |
+| Autenticação | Better Auth: e-mail verificado, sessão em cookie e recuperação |
 | Firestore (saves, ranking, amigos, perfis, convites) | SQLite (`/data/pokesurvivor.sqlite`), `POST /api/fs/*`, `onSnapshot` por WebSocket |
 | Realtime Database (salas e sinalização do coop) | memória do servidor, WebSocket `/api/ws` |
 | `firestore.rules` / `database.rules.json` | `server/rules.js` e `server/live.js` (donos e permissões; sem o anti-trapaça do ranking) |
 
-Sem login com Google (`google: false` em `js/core/firebase-config.js`).
+Autenticação, configuração de Google/SMTP, backup e migração estão em
+[AUTENTICACAO.md](AUTENTICACAO.md). Não há emulação de Firebase Auth.
+O adapter de dados usa a sessão do Better Auth nas requisições HTTP e WebSocket.
 
-## O que mudou no código do jogo
+## Integração com o jogo
 
-- `js/core/firebase-config.js`: `sdk: '/js/fb/'` e `apiBase: '/api'`.
-- `js/core/db.js`: carrega o SDK de `cfg.sdk`, não exige host oficial quando há
-  `cfg.sdk` e aplica o save importado (`ps.import`) ao entrar na conta.
-- `js/ui/login.js`: esconde o botão e o aviso de vincular Gmail.
-- `dev.html`: link para `importar/` na tela de login.
+- `js/core/auth.js`: cliente dos endpoints do Better Auth, sem tokens persistidos no JavaScript.
+- `js/core/db.js`: saves e sincronização; contas com senha locais foram removidas.
+- `js/fb/firebase-app-compat.js`: adapter de documentos e salas com cookies.
+- `js/ui/login.js`: cadastro, verificação, login e recuperação por e-mail.
+- `server/auth.mjs`: configuração do Better Auth e entrega de e-mails.
 
 ## Trazer o save do pokesurvivor.com
 
@@ -35,7 +37,7 @@ dá para colar o JSON ou escolher um arquivo.
 ## Rodar
 
 ```sh
-cd server && npm install && PORT=3000 DATA_DIR=./data STATIC_DIR=.. node index.js
+cd server && npm install && PORT=3000 BETTER_AUTH_URL=http://localhost:3000 AUTH_EMAIL_MODE=outbox DATA_DIR=./data STATIC_DIR=.. node index.js
 # abrir http://localhost:3000/dev.html (os scripts soltos) ou / (depois de node tools/build.js --sin-seo)
 ```
 

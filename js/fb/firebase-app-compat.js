@@ -1,15 +1,13 @@
 /* ============ firebase-app-compat.js — Firebase "de mentira" contra nuestro servidor ============
- * El juego habla con Firebase a través del SDK compat (firebase.auth(),
- * firebase.firestore(), firebase.database()). Este archivo da esa misma API
+ * El juego habla con Firebase a través del SDK compat (firebase.firestore(), firebase.database()). Este archivo da esa misma API
  * (sólo lo que usa el juego) pero contra el servidor propio (server/):
  *
- *   auth       POST /api/auth/*  · sesión en localStorage (psfb.auth)
  *   firestore  POST /api/fs/*    · onSnapshot por WebSocket
  *   database   WebSocket /api/ws (salas y señalización del cooperativo)
  *
  * Así el resto del código del juego no cambia. Lo carga js/core/db.js cuando
- * G.FIREBASE_CONFIG.sdk apunta a esta carpeta. Los otros tres archivos de la
- * carpeta están vacíos: todo vive aquí.
+ * G.FIREBASE_CONFIG.sdk apunta a esta carpeta. La autenticación vive en G.Auth;
+ * este adapter sólo expone documentos y salas mediante la cookie de sesión.
  */
 (() => {
   if (window.firebase && window.firebase.__self) return;
@@ -18,28 +16,21 @@
   const apiBase = () => (cfg && cfg.apiBase) || '/api';
   const err = (code, message) => Object.assign(new Error(message || code), { code });
 
-  // ---------------- sesión ----------------
+  const currentUser = () => cfg && cfg.getUser && cfg.getUser();
 
-  const K_AUTH = 'psfb.auth';
-  let session = null;                 // { token, uid, email }
-  try { session = JSON.parse(localStorage.getItem(K_AUTH) || 'null'); } catch (e) { session = null; }
-  function saveSession(s) {
-    session = s;
-    try { if (s) localStorage.setItem(K_AUTH, JSON.stringify(s)); else localStorage.removeItem(K_AUTH); } catch (e) { /* nada */ }
-    Live.reauth();
-  }
-
-  async function call(route, body, authCall) {
+  async function call(route, body) {
     let r;
     try {
       r = await fetch(apiBase() + '/' + route, {
-        method: 'POST', cache: 'no-store',
-        headers: Object.assign({ 'content-type': 'application/json' }, session ? { authorization: 'Bearer ' + session.token } : {}),
+        method: 'POST', cache: 'no-store', signal: AbortSignal.timeout(15000),
+        credentials: 'same-origin',
+        headers: { 'content-type': 'application/json' },
         body: JSON.stringify(body || {})
       });
-    } catch (e) { throw err(authCall ? 'auth/network-request-failed' : 'unavailable', e.message); }
+    } catch (e) { throw err('unavailable', e.message); }
     let j = {};
     try { j = await r.json(); } catch (e) { /* sin cuerpo */ }
+    if (r.status === 401 && cfg.onUnauthorized) cfg.onUnauthorized();
     if (!r.ok) throw err(j.code || (r.status >= 500 ? 'unavailable' : 'unknown'), j.message);
     return j;
   }
@@ -99,14 +90,15 @@
     }
 
     function connect() {
-      if (ws || !session) return;
+      if (ws || !currentUser()) return;
       wanted = true;
       try { ws = new WebSocket(url()); } catch (e) { ws = null; return retry(); }
-      ws.onopen = () => { ready = true; backoff = 1000; ws.send(JSON.stringify({ t: 'auth', token: session ? session.token : '' })); };
+      ws.onopen = () => { ready = true; backoff = 1000; };
       ws.onmessage = e => {
         let m;
         try { m = JSON.parse(e.data); } catch (x) { return; }
         if (m.t === 'auth') {
+          if (!m.ok || m.uid !== currentUser()?.id) { ws.close(); return; }
           authed = true;
           for (const s of subs.values()) raw(s.msg);
           for (const o of ods.values()) raw(o);
@@ -124,7 +116,11 @@
         const s = subs.get(m.id);
         if (s) s.on(m);
       };
-      ws.onclose = () => { ws = null; ready = authed = false; if (wanted && session) retry(); };
+      ws.onclose = event => {
+        ws = null; ready = authed = false;
+        if (event.code === 1008) { wanted = false; cfg.onUnauthorized?.(); }
+        else if (wanted && currentUser()) retry();
+      };
       ws.onerror = () => { /* llega onclose */ };
     }
     function retry() {
@@ -136,9 +132,11 @@
     function send(m) { if (ws && ready && authed) raw(m); else { queue.push(m); connect(); } }
 
     function request(m) {
+      if (!currentUser()) return Promise.reject(err('unauthenticated'));
       return new Promise((res, rej) => {
         m.rid = ++seq;
-        pending.set(m.rid, { msg: m, res, rej });
+        const timeout = setTimeout(() => { pending.delete(m.rid); rej(err('unavailable')); }, 10000);
+        pending.set(m.rid, { msg: m, res: value => { clearTimeout(timeout); res(value); }, rej: error => { clearTimeout(timeout); rej(error); } });
         if (ws && ready && authed) raw(m); else connect();
       });
     }
@@ -158,79 +156,14 @@
       if (op === 'cancel') ods.delete(path); else ods.set(path, m);
       return request(m);
     }
-    /** La sesión ha cambiado: se vuelve a conectar con la nueva. */
     function reauth() {
-      if (!ws) return;
-      if (!session) { wanted = false; try { ws.close(); } catch (e) { /* nada */ } return; }
-      authed = false;
-      raw({ t: 'auth', token: session.token });
+      wanted = false; clearTimeout(timer);
+      for (const p of pending.values()) p.rej(err('unauthenticated'));
+      pending.clear(); queue.length = 0; subs.clear(); ods.clear();
+      if (ws) ws.close();
     }
     return { request, subscribe, unsubscribe, send, onDisconnect, reauth, connect };
   })();
-
-  // ---------------- Authentication ----------------
-
-  class GoogleAuthProvider {}
-  const EmailAuthProvider = { credential: (email, password) => ({ providerId: 'password', email, password }) };
-  const noGoogle = () => Promise.reject(err('auth/operation-not-allowed'));
-
-  function makeUser(s) {
-    return {
-      uid: s.uid, email: s.email, displayName: null,
-      providerData: [{ providerId: 'password', uid: s.email, email: s.email }],
-      getIdToken: () => Promise.resolve(session ? session.token : ''),
-      reauthenticateWithCredential: cred => call('auth/reauth', { password: cred && cred.password }, true),
-      reauthenticateWithPopup: noGoogle,
-      linkWithPopup: noGoogle,
-      async delete() { await call('auth/delete', {}, true); setUser(null); }
-    };
-  }
-
-  const authListeners = new Set();
-  let authReady = null;
-  const auth = {
-    currentUser: null, languageCode: 'es',
-    setPersistence: () => Promise.resolve(),
-    useEmulator() {},
-    onAuthStateChanged(cb) {
-      authListeners.add(cb);
-      authReady.then(() => { if (authListeners.has(cb)) cb(auth.currentUser); });
-      return () => authListeners.delete(cb);
-    },
-    async createUserWithEmailAndPassword(email, password) {
-      const j = await call('auth/register', { email, password }, true);
-      setUser(j);
-      return { user: auth.currentUser };
-    },
-    async signInWithEmailAndPassword(email, password) {
-      const j = await call('auth/login', { email, password }, true);
-      setUser(j);
-      return { user: auth.currentUser };
-    },
-    signInWithPopup: noGoogle,
-    async signOut() {
-      if (session) await call('auth/logout', {}, true).catch(() => {});
-      setUser(null);
-    }
-  };
-  function setUser(j) {
-    saveSession(j ? { token: j.token, uid: j.uid, email: j.email } : null);
-    auth.currentUser = j ? makeUser(session) : null;
-    authListeners.forEach(fn => { try { fn(auth.currentUser); } catch (e) { console.warn(e); } });
-  }
-  function startAuth() {
-    authReady = (async () => {
-      if (!session) return;
-      try {
-        await call('auth/me', {}, true);
-        auth.currentUser = makeUser(session);
-      } catch (e) {
-        // Sin conexión: se sigue con la sesión guardada (se juega con la copia local).
-        if (e.code === 'auth/network-request-failed' || e.code === 'unavailable') auth.currentUser = makeUser(session);
-        else saveSession(null);
-      }
-    })();
-  }
 
   // ---------------- Firestore ----------------
 
@@ -276,7 +209,7 @@
     async get() { const j = await call('fs/query', this._wire()); return new QuerySnapshot(this._snap(j.docs)); }
     add(data) { const ref = this.doc(); return ref.set(data).then(() => ref); }
     onSnapshot(next, error) {
-      if (!session) { if (error) setTimeout(() => error(err('permission-denied')), 0); return () => {}; }
+      if (!currentUser()) { if (error) setTimeout(() => error(err('permission-denied')), 0); return () => {}; }
       let prev = new Map();             // ruta -> JSON
       const id = Live.subscribe({ t: 'sub', q: this._wire() }, m => {
         if (m.t === 'serr') { if (error) error(err(m.code)); return; }
@@ -413,32 +346,12 @@
     goOnline() {}, goOffline() {}, useEmulator() {}
   };
 
-  // ---------------- conteo del ranking (API REST de Firestore) ----------------
-  // js/net/ranking.js cuenta las marcas por delante con la API REST de
-  // agregación de Firestore. Esa llamada se desvía aquí a /api/fs/count.
-  const realFetch = window.fetch.bind(window);
-  window.fetch = function (input, init) {
-    const url = typeof input === 'string' ? input : input && input.url;
-    const m = url && /\/v1\/projects\/[^/]+\/databases\/\(default\)\/documents\/(.+):runAggregationQuery$/.exec(url);
-    if (!m) return realFetch(input, init);
-    return (async () => {
-      const body = JSON.parse((init && init.body) || '{}');
-      const sq = body.structuredAggregationQuery.structuredQuery;
-      const ff = sq.where.fieldFilter;
-      const OPS = { GREATER_THAN: '>', GREATER_THAN_OR_EQUAL: '>=', LESS_THAN: '<', LESS_THAN_OR_EQUAL: '<=', EQUAL: '==' };
-      const val = ff.value.integerValue != null ? +ff.value.integerValue : ff.value.doubleValue != null ? +ff.value.doubleValue : ff.value.stringValue;
-      const j = await call('fs/count', { path: decodeURIComponent(m[1]) + '/' + sq.from[0].collectionId, field: ff.field.fieldPath, op: OPS[ff.op], value: val });
-      return new Response(JSON.stringify([{ result: { aggregateFields: { n: { integerValue: String(j.n) } } } }]), { headers: { 'content-type': 'application/json' } });
-    })();
-  };
-
   // ---------------- espacio de nombres ----------------
 
   let app = null;
   function initializeApp(c) {
     if (app) return app;
     cfg = c || {};
-    startAuth();
     app = { name: '[DEFAULT]', options: cfg };
     return app;
   }
@@ -448,7 +361,7 @@
     initializeApp,
     app: () => app,
     apps: [],
-    auth: Object.assign(() => auth, { Auth: { Persistence: { LOCAL: 'local', SESSION: 'session', NONE: 'none' } }, GoogleAuthProvider, EmailAuthProvider }),
+    sessionChanged: () => Live.reauth(),
     firestore: Object.assign(() => firestore, { FieldValue: { serverTimestamp: () => new Sentinel('ts') }, Timestamp }),
     database: Object.assign(() => database, { ServerValue: { TIMESTAMP: { '.sv': 'timestamp' } } })
   };

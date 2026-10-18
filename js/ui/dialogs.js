@@ -13,7 +13,7 @@
     while (header.nextSibling) body.appendChild(header.nextSibling);
     box.appendChild(body);
   }
-  for (const id of ['starter-back', 'btn-resume', 'btn-again', 'rec-later', 'nick-later']) {
+  for (const id of ['starter-back', 'btn-resume', 'btn-again', 'nick-later']) {
     const button = document.getElementById(id), box = button.closest('.box');
     const footer = button.parentElement === box ? button : button.parentElement;
     box.classList.add('dialog-frame');

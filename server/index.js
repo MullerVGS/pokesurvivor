@@ -1,13 +1,6 @@
-/* ============ index.js — servidor propio de PokéSurvivor ============
- * Sustituye a Firebase: sirve el juego (la carpeta ya construida) y una API
- * que el cliente js/fb/ usa como si fueran Authentication, Firestore y
- * Realtime Database.
- *
- *   POST /api/auth/*   cuentas (nombre + contraseña)
- *   POST /api/fs/*     documentos
- *   GET  /api/ws       WebSocket: consultas en vivo y salas
- *
- * Variables: PORT (3000) · DATA_DIR (./data) · STATIC_DIR (..) · ADMINS (uids separados por comas)
+/* Game HTTP/WebSocket server. Better Auth owns authentication at /api/auth/*.
+ * /api/fs/* and /api/ws use the same verified cookie session.
+ * Configuration and migration: docs/AUTENTICACAO.md.
  */
 const http = require('http');
 const fs = require('fs');
@@ -17,6 +10,9 @@ const { open } = require('./store');
 const rules = require('./rules');
 const { createDocs, ERR } = require('./docs');
 const { createLive } = require('./live');
+const { isIP } = require('net');
+
+async function main() {
 
 const PORT = +process.env.PORT || 3000;
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data');
@@ -28,67 +24,32 @@ const subs = new Set();               // consultas en vivo: { conn, id, q, last 
 const docs = createDocs(store, rules, paths => notify(paths));
 const live = createLive();
 
-// ---------------- límites de intentos (entrar / crear cuenta) ----------------
-
-const tries = new Map();
-function limited(ip) {
-  const now = Date.now(), t = tries.get(ip) || { n: 0, at: now };
-  if (now - t.at > 60e3) { t.n = 0; t.at = now; }
-  t.n++;
-  tries.set(ip, t);
-  if (tries.size > 5000) for (const [k, v] of tries) if (now - v.at > 60e3) tries.delete(k);
-  return t.n > 20;
+const { createAuth } = await import('./auth.mjs');
+const identity = await createAuth({
+  file: path.join(DATA_DIR, 'pokesurvivor.sqlite'),
+  afterDelete: async user => { store.deletePlayer(user.id); await revalidateConnections(); }
+});
+const trustedProxies = new Set((process.env.AUTH_TRUSTED_PROXIES || '').split(',').map(x => x.trim()).filter(Boolean));
+function clientIp(req) {
+  const remote = (req.socket.remoteAddress || '').replace(/^::ffff:/, '');
+  if (!trustedProxies.has(remote)) return remote;
+  // Only the rightmost hop supplied by our trusted ingress is considered.
+  const forwarded = String(req.headers['x-forwarded-for'] || '').split(',').pop().trim();
+  return isIP(forwarded) ? forwarded : remote;
 }
-const ipOf = req => String(req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').split(',')[0].trim();
+function sameOrigin(req) { return req.headers.origin === identity.origin; }
+function send(res, status, body) {
+  res.writeHead(status, { 'content-type': 'application/json', 'cache-control': 'no-store' });
+  res.end(JSON.stringify(body));
+}
 
-// ---------------- API ----------------
-
-const EMAIL = /^[^\s@]{1,200}@[^\s@]{1,200}$/;
-const userJson = (u, token) => ({ uid: u.uid, email: u.email, token });
-
+// ---------------- game documents (Better Auth supplies the identity) ----------------
 const routes = {
-  'auth/register'(uid, b, req) {
-    if (limited(ipOf(req))) throw ERR('auth/too-many-requests');
-    const email = String(b.email || '').trim().toLowerCase(), pass = String(b.password || '');
-    if (!EMAIL.test(email)) throw ERR('auth/invalid-email');
-    if (pass.length < 6) throw ERR('auth/weak-password');
-    const u = store.createUser(email, pass);
-    if (!u) throw ERR('auth/email-already-in-use');
-    return userJson(u, store.newSession(u.uid));
-  },
-  'auth/login'(uid, b, req) {
-    if (limited(ipOf(req))) throw ERR('auth/too-many-requests');
-    const u = store.verifyUser(String(b.email || '').trim().toLowerCase(), String(b.password || ''));
-    if (!u) throw ERR('auth/invalid-credential');
-    return userJson(u, store.newSession(u.uid));
-  },
-  'auth/me'(uid) {
-    const u = uid && store.userOf(uid);
-    if (!u) throw ERR('auth/user-token-expired');
-    return userJson(u);
-  },
-  'auth/logout'(uid, b, req) { store.endSession(tokenOf(req)); return {}; },
-  'auth/reauth'(uid, b, req) {
-    if (!uid) throw ERR('auth/requires-recent-login');
-    if (limited(ipOf(req))) throw ERR('auth/too-many-requests');
-    if (!store.verifyUid(uid, String(b.password || ''))) throw ERR('auth/invalid-credential');
-    return {};
-  },
-  'auth/delete'(uid) {
-    if (!uid) throw ERR('auth/requires-recent-login');
-    store.deleteUser(uid);
-    return {};
-  },
   'fs/get'(uid, b) { const d = docs.get(uid, String(b.path)); return { exists: !!d.data, data: d.data, v: d.v }; },
   'fs/query'(uid, b) { return { docs: docs.run(uid, b) }; },
   'fs/commit'(uid, b) { docs.commit(uid, b); return {}; },
   'fs/count'(uid, b) { return { n: docs.count(uid, b) }; }
 };
-
-function tokenOf(req) {
-  const h = String(req.headers.authorization || '');
-  return h.startsWith('Bearer ') ? h.slice(7) : '';
-}
 
 function readBody(req) {
   return new Promise((res, rej) => {
@@ -103,17 +64,19 @@ const STATUS = { 'permission-denied': 403, 'not-found': 404, aborted: 409, 'inva
                  'auth/too-many-requests': 429, 'auth/user-token-expired': 401, 'auth/requires-recent-login': 401 };
 
 async function api(req, res, name) {
-  const send = (code, obj) => { res.writeHead(code, { 'content-type': 'application/json', 'cache-control': 'no-store' }); res.end(JSON.stringify(obj)); };
   const fn = routes[name];
-  if (!fn || req.method !== 'POST') return send(404, { code: 'not-found' });
+  if (!fn || req.method !== 'POST') return send(res, 404, { code: 'not-found' });
+  if (!sameOrigin(req) || !String(req.headers['content-type']).startsWith('application/json')) return send(res, 403, { code: 'permission-denied' });
   try {
     const body = await readBody(req);
-    const uid = store.sessionUid(tokenOf(req));
-    send(200, fn(uid, body, req) || {});
+    // Authorize after the final await, so a stalled upload cannot outlive logout.
+    const session = await identity.session(req);
+    if (!session) return send(res, 401, { code: 'unauthenticated' });
+    send(res, 200, fn(session.user.id, body, req) || {});
   } catch (e) {
     const code = e.code || 'internal';
-    if (!STATUS[code] && !code.startsWith('auth/')) console.error('[api]', name, e);
-    send(STATUS[code] || (code.startsWith('auth/') ? 400 : 500), { code, message: e.message });
+    if (!STATUS[code]) console.error('[api]', name, code);
+    if (!res.destroyed) send(res, STATUS[code] || 500, { code });
   }
 }
 
@@ -156,8 +119,21 @@ function serveStatic(req, res, pathname, search) {
 const server = http.createServer((req, res) => {
   // Copia privada: fuera de los buscadores (la web oficial es pokesurvivor.com).
   res.setHeader('x-robots-tag', 'noindex, nofollow');
+  res.setHeader('referrer-policy', 'no-referrer');
+  res.setHeader('x-content-type-options', 'nosniff');
   const { pathname, searchParams } = new URL(req.url, 'http://x');
   if (pathname === '/api/health') { res.writeHead(200, { 'content-type': 'application/json' }); return res.end(JSON.stringify({ ok: true, rooms: live.size, ws: wss.clients.size })); }
+  if (pathname === '/api/account/config' && req.method === 'GET') return send(res, 200, identity.capabilities);
+  if (pathname.startsWith('/api/auth/')) {
+    if (req.method === 'POST' && !sameOrigin(req)) return send(res, 403, { code: 'INVALID_ORIGIN' });
+    req.headers['x-pokesurvivor-client-ip'] = clientIp(req);
+    if (Number(req.headers['content-length'] || 0) > 16384) return send(res, 413, { code: 'resource-exhausted' });
+    let size = 0;
+    req.on('data', chunk => { size += chunk.length; if (size > 16384) req.destroy(); });
+    res.setHeader('cache-control', 'no-store');
+    res.on('finish', () => { revalidateConnections().catch(() => {}); });
+    return Promise.resolve(identity.handler(req, res)).catch(() => { if (!res.headersSent) send(res, 500, { code: 'internal' }); });
+  }
   if (pathname.startsWith('/api/')) return api(req, res, pathname.slice(5));
   if (req.method !== 'GET' && req.method !== 'HEAD') { res.writeHead(405); return res.end(); }
   serveStatic(req, res, pathname, searchParams);
@@ -165,11 +141,31 @@ const server = http.createServer((req, res) => {
 
 // ---------------- WebSocket ----------------
 
-const wss = new WebSocketServer({ noServer: true, maxPayload: MAX_BODY });
-server.on('upgrade', (req, sock, head) => {
-  if (new URL(req.url, 'http://x').pathname !== '/api/ws') return sock.destroy();
-  wss.handleUpgrade(req, sock, head, ws => wss.emit('connection', ws, req));
+const wss = new WebSocketServer({ noServer: true, maxPayload: 256 * 1024 });
+const connections = new Set();
+server.on('upgrade', async (req, sock, head) => {
+  if (new URL(req.url, 'http://x').pathname !== '/api/ws' || !sameOrigin(req)) return sock.destroy();
+  try {
+    const session = await identity.session(req);
+    if (!session || sock.destroyed) return sock.destroy();
+    wss.handleUpgrade(req, sock, head, ws => wss.emit('connection', ws, req, session));
+  } catch { sock.destroy(); }
 });
+async function validateConnection(conn) {
+  if (conn.closed) return false;
+  const session = await identity.session(conn.request);
+  if (!session || session.session.id !== conn.sessionId) {
+    conn.closed = true;
+    conn.ws.close(1008, 'Session expired');
+    return false;
+  }
+  return true;
+}
+async function revalidateConnections() {
+  await Promise.all([...connections].map(conn => validateConnection(conn).catch(() => conn.ws.terminate())));
+}
+const sessionCheck = setInterval(() => revalidateConnections().catch(() => {}), 30000);
+sessionCheck.unref();
 
 function runSub(s) {
   let out;
@@ -188,25 +184,31 @@ function notify(paths) {
   for (const s of subs) if (s.q.group ? cids.has(s.q.path) : parents.has(s.q.path)) runSub(s);
 }
 
-wss.on('connection', ws => {
+wss.on('connection', (ws, request, session) => {
   const conn = {
-    uid: null, onDisconnect: [],
-    send(m) { if (ws.readyState === 1) ws.send(JSON.stringify(m)); }
+    uid: session.user.id, sessionId: session.session.id, request, ws, closed: false, onDisconnect: [],
+    send(m) {
+      validateConnection(this).then(valid => {
+        if (valid && ws.readyState === 1) ws.send(JSON.stringify(m));
+      }).catch(() => ws.terminate());
+    }
   };
+  connections.add(conn);
+  conn.send({ t: 'auth', ok: true, uid: conn.uid });
   let alive = true;
   ws.on('pong', () => { alive = true; });
   const ping = setInterval(() => { if (!alive) return ws.terminate(); alive = false; ws.ping(); }, 30000);
 
+  let queue = Promise.resolve(), queued = 0;
   ws.on('message', raw => {
+    if (++queued > 64) return ws.close(1008, 'Too many pending messages');
+    queue = queue.then(async () => {
+    if (!await validateConnection(conn)) return;
     let m;
     try { m = JSON.parse(raw); } catch (e) { return; }
     const reply = (ok, extra) => conn.send(Object.assign({ t: 'rtr', rid: m.rid, ok }, extra));
     try {
       switch (m.t) {
-        case 'auth':
-          conn.uid = store.sessionUid(m.token);
-          conn.send({ t: 'auth', ok: !!conn.uid, uid: conn.uid });
-          break;
         case 'sub': {
           for (const x of subs) if (x.conn === conn && x.id === m.id) subs.delete(x);
           const s = { conn, id: m.id, q: m.q, last: null };
@@ -228,9 +230,12 @@ wss.on('connection', ws => {
       if (m.rid != null) reply(false, { code: e.code || 'internal' });
       else console.warn('[ws]', m.t, e.message);
     }
+
+    }).catch(() => ws.terminate()).finally(() => { queued--; });
   });
 
   ws.on('close', () => {
+    conn.closed = true; connections.delete(conn);
     clearInterval(ping);
     for (const s of subs) if (s.conn === conn) subs.delete(s);
     live.drop(conn);
@@ -238,4 +243,9 @@ wss.on('connection', ws => {
 });
 
 server.listen(PORT, () => console.log(`[pokesurvivor] http://0.0.0.0:${PORT} · datos en ${DATA_DIR} · juego en ${STATIC_DIR}`));
-for (const sig of ['SIGINT', 'SIGTERM']) process.on(sig, () => { server.close(); process.exit(0); });
+for (const sig of ['SIGINT', 'SIGTERM']) process.on(sig, () => {
+  clearInterval(sessionCheck); for (const ws of wss.clients) ws.terminate();
+  server.close(() => { identity.close(); store.close(); process.exit(0); });
+});
+}
+main().catch(error => { console.error('[startup]', error.message); process.exit(1); });

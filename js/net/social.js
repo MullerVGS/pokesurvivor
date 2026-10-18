@@ -77,19 +77,15 @@ G.Social = (() => {
     fb = G.DB.fb; uid = fb.uid;
     started = true;
     measureSkew();
-    // El apodo no cambia nunca: se recuerda en este navegador y así no se lee
-    // el perfil en cada visita (una lectura menos por jugador y sesión).
+    // The server owns the current nickname, including accounts migrated by an administrator.
     const NICK = 'ps.nick.' + uid;
-    let cachedNick = null;
-    try { cachedNick = localStorage.getItem(NICK); } catch (e) { /* nada */ }
-    const prof = cachedNick ? { name: cachedNick }
-      : await fb.fs.collection('profiles').doc(uid).get().then(s => s.exists ? s.data() : null).catch(() => null);
+    const prof = await fb.fs.collection('profiles').doc(uid).get().then(s => s.exists ? s.data() : null).catch(() => null);
     if (prof) {
       me = { uid, name: prof.name };
       if (G.DB.user !== prof.name) G.DB.setName(prof.name);
       try { localStorage.setItem(NICK, prof.name); } catch (e) { /* nada */ }
     }
-    else if (G.DB.nameAccount) {
+    else if (G.DB.save.name) {
       // Cuentas de nombre y contraseña: su nombre ya es único, se usa de apodo.
       const r = await claimNick(G.DB.save.name);
       if (!r.ok) return 'need-nick';
