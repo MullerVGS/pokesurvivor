@@ -119,7 +119,8 @@ G.Challenges = (() => {
     }
     const a = state.attack;
     if (a && a.id !== 'stampede') { if (a.t < a.wind) e.anim.loop('Charge'); return; }
-    const keep = state.id === 'ditto' ? 110 : e.r + pl.r + 10;
+    const m = state.id === 'ditto' && (warning ? warning.move : actorFor(e).moves[state.moveIndex % actor.moves.length]);
+    const keep = m ? dittoDistance(m, e, pl) : e.r + pl.r + 10;
     if (distance(e, pl) > keep) move(e, pl.x, pl.y, (state.id === 'ditto' ? 105 : 78) * (warning ? 0.55 : 1) * (1 - e.slow), dt);
     else e.anim.loop(warning ? 'Charge' : 'Idle');
   }
@@ -200,6 +201,16 @@ G.Challenges = (() => {
     e.anim.play('Attack', { speed: 1.6 });
     warning = null; G.Audio.sfx('shot', { kind: m.kind, type: m.type });
   }
+  function dittoDistance(m, e, target) {
+    if (m.kind === 'orbit') {
+      const angle = Math.atan2(target.y - e.y, target.x - e.x);
+      return m.radius / Math.hypot(Math.cos(angle), Math.sin(angle) / 0.7);
+    }
+    if (m.kind === 'mine') return 20;
+    if (['melee', 'aura', 'trail', 'dash', 'beam'].includes(m.kind)) return Math.min(110, m.radius * 0.8);
+    if (m.kind === 'cone') return Math.min(110, m.speed * m.life * 0.65);
+    return 110;
+  }
   function dittoTick(dt, e) {
     if (actor) { actor.x = e.x; actor.y = e.y; }
     if (warning) warning.t = Math.max(0, warning.t - dt);
@@ -215,7 +226,9 @@ G.Challenges = (() => {
     } else if (state.castT <= 0) {
       const p = G.EnemyMgr.nearestPlayer(G.Game.everyone(), e.x, e.y);
       if (!p) return;
-      const a = actorFor(e), index = state.moveIndex++ % a.moves.length, m = a.moves[index];
+      const a = actorFor(e), index = state.moveIndex % a.moves.length, m = a.moves[index];
+      if (['melee', 'aura', 'orbit', 'mine', 'trail', 'cone'].includes(m.kind) && distance(e, p) > dittoDistance(m, e, p) + 8) return;
+      state.moveIndex++;
       const duration = ['beam', 'dash', 'meteor', 'nova'].includes(m.kind) ? 0.85 : 0.55;
       warning = { enemy: e.id, index, x: e.x, y: e.y, tx: p.x, ty: p.y, aim: Math.atan2(p.y - e.y, p.x - e.x),
         t: duration, duration, move: m };
@@ -248,8 +261,8 @@ G.Challenges = (() => {
     bindUnits(); state.t += dt;
     const e = boss();
     if (!e) return;
-    state.x = e.x; state.y = e.y;
     if (authority()) {
+      state.x = e.x; state.y = e.y;
       if (e.dead) { if (state.phase === 'roam') finish(); else win(); return; }
       if (G.Rift.inArena || G.Judgment.active || players.every(p => p.dead)) { finish(); return; }
       // Un encuentro ignorado no bloquea la siguiente aparición de jefe ni las grietas.
@@ -276,7 +289,7 @@ G.Challenges = (() => {
   }
   function drawables() { return [{ y: -Infinity, draw(ctx) { G.ChallengeArt.ground(ctx, state, warning); } }]; }
   return { ids: IDS, names: NAMES, available, offer, onHit, roaming, snapshot, reset, update, onNet, updateEnemy, drawables,
-    markers() { const e = boss(); return state ? [{ x: e ? e.x : state.x, y: e ? e.y : state.y, id: state.id }] : []; },
+    markers() { const e = authority() && boss(); return state ? [{ x: e ? e.x : state.x, y: e ? e.y : state.y, id: state.id }] : []; },
     get state() { return state; }, get warning() { return warning; },
     get fighting() { return !!state && state.phase !== 'roam'; },
     get blocksEncounters() { return !!state || recovery > 0; },

@@ -95,6 +95,44 @@ const URL = process.env.EVENT_TEST_URL || 'http://127.0.0.1:3087/dev.html';
       e.hurt(1e8,'#fff',0,0,0,null,p);stepEvent(0.1);takeReward();
       check(p.coins===400&&p.item==='dittoecho','Ditto reward');
     });
+    await test('Ditto approaches before short-range casts and can hit a stationary target', () => {
+      const collide = G.World.collide;
+      G.World.collide = () => false;
+      try {
+        for (const [id, level] of [['tackle', 1], ['fire-spin', 1], ['giga-drain', 1], ['leaf-storm', 4], ['leaf-storm', 5]]) for (const angle of [0, Math.PI / 2, Math.PI / 4]) {
+          const p = fresh(), m = G.Moves.instance(id, level);
+          if (level === 5) G.Moves.evolve(m);
+          p.moves = [m]; p.slots = [[m]]; p.maxHp = p.hp = 10000;
+          beginEvent('ditto');
+          const e = G.EnemyMgr.get(G.Challenges.state.units[0].id);
+          e.x = p.x - Math.cos(angle) * 240; e.y = p.y - Math.sin(angle) * 240; stepEvent(3.01);
+          let casts = 0;
+          for (let i = 0; i < 130; i++) {
+            p.invuln = 0; G.Challenges.updateEnemy(e, 0.04, p); stepEvent(0.04);
+            if (G.Challenges.warning) {
+              const w = G.Challenges.warning;
+              check(Math.hypot(w.x - p.x, w.y - p.y) <= m.radius + p.r, 'reachable ' + id);
+              casts++;
+            }
+            G.Projectiles.update(0.04, p, G.EnemyMgr.all());
+            e.dmg = 0; G.Combat.resolve(0.04, p, i * 0.04);
+          }
+          check(casts > 0 && p.hp < p.maxHp, id + ' actually hits, without contact damage');
+        }
+      } finally { G.World.collide = collide; }
+    });
+    await test('Ditto telegraphs cover melee arcs, full cone spread, and radial projectile reach', () => {
+      fresh();
+      const tackle = G.Moves.instance('tackle', 1), flame = G.Moves.instance('flamethrower', 1), nova = G.Moves.instance('heat-wave', 1);
+      const arc = G.Combat.warningZones(tackle, 0, 0, 0, 0, 0)[0];
+      check(arc.kind === 'sector' && arc.arc === tackle.arc && arc.r === tackle.radius, 'melee arc footprint');
+      const cone = G.Combat.warningZones(flame, 0, 0, 0, 0, 0)[0];
+      check(cone.kind === 'sector' && cone.arc >= flame.arc + 0.1 && cone.r >= flame.speed * flame.life * 1.155, 'full cone spread');
+      const ring = G.Combat.warningZones(nova, 0, 0, 0, 0, 0)[0];
+      check(ring.kind === 'zone' && ring.r >= nova.speed * nova.life + nova.size && ring.round, 'full radial reach');
+      const ctx = document.createElement('canvas').getContext('2d');
+      for (const zone of [arc, cone, ring]) for (const progress of [0, 0.5, 1]) G.Hazards.drawWarning(ctx, zone, progress);
+    });
     await test('actual melee and projectile damage can engage a roaming boss', () => {
       for(const id of ['tackle','ember']) {
         const p=fresh();G.Challenges.offer('stampede',240,[p],{x:40,y:0});
@@ -220,10 +258,25 @@ const URL = process.env.EVENT_TEST_URL || 'http://127.0.0.1:3087/dev.html';
     for (const [uid, p] of Object.entries(pages)) await p.evaluate(({ cfg, uid }) => { G.DB.save.partner = uid === 'host' ? 25 : 4; G.Game.startRun(cfg); }, { cfg, uid });
     await exchange();
     await host.evaluate(()=>G.Challenges.offer('stampede',240,G.Game.everyone(),{x:200,y:0}));await exchange();
+    await guest.evaluate(() => { G.Game.player.x = 5000; }); await exchange();
+    await host.evaluate(() => { const e = G.EnemyMgr.get(G.Challenges.state.units[0].id); e.x = 400; e.y = 300; stepEvent(0.3); });
+    await exchange();
+    await guest.evaluate(() => {
+      const e = G.EnemyMgr.get(G.Challenges.state.units[0].id);
+      check(e.x !== 400, 'enemy position intentionally outside replication range');
+      stepEvent(0.01);
+      const marker = G.Challenges.markers()[0];
+      check(marker.x === 400 && marker.y === 300, 'distant minimap uses authoritative state');
+      G.Game.player.x = 0;
+    });
+    console.log('PASS co-op distant roaming boss marker survives local stale enemy positions');
+    await exchange();
     await guest.evaluate(()=>{const e=G.EnemyMgr.get(G.Challenges.state.units[0].id);e.hurt(1,'#fff',0,0,0,null,G.Game.player);});await exchange();
     for(const p of [host,guest]) assert.equal(await p.evaluate(()=>G.Challenges.state.phase),'fight');
     await host.evaluate(()=>{const s=G.Challenges.state;s.moveIndex=2;s.castT=0;stepEvent(0.01);});await exchange();
-    assert.deepEqual(await guest.evaluate(()=>G.Challenges.state.attack),await host.evaluate(()=>G.Challenges.state.attack));
+    const guestAttack = await guest.evaluate(() => G.Challenges.state.attack), hostAttack = await host.evaluate(() => G.Challenges.state.attack);
+    const { t: guestTime, ...guestGeometry } = guestAttack, { t: hostTime, ...hostGeometry } = hostAttack;
+    assert.deepEqual(guestGeometry, hostGeometry); assert.ok(Math.abs(guestTime - hostTime) <= 0.2, 'clock within broadcast interval');
     await host.evaluate(()=>{const e=G.EnemyMgr.get(G.Challenges.state.units[0].id);e.hurt(1e8,'#fff',0,0,0,null,G.Game.player);stepEvent(0.1);});await exchange();
     for(const p of [host,guest]) {await p.evaluate(()=>takeReward());assert.equal(await p.evaluate(()=>G.Game.player.coins),250);}
     console.log('PASS co-op first-hit engagement, shared stampede geometry and rewards');

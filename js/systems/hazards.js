@@ -77,31 +77,43 @@ G.Hazards = (() => {
   }
   function drawWarning(ctx, h, progress) {
     const k = G.U.clamp(progress, 0, 1), blink = Math.sin(performance.now() / 60) > 0;
-  ctx.save();
-  if (h.kind === 'zone') {
-    ctx.globalAlpha = 0.16;
-    ctx.fillStyle = h.color;
-    ctx.beginPath(); ctx.ellipse(h.x, h.y, h.r, h.r * 0.75, 0, 0, 6.2832); ctx.fill();
-    ctx.globalAlpha = 0.32;
-    ctx.beginPath(); ctx.ellipse(h.x, h.y, h.r * k, h.r * 0.75 * k, 0, 0, 6.2832); ctx.fill();
-    ctx.globalAlpha = k > 0.75 && blink ? 0.95 : 0.6;
-    ctx.strokeStyle = h.color; ctx.lineWidth = 2;
-    ctx.setLineDash([4, 4]);
-    ctx.beginPath(); ctx.ellipse(h.x, h.y, h.r, h.r * 0.75, 0, 0, 6.2832); ctx.stroke();
-  } else {
-    ctx.translate(h.x, h.y);
-    ctx.rotate(h.angle);
-    ctx.globalAlpha = 0.14;
-    ctx.fillStyle = h.color;
-    ctx.fillRect(0, -h.w / 2, h.len, h.w);
-    ctx.globalAlpha = 0.34;
-    ctx.fillRect(0, -h.w / 2 * k, h.len, h.w * k);
-    ctx.globalAlpha = k > 0.75 && blink ? 0.95 : 0.55;
-    ctx.strokeStyle = h.color; ctx.lineWidth = 2;
-    ctx.setLineDash([6, 4]);
-    ctx.strokeRect(0, -h.w / 2, h.len, h.w);
-  }
-  ctx.restore();
+    ctx.save();
+    if (h.kind === 'sector') {
+      const path = scale => {
+        ctx.beginPath(); ctx.moveTo(h.x, h.y);
+        ctx.arc(h.x, h.y, h.r * scale, h.angle - h.arc / 2, h.angle + h.arc / 2); ctx.closePath();
+      };
+      ctx.fillStyle = ctx.strokeStyle = h.color;
+      ctx.globalAlpha = 0.16; path(1); ctx.fill();
+      if (h.pad) { ctx.lineWidth = h.pad * 2; ctx.lineJoin = 'round'; ctx.stroke(); }
+      ctx.globalAlpha = 0.32; path(k); ctx.fill();
+      ctx.globalAlpha = k > 0.75 && blink ? 0.95 : 0.6;
+      ctx.lineWidth = 2; ctx.setLineDash([4, 4]); path(1); ctx.stroke();
+    } else if (h.kind === 'zone') {
+      const sy = h.round ? 1 : 0.75;
+      ctx.globalAlpha = 0.16;
+      ctx.fillStyle = h.color;
+      ctx.beginPath(); ctx.ellipse(h.x, h.y, h.r, h.r * sy, 0, 0, 6.2832); ctx.fill();
+      ctx.globalAlpha = 0.32;
+      ctx.beginPath(); ctx.ellipse(h.x, h.y, h.r * k, h.r * sy * k, 0, 0, 6.2832); ctx.fill();
+      ctx.globalAlpha = k > 0.75 && blink ? 0.95 : 0.6;
+      ctx.strokeStyle = h.color; ctx.lineWidth = 2;
+      ctx.setLineDash([4, 4]);
+      ctx.beginPath(); ctx.ellipse(h.x, h.y, h.r, h.r * sy, 0, 0, 6.2832); ctx.stroke();
+    } else {
+      ctx.translate(h.x, h.y);
+      ctx.rotate(h.angle);
+      ctx.globalAlpha = 0.14;
+      ctx.fillStyle = h.color;
+      ctx.fillRect(0, -h.w / 2, h.len, h.w);
+      ctx.globalAlpha = 0.34;
+      ctx.fillRect(0, -h.w / 2 * k, h.len, h.w * k);
+      ctx.globalAlpha = k > 0.75 && blink ? 0.95 : 0.55;
+      ctx.strokeStyle = h.color; ctx.lineWidth = 2;
+      ctx.setLineDash([6, 4]);
+      ctx.strokeRect(0, -h.w / 2, h.len, h.w);
+    }
+    ctx.restore();
   }
 
   return { add, clear, update, draw, drawWarning, inside, get all() { return list; }, get count() { return list.length; } };

@@ -45,11 +45,9 @@ G.ChallengeArt = (() => {
     const m = warning.move, x = warning.x, y = warning.y;
     const color = G.U.TYPE_COLOR[m.type] || '#ffb566';
     const progress = 1 - warning.t / warning.duration;
-    let zone;
-    if (['aura', 'orbit', 'nova', 'mine', 'trail'].includes(m.kind)) zone = { kind: 'zone', x, y, r: m.radius || 80, color };
-    else if (m.kind === 'meteor' || m.kind === 'chain') zone = { kind: 'zone', x: warning.tx, y: warning.ty, r: m.kind === 'chain' ? 55 : m.radius, color };
-    else zone = { kind: 'beam', x, y, angle: warning.aim, len: G.Combat.reach(m), w: m.width || m.size * 2 || 24, color };
-    G.Hazards.drawWarning(ctx, zone, progress);
+    for (const zone of G.Combat.warningZones(m, x, y, warning.aim, warning.tx, warning.ty)) {
+      G.Hazards.drawWarning(ctx, zone, progress);
+    }
     const e = G.EnemyMgr.get(warning.enemy);
     label(ctx, m.name || G.Moves.BY_ID[m.id].name, e ? e.x : x, (e ? e.y - e.bodyH : y - 50) - 46, color, 11);
   }

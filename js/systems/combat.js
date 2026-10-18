@@ -92,6 +92,33 @@ G.Combat = (function create(G) {
     return 520;
   }
 
+  /** Huella inicial de los golpes copiados; incluye la dispersión de los proyectiles. */
+  function warningZones(m, x, y, aim, tx, ty) {
+    const color = G.U.TYPE_COLOR[m.type], circle = (r, cx = x, cy = y) => ({ kind: 'zone', x: cx, y: cy, r, color, round: true });
+    const sector = (r, arc, pad = 0) => ({ kind: 'sector', x, y, r, angle: aim, arc: Math.min(Math.PI * 2, arc), pad, color });
+    const beamZone = (angle, len, w) => ({ kind: 'beam', x, y, angle, len, w, color });
+    switch (m.kind) {
+      case 'buff': return [];
+      case 'melee': return [sector(m.radius, m.arc)];
+      case 'cone': return [sector(m.speed * m.life * 1.1 * 1.05 + 4, (m.arc || 0.9) + 0.1, m.size)];
+      case 'nova': return [circle(m.speed * m.life + m.size + 3)];
+      case 'orbit': return [circle(m.radius + m.size)];
+      case 'aura': case 'trail': return [circle(m.radius)];
+      case 'mine': return [circle(m.radius + (m.count > 1 ? 46 : 0))];
+      case 'meteor': return [circle(m.radius + 65, tx, ty)];
+      case 'chain': return [circle(55, tx, ty)];
+      case 'turret': return [circle((m.range || 300) + 26)];
+      case 'beam': case 'dash': return [beamZone(aim, m.radius, m.width || 34)];
+      default: {
+        const n = Math.max(1, m.count | 0), boom = m.kind === 'boomerang';
+        const len = boom ? m.radius : m.speed * m.life + 3;
+        const spread = boom ? (m.spread || 0.5) * Math.min(n, 3) : (m.spread || 0) * n;
+        return Array.from({ length: n }, (_, i) => beamZone(aim + (n === 1 ? 0 : (i / (n - 1) - 0.5) * spread), len,
+          m.size * 2 + (boom ? 0 : len * Math.sin(0.03) * 2)));
+      }
+    }
+  }
+
   function payload(m) {
     return { burn: m.burn || 0, poison: m.poison || 0, slow: m.slow || 0, knock: m.knock || 0, mtype: m.type };
   }
@@ -699,6 +726,6 @@ G.Combat = (function create(G) {
     }
   }
 
-  return { create, tick, resolve, replay, ghostCast, ghostOrbit, updateFields, drawGroundFields, drawAirFields, clearFields, reach,
+  return { create, tick, resolve, replay, ghostCast, ghostOrbit, updateFields, drawGroundFields, drawAirFields, clearFields, reach, warningZones,
            get fieldCount() { return fields.length; } };
 })(G);
