@@ -145,7 +145,8 @@ G.RunUI = (() => {
   function showItemChoice(cur, next, cb) {
     const box = $('item-cards');
     box.innerHTML = '';
-    [[cur, 'Quedarme con'], [next, 'Cambiar a']].forEach(([id, verb], i) => {
+    const choices = Array.isArray(next) ? (cur ? [[cur, 'Quedarme con']] : []).concat(next.filter(id => id !== cur).map(id => [id, 'Cambiar a'])) : [[cur, 'Quedarme con'], [next, 'Cambiar a']];
+    choices.forEach(([id, verb], i) => {
       const it = G.Items.BY[id];
       const el = document.createElement('div');
       el.className = 'card' + (i === 1 ? ' evo' : '');

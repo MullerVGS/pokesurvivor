@@ -281,6 +281,8 @@ G.Coop = (() => {
         case 'hs': holdOn(from); break;
         case 'he': holdOff(from); break;
         case 're': G.Rift.enterRequest(); break;
+        case 'challenge': G.Challenges.request(m.pl, ev[1], ev[2]); break;
+        case 'event-item': G.EventItems.onNet(ev, m.pl); emit(['event-item', from, ev[1]], from); break;
         case 'bye': mateGone(from); break;
       }
     }
@@ -377,6 +379,8 @@ G.Coop = (() => {
       case 'jd': case 'jk': G.Judgment.onEvent(ev); break;
       case 'wx': G.Weather.onEvent(ev); break;
       case 'ev': G.Events.onNet(ev); break;
+      case 'challenge': G.Challenges.onNet(ev[1], ev[2]); break;
+      case 'event-item': { const m = mates.get(ev[1]); if (m) G.EventItems.onNet(['event-item', ev[2]], m.pl); break; }
       case 'hz': G.Hazards.add(ev[1], true); break;
       case 'fxr': G.FX.ring(ev[1], ev[2], 8, ev[3], ev[4], 0.5, 3); break;
     }

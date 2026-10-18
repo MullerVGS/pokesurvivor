@@ -6,6 +6,14 @@
  * Cada línea en español y en inglés.
  */
 G.CHANGELOG = [
+  { d: '2026-10-18', title: ['Encuentros y copias oscuras', 'Encounters and dark copies'], new: [
+    ['Cuatro eventos opcionales entre las hordas: Casa Monstruo (tres cofres, 150/200/250 monedas), Operación Rocket (150 por generador), Estampida de Tauros (250 por el alfa) y Ditto impostor (400). Acércate y permanece en el círculo para empezar. No coinciden con jefes ni grietas; puedes retirarte con las recompensas de las etapas terminadas.',
+     'Four optional horde encounters: Monster House (three chests, 150/200/250 coins), Operation Rocket (150 per generator), Tauros Stampede (250 for the alpha), and Ditto Impostor (400). Approach and stay in the circle to begin. They do not overlap bosses or rifts; you can leave with rewards from completed stages.'],
+    ['Ditto copia al jugador que inicia el evento, también en cooperativo: parpadea durante tres segundos como una evolución y revela una copia oscura con colores negativos. Sus ataques conservan su tipo, con una paleta corrompida y avisos antes de atacar.',
+     'Ditto copies the player who starts the encounter, including in co-op: it flashes for three seconds like an evolution, revealing a dark copy with negative colors. Its moves keep their types, with corrupted palettes and warnings before attacks.'],
+    ['Dos objetos de evento: Eco de Ditto repite cada tercer ataque con un 60% de daño; Rastro de la Manada da +10% velocidad y deja una estela que daña a los enemigos. Usan el mismo hueco de objeto que los demás y duran la partida.',
+     'Two encounter items: Ditto Echo repeats every third cast at 60% damage; Herd Trail gives +10% speed and leaves a damaging trail. They use the existing item slot and last for the run.']
+  ] },
   { d: '2026-10-17', title: ['Trae tu partida, minimapa, información al pasar el ratón, apuntar con clic y campo de visión', 'Bring your save, minimap, info on hover, click to aim and field of view'], new: [
     ['Trae tu partida de pokesurvivor.com: en la pantalla de entrada, el botón verde «Trazer meu save» te explica cómo (un favorito que se arrastra a la barra, o copiar y pegar). Tus Pokémon, shinies, monedas, tickets, mejoras y logros entran en la cuenta que crees aquí, con tu mismo apodo, que ya sale escrito. Si ya tenías cuenta aquí, se junta con lo que tenías y no se pierde nada.',
      'Bring your save from pokesurvivor.com: on the sign-in screen, the green «Trazer meu save» button explains how (a bookmark you drag to the bar, or copy and paste). Your Pokémon, shinies, coins, tickets, upgrades and achievements go into the account you create here, with your same nickname, already filled in. If you already had an account here, it is merged with what you had and nothing is lost.'],

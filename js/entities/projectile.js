@@ -25,6 +25,7 @@ G.Projectiles = (() => {
       orb: false, rehit: 0.34, hitLog: null, phits: null
     }, o);
     if (p.friendly && !p.orb && !p.phits) p.phits = new Set();
+    if (p.owner && p.owner.hostile) { p.friendly = false; p.corrupt = true; }
     list.push(p);
     return p;
   }
@@ -43,7 +44,9 @@ G.Projectiles = (() => {
     for (let i = list.length - 1; i >= 0; i--) {
       const p = list[i];
       p.t += dt;
+      if (p.echoLife && p.t >= p.echoLife) { list.splice(i, 1); continue; }
 
+      if (p.owner && p.owner.hostile && p.owner.dead) { list.splice(i, 1); continue; }
       if (p.orb) {
         // Gira alrededor de su jugador.
         const o = p.owner || player;
@@ -69,8 +72,8 @@ G.Projectiles = (() => {
       }
 
       // Teledirigido: curva la velocidad hacia el enemigo más cercano.
-      if (p.homing > 0 && p.friendly) {
-        const tg = nearest(enemies, p.x, p.y, 340);
+      if (p.homing > 0 && (p.friendly || p.corrupt)) {
+        const tg = nearest(p.corrupt ? [player] : enemies, p.x, p.y, 340);
         if (tg) {
           const [dx, dy] = G.U.norm(tg.x - p.x, tg.cy() - p.y);
           const sp = Math.hypot(p.vx, p.vy);

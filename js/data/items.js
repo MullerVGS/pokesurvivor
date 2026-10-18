@@ -10,6 +10,10 @@
  */
 G.Items = (() => {
   const LIST = [
+    { id: 'dittoecho', name: 'Eco de Ditto', desc: 'Cada 3 ataques repite el último con un 60% de daño. Los ecos no generan ecos.', eventOnly: true,
+      on: () => {}, off: () => {} },
+    { id: 'herdtrail', name: 'Rastro de la Manada', desc: '+10% velocidad. Al caminar dejas un rastro durante 2 s que hace un 20% de tu ataque por segundo. Los rastros no acumulan daño.', eventOnly: true,
+      on: p => { p.spdMul *= 1.1; }, off: p => { p.spdMul /= 1.1; } },
     { id: 'leftovers', name: 'Restos', desc: 'Recuperas un 1,5% de tu vida por segundo.',
       on: p => { p.regenFlat += p.maxHp * 0.015; p._itemRegen = p.maxHp * 0.015; },
       off: p => { p.regenFlat -= p._itemRegen || 0; } },
@@ -39,7 +43,7 @@ G.Items = (() => {
 
   /** Uno al azar, distinto del que ya llevas. */
   function roll(except) {
-    const pool = LIST.filter(i => i.id !== except);
+    const pool = LIST.filter(i => !i.eventOnly && i.id !== except);
     return G.U.pick(pool).id;
   }
 

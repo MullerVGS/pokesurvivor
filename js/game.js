@@ -435,8 +435,9 @@ G.Game = (() => {
 
   /** Has cogido un objeto: si no llevas ninguno te lo pones; si no, eliges. */
   function offerItem(id) {
-    if (!pl || !G.Items.BY[id]) return;
-    if (state === 'levelup' || G.UI.isOpen('scr-levelup')) { laterItems.push(id); return; }
+    const options = Array.isArray(id) ? id.filter(x => G.Items.BY[x]) : null;
+    if (!pl || (options ? !options.length : !G.Items.BY[id])) return;
+    if (openItem || state === 'levelup' || G.UI.isOpen('scr-levelup')) { laterItems.push(id); return; }
     let mine = false;            // esta elección es la que ha parado el juego
     const take = got => {
       openItem = null;
@@ -450,7 +451,7 @@ G.Game = (() => {
       if (G.Coop.active) G.Coop.holdEnd();
       afterLevelUp();
     };
-    if (!pl.item) { take(id); return; }
+    if (!options && !pl.item) { take(id); return; }
     if (pl.item === id) { G.Spawner.say('Ya llevas ' + G.Items.BY[id].name, 2, true); return; }
     // Se para el juego mientras eliges; en grupo, para todos (como con las
     // fusiones). Antes en grupo seguía y te pegaban mientras elegías.
@@ -459,8 +460,8 @@ G.Game = (() => {
       state = 'choice';
       if (G.Coop.active) G.Coop.holdStart();
     }
-    openItem = { cur: pl.item, next: id, take, get mine() { return mine; } };
-    G.RunUI.showItemChoice(pl.item, id, take);
+    openItem = { cur: pl.item, next: options || id, take, get mine() { return mine; } };
+    G.RunUI.showItemChoice(pl.item, options || id, take);
   }
 
   /** @param who  quien lo ha cogido (en cooperativo puede ser un compañero) */
@@ -537,7 +538,7 @@ G.Game = (() => {
       return;
     }
     if (G.UI.isOpen('scr-item')) {
-      for (let i = 0; i < 2; i++) {
+      for (let i = 0; i < document.querySelectorAll('#item-cards .card').length; i++) {
         if (G.Input.tap('digit' + (i + 1)) || G.Input.tap('numpad' + (i + 1))) document.querySelectorAll('#item-cards .card')[i].click();
       }
       return;
@@ -638,7 +639,7 @@ G.Game = (() => {
     time += dt;
 
     const b = Math.floor(time / 240);
-    if (b !== biome && !G.Rift.inArena && !G.Judgment.active) {
+    if (b !== biome && !G.Rift.inArena && !G.Judgment.active && !G.Challenges.inHouse) {
       biome = b;
       G.World.setBiome(b);
       G.Audio.sfx('biome');
@@ -704,6 +705,7 @@ G.Game = (() => {
     G.World.drawGround(ctx, cam);
     G.World.drawLiquid(ctx, cam, t);
     G.Hazards.draw(ctx);
+    G.EventItems.draw(ctx);
     G.Combat.drawGroundFields(ctx);
     G.Pickups.draw(ctx);
 
@@ -867,7 +869,13 @@ G.Game = (() => {
   })();
 
   return {
-    init, startRun, everyone, levelXp, flash, offerBond,
+    init, startRun, everyone, levelXp, flash, offerBond, offerItem,
+    claimEventLoot(x, y, radius) {
+      for (const p of G.Pickups.all().slice()) if (G.U.dist2(p.x, p.y, x, y) < radius * radius) {
+        onCollect(p); G.Pickups.removeId(p.id);
+      }
+    },
+    grantEventReward(coins, tickets) { pl.coins += coins; pl.t1 += tickets; bankTickets(); },
     /** Para pruebas: salta el reloj de la run. */
     debugTime(t) { tampered = true; time = t; },
     /** Para grabar vídeos: cámara lenta (0,5 = mitad de velocidad). */

@@ -35,6 +35,7 @@ G.Rift = (() => {
   // ---------------- grieta en el mapa ----------------
 
   function update(dt, pl, time) {
+    if (G.Challenges.blocksEncounters) return;
     if (rift) {
       rift.t += dt;
       rift.ttl -= dt;

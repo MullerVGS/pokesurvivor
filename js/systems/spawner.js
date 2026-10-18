@@ -110,7 +110,7 @@ G.Spawner = (() => {
     if (announceT > 0) announceT -= dt;
     // En la arena de la grieta no sale nada más (y el reloj de jefes espera).
     // En la Sentencia de Arceus, sólo sus legendarios (systems/judgment.js).
-    if (G.Rift.inArena || G.Judgment.active) return;
+    if (G.Rift.inArena || G.Judgment.active || G.Challenges.inHouse) return;
 
     // Precarga lo que va a salir en el próximo minuto.
     preloadT -= dt;
@@ -126,14 +126,15 @@ G.Spawner = (() => {
 
     // --- goteo normal ---
     if (G.EnemyMgr.count < CAP) {
-      acc += rate(t) * G.Coop.scaleRate(players.length) * (bossFight ? 0.25 : 1) * dt;
+      acc += rate(t) * G.Coop.scaleRate(players.length) * (bossFight ? 0.25 : G.Challenges.spawnFactor) * dt;
       let n = Math.floor(acc);
       acc -= n;
       while (n-- > 0 && G.EnemyMgr.count < CAP) spawnOne(anchor(), t);
     }
 
     // --- marea ---
-    if (!bossFight) surgeT -= dt;
+    if (G.Challenges.blocksEncounters) surgeT = Math.max(surgeT, 8);
+    else if (!bossFight) surgeT -= dt;
     if (surgeT <= 0) {
       surgeT = G.U.rand(38, 56);
       const base = Math.random() * 6.2832;

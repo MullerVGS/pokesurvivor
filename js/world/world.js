@@ -75,6 +75,7 @@ G.World = (() => {
     const ad = arenaDist(tx, ty);
     if (ad < arena_outer()) {
       if (ad >= arena.r) return WALL;
+      if (arena.clear) return FLOOR;
       if (arenaSafe(tx, ty)) return FLOOR;
       const th = arena.th;
       // Columnas de 2×2 (cobertura) y charcos según el tipo de la arena.
@@ -134,6 +135,7 @@ G.World = (() => {
       // Dentro de la arena: la decoración de su tipo (y nada en el pasillo).
       const ad = arenaDist(tx, ty);
       if (ad < arena_outer() + 2) {
+        if (arena && arena.clear) continue;
         if (!arena || ad >= arena.r - 1.2 || arenaSafe(tx, ty)) continue;
         const pr = arena.th.props, hh = H(tx, ty, seed + 777);
         let at = null;

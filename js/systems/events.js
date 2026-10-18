@@ -27,6 +27,7 @@ G.Events = (() => {
   let lost = null;      // { dex, name, x, y, hp, maxHp, state, follow, tx, ty, t, anim, r, hitCd, netT, grant }
 
   function reset() {
+    G.Challenges.reset();
     nextT = G.U.rand(EVERY[0], EVERY[1]);
     cur = null; last = null; lost = null;
     thiefT = G.U.rand(THIEF_FIRST[0], THIEF_FIRST[1]); thieves = 0;
@@ -35,6 +36,8 @@ G.Events = (() => {
   // ---------------- ciclo ----------------
 
   function update(dt, players, time) {
+    G.Challenges.update(dt, players, time);
+    if (G.Challenges.blocksEncounters) return;
     if (cur) {
       cur.t += dt;
       if (cur.id !== 'lost' && cur.t >= cur.dur && authority()) end();
@@ -55,12 +58,13 @@ G.Events = (() => {
     if (nextT > 0) return;
     if (G.EnemyMgr.bossAlive()) { nextT = 10; return; }
     nextT = G.U.rand(EVERY[0], EVERY[1]);
-    const ids = ['horde', 'gold', 'lost'].filter(id => id !== last);
+    const ids = ['horde', 'gold', 'lost', ...G.Challenges.available(time)].filter(id => id !== last);
     start(G.U.pick(ids), time, players);
   }
 
   function start(id, time, players) {
     last = id;
+    if (G.Challenges.ids.includes(id)) { G.Challenges.offer(id, time, players); return; }
     if (id === 'horde') {
       const types = G.Enemies.hordeTypes(time);
       if (!types.length) return start('gold', time, players);
@@ -251,7 +255,7 @@ G.Events = (() => {
 
   /** El Pokémon perdido y la marca, para ordenarlos por Y con el resto. */
   function drawables() {
-    if (!lost) return [];
+    if (!lost) return G.Challenges.drawables();
     const L = lost;
     const now = performance.now() / 1000;
     const goal = {

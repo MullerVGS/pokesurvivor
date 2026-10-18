@@ -129,6 +129,14 @@ G.Icons = (() => {
     ballLux: { pal: { r: '#30303a', s: '#18181e', w: '#ff5f6d', b: '#ffd23f' }, rows: [
       '....kkkk....', '..kkrrrrkk..', '.krwrrrrrrk.', '.krwrrrrrsk.', 'krrrrkkrrssk', 'kkkkkbbkkkkk', 'kbbbkbbkbbbk', 'kbbbbkkbbbbk', '.kbbbbbbbbk.', '.kbbbbbbbbk.', '..kkbbbbkk..', '....kkkk....'] },
     // ---------- objetos equipables (data/items.js) ----------
+    dittoecho: { pal: { p: '#a465ce', w: '#f3d8ff', e: '#ff578e' }, rows: [
+      '................', '......pppp......', '....ppwwwwpp....', '...pwwwwwwwwp...', '..pwwwwwwwwwwp..',
+      '..pwwpewwepwwp..', '..pwwwwwwwwwwp..', '..pwwwppppwwwp..', '.pwwwwwwwwwwwwp.',
+      '.pppppppppppppp.', '................', '................', '................', '................', '................', '................'] },
+    herdtrail: { pal: { b: '#946b47', w: '#ffe1ae', d: '#4f3527' }, rows: [
+      '................', '...bb.....bb....', '..bwwb...bwwb...', '..bwwb...bwwb...', '...dd.....dd....',
+      '................', '.....bb.....bb..', '....bwwb...bwwb.', '....bwwb...bwwb.', '.....dd.....dd..',
+      '................', '................', '................', '................', '................', '................'] },
     leftovers: { pal: { r: '#ff5f6d', d: '#b8283a', w: '#ffd8d8', g: '#5fe08a' }, rows: [
       '.....kgk....', '....kggk....', '..kkkkkkkk..', '.krwrrrrrrk.', 'krwrrrrrrrdk', 'krrrrrrrrrdk',
       'krrrrrrrrrdk', 'krrrrrrrrddk', '.krrrrrrrdk.', '..kdrrrrdk..', '...kkkkkk...', '............'] },

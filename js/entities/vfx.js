@@ -33,6 +33,13 @@ G.VFX = (() => {
     normal:   ['#3e3834', '#7a7068', '#c4bcb0', '#ece6dc', '#ffffff'],
     aura:     ['#0c2460', '#1c4cb0', '#3a7cff', '#90d2ff', '#ffffff']
   };
+  for (const [type, colors] of Object.entries(PAL)) {
+    const inverted = colors.map((hex, i) => {
+      if (i === 0) return '#160b25';
+      return '#' + [1, 3, 5].map(p => Math.round((255 - parseInt(hex.slice(p, p + 2), 16)) * 0.8 + 28).toString(16).padStart(2, '0')).join('');
+    });
+    PAL['corrupt_' + type] = inverted;
+  }
   const IDX = { o: 0, d: 1, m: 2, l: 3, w: 4 };
   const H = (a, b, c) => G.U.hash(a, b, c);
 
@@ -390,7 +397,7 @@ G.VFX = (() => {
 
   function forMove(m) {
     const v = MOVE[m.id] || {};
-    return Object.assign({ pal: m.type, proj: TYPE_SHAPE[m.type] || 'ball' }, v, { pal: v.pal || m.type });
+    return Object.assign({ pal: m.type, proj: TYPE_SHAPE[m.type] || 'ball' }, v, { pal: m.corrupt ? 'corrupt_' + m.type : v.pal || m.type });
   }
   function forType(type) { return { proj: TYPE_SHAPE[type] || 'ball', pal: PAL[type] ? type : 'normal' }; }
 
